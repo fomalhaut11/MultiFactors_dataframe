@@ -1,3 +1,4 @@
 {
-    "easycode.model": "gpt-4"
+    "easycode.model": "gpt-4",
+    "python.REPL.enableREPLSmartSend": false
 }

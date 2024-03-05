@@ -1,10 +1,11 @@
 import numpy as np
 import pandas as pd
 import sys
-import GTJA_Alpha191 as a191
+#import GTJA_Alpha191 as a191
 file_path =r'E:\Documents\PythonProject\StockProject'
 sys.path.append(file_path)
 import StockDataPrepairing  as SDP
+import alpha191backtest_factor as alpha191
 import 股票数据接口_zx as FinData
 from datetime import date
 from datetime import datetime
@@ -276,6 +277,10 @@ def half_decay_factor(DateCount_df,factorDF,para=20,show=False):
     indice=logbase**minvalues
     df=factorDF*indice
     return df
+def none_linear_marketcap(MarketCap,para=0.5):
+     
+    return df
+    
 
 
 
@@ -289,7 +294,7 @@ if __name__=='__main__':
     
     #SDP.Main_Data_Renew()#StockDataPrepairing中的数据更新
     datasavepath=r'E:\Documents\PythonProject\StockProject\StockData'
-    datapath=r'E:\Documents\PythonProject\StockProject\StockData'
+    datapath=    r'E:\Documents\PythonProject\StockProject\StockData'
     realead_dates=pd.read_pickle(datapath+'\\'+'realesed_dates_df.pkl')
     realead_dates_count_df=pd.read_pickle(datapath+'\\'+'realesed_dates_count_df.pkl')
     today=datetime.today()
@@ -307,7 +312,7 @@ if __name__=='__main__':
     TradingDates=PriceDf.index.get_level_values(0).to_frame()
     PriceDf=None
 
-
+    MarketCap=pd.read_pickle(datapath+'\\'+'MarketCap.pkl')
     factorDF=RoE(x1)
     pd.to_pickle(factorDF,datasavepath+r'\ROE.pkl')
     factorDF=RoE_zscores(x1,r_method='ttm',e_method='avg',len1=8)
@@ -340,7 +345,7 @@ if __name__=='__main__':
     SUE_ss_4=pd.read_pickle(datasavepath+r'\SUE_ss_4.pkl')
     SUE_ss_4_hd20= half_decay_factor(realead_dates_count_df,SUE_ss_4,para=5,show=False)
     pd.to_pickle(SUE_ss_4_hd20,datasavepath+r'\SUE_ss_4_hd5.pkl')
-
+    
     testdata1=pd.read_pickle(datasavepath+r'\ROE.pkl')
     testdata2=pd.read_pickle(datasavepath+r'\CurrentRatio.pkl')
     ROE_d_Currentratio=testdata1/testdata2
@@ -350,3 +355,5 @@ if __name__=='__main__':
     qr=pd.read_pickle(datasavepath+r'\QuickRatio.pkl')
     gw_divide_qr=gw/qr
     pd.to_pickle(gw_divide_qr,datasavepath+r'\GOODWILLRatio_divide_QuickRatio.pkl')
+
+    alpha191.Main_Data_Renew()

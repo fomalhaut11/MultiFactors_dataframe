@@ -8,8 +8,10 @@ sys.path.append(file_path)
 import os
 import statsmodels.api as sm
 import StockDataPrepairing as SDP
+import alpha191backtest_factor as alpha191
 from scipy.stats import spearmanr,kendalltau, t
 import matplotlib.pyplot as plt 
+import pickle
 
 def print_memory_usage():
     process = psutil.Process(os.getpid())
@@ -91,14 +93,16 @@ def cal_IC_P_GroupReturn_inday(newfactor,next_log_return,groupnum=10):
  
     return IC,P,mean_return_group,std_return_group,mean_factor_group,sorted_indice_group
 
-def PickupStocksByAmount(PriceDF,windows=5,para=10000000):
-    #过去5天平均成交额大于1000万,amt>0,l<h,的股票
+def PickupStocksByAmount(PriceDF,windows=5,para=10000000,mclimit=100000000):
+    #过去5天平均成交额大于para,市值>mclimit,amt>0,l<h,的股票
     average_amount=PriceDF.groupby('StockCodes')['amt'].rolling(window=windows).mean().reset_index(level=0,drop=True).shift(1)
     filtered_stocks=average_amount[average_amount>para]
-    filtered_stocks=filtered_stocks[PriceDF['MC']>100000000]
+    filtered_stocks=filtered_stocks[PriceDF['MC']>mclimit]
     filtered_stocks=filtered_stocks[PriceDF['amt']>0]
     filtered_stocks=filtered_stocks[PriceDF['l']<PriceDF['h']]
     filtered_stocks=filtered_stocks[PriceDF['o']<PriceDF['high_limit']-0.02]
+    # 找出所有股票代码的第一个数字小于7的所有数据
+    filtered_stocks = filtered_stocks[filtered_stocks.index.get_level_values('StockCodes').str[0].astype(int) < 7]
     filtered_stocks=filtered_stocks.to_frame().sort_index(level=0)
     return filtered_stocks
 
@@ -123,6 +127,7 @@ class Single_Factor_Test():
         self.groupnums = config.getint('SingleFactorTest', 'groupnums')#回测分组数量
         self.NetralBase = config.getboolean('SingleFactorTest', 'NetralBase')#是否中性化基准
         self.backtesttradingprice=config.get('SingleFactorTest', 'backtesttradingprice')#回测交易价格#vwap o2o
+        
     def stock_filter(self,PriceDF):
         #股票池过滤
         self.filtered_stocks=PickupStocksByAmount(PriceDF,windows=5,para=10000000)
@@ -130,7 +135,7 @@ class Single_Factor_Test():
 
     def data_loading(self,factor_name,c_type='one_hot'):
         #加载数据
-        
+        self.factor_name=factor_name
         if self.backtesttradingprice=='o2o':
             if self.backtesttype=='daily':
                 self.next_log_return=pd.read_pickle(os.path.join(self.datasavepath,'LogReturn_daily_o2o.pkl'))
@@ -152,51 +157,54 @@ class Single_Factor_Test():
         self.backtestdates=self.backtestdates[self.backtestdates<=pd.to_datetime(self.EndDate,format='%Y-%m-%d')]
         #读取回测日期
         self.factor_data=pd.read_pickle(os.path.join(self.datasavepath,factor_name+'.pkl'))
-        self.factor_data=self.factor_data.sort_index(level=0).to_frame().rename(columns={0:'Factor'}) #读取因子数据
+        self.factor_data=self.factor_data.sort_index(level=0).to_frame()
+        self.factor_data=self.factor_data.rename(columns={self.factor_data.columns[0]: 'Factor'}) #读取因子数据
+       
  
         if type(self.base_name)==list:
             for i in range(0,len(base_name)):
                 temp=pd.read_pickle(os.path.join(self.datasavepath,self.base_name[i]+'.pkl')).to_frame(name='BaseFactor'+str(i+1))
-                if self.base_name[i]=='MarketCap':
-                    temp=np.log(temp)
+ 
                 if i==0:
                     base_data=temp
                 else:
                     base_data=pd.merge(self.base_data,temp,left_index=True,right_index=True)
         elif type(self.base_name)==str:
             base_data=pd.read_pickle(os.path.join(self.datasavepath,self.base_name+'.pkl')).to_frame(name='BaseFactor')  
-            if self.base_name=='MarketCap':
-                base_data=np.log(base_data)
+ 
 
         #读取基准数据
         self.base_data=base_data.sort_index(level=0)
-        self.classification_data=pd.read_pickle(os.path.join(self.datasavepath,self.c_name+'.pkl'))
-        # 将索引转换为列
-        self.classification_data = self.classification_data.reset_index()
-        # 去除重复的行
-        self.classification_data = self.classification_data.drop_duplicates(subset=['TradingDates', 'StockCodes'])
-        # 将索引转换回来
-        self.classification_data = self.classification_data.set_index(['TradingDates', 'StockCodes'])
+
+        if c_type=='one_hot':
+            self.classification_data=pd.read_pickle(os.path.join(self.datasavepath,self.c_name+'.pkl'))
+            # 将索引转换为列
+            self.classification_data = self.classification_data.reset_index()
+            # 去除重复的行
+            self.classification_data = self.classification_data.drop_duplicates(subset=['TradingDates', 'StockCodes'])
+            # 将索引转换回来
+            self.classification_data = self.classification_data.set_index(['TradingDates', 'StockCodes'])
 
 
     def data_preprocessing(self):
         if hasattr(self,'filtered_stocks'):
             common_index=self.filtered_stocks.index.intersection(self.factor_data.index)
+            common_index=common_index.intersection(self.next_log_return.index)
             next_log_return=self.next_log_return.loc[common_index]
         else:
             print('需要生成股票池') 
             return
-        factor=self.factor_data.groupby(level=1).shift(1)
-        basedata=self.base_data.groupby(level=1).shift(1)
+        factor=self.factor_data#在因子制备过程中都已经控制了因子值是当天开盘可用的，不需要进行日期上的移动
+        basedata=self.base_data
         factor=factor.reindex(next_log_return.index).groupby(level=1).fillna(method='ffill')
         basedata=basedata.reindex(next_log_return.index).groupby(level=1).fillna(method='ffill')
-        #因子数据和基准数据都是前一日的数据，所以需要shift(1)然后和当日收益率数据合并
+        
         self.merged_data=next_log_return.join([factor,basedata],how='inner').sort_index(level=0).drop_duplicates()
         # 找出重复的索引
         duplicated_indices = self.merged_data.index.duplicated()
         # 删除重复的行
         self.merged_data = self.merged_data[~duplicated_indices]
-    
+        
 
 
     def data_reloading_factor(self,newfactorname):
@@ -242,50 +250,86 @@ class Single_Factor_Test():
         m1=m1.groupby('StockCodes', group_keys=False).apply(lambda group:group.fillna(method='ffill'))
         m1=m1.loc[(m1.index.get_level_values(0)>=pd.to_datetime(self.BeginDate,format='%Y-%m-%d'))&((m1.index.get_level_values(0)<=pd.to_datetime(self.EndDate,format='%Y-%m-%d')))]
  
-        def m1dailycount(m1slice):
+        def m1dailycount(m1slice,groupnums):
+           # print(m1slice.index.get_level_values(0).unique())
             y=m1slice['Factor']
-            y=Remove_Outlier(y,method='IQR',para=3)
+            y=Remove_Outlier(y,method='IQR',para=5)
             y=Normlization(y,method='zscore').to_frame()
+            if y.std().values[0]<=0.00001:#如果因子是布尔值等击中离散型，则不做去极值，只做标准化
+                y=m1slice['Factor']
+                y=Normlization(y,method='zscore').to_frame()
+            y=y.fillna(0)
+            if (y==0).all().all():
+                print(m1slice.index.get_level_values(0).unique())
+                resid=y
+                groupedmean  = pd.DataFrame({'Group': [0]*10}, index=range(10))
+                groupedmean.index=groupedmean.index.astype('float')
+                groupedstd  = pd.DataFrame({'Group': [0]*10}, index=range(10))
+                groupedstd.index=groupedmean.index.astype('float')          
+                correlation=np.nan
+                p_value=np.nan
+                tvalues=[]
+                params=[]
+                return pd.Series({'newfactor':resid,'groupedmean':groupedmean,'groupedstd':groupedstd,'IC':correlation,'P':p_value,'tvalues':tvalues,'params':params})    
 
-            base_factors =m1slice[m1slice.filter(like='BaseFactor').columns]
-            basesize=len(base_factors.columns)
-            for i in range(basesize):
-                base_factors.iloc[:,i]=Remove_Outlier(base_factors.iloc[:,i],method='IQR',para=3)
-                base_factors.iloc[:,i]=Normlization(base_factors.iloc[:,i],method='zscore')
+            else:
+                base_factors =m1slice[m1slice.filter(like='BaseFactor').columns]
+                basesize=len(base_factors.columns)
+                for i in range(basesize):
+                    base_factors.iloc[:,i]=Remove_Outlier(base_factors.iloc[:,i],method='IQR',para=5)
+                    base_factors.iloc[:,i]=Normlization(base_factors.iloc[:,i],method='zscore')
 
-            industry_columns=m1slice.drop(columns=base_factors.columns.tolist()+['Factor','LogReturn']).dropna(axis=1,how='all')
-            x=base_factors.join(industry_columns)
-            x=sm.add_constant(x)
-            x=x.dropna(axis=0,how='any')
-            y=y.loc[x.index.values]
-            model=sm.OLS(y,x)
-            result=model.fit()
-            resid=result.resid
-            tvalues=result.tvalues
-            params=result.params
-            m1slice['Group']=pd.qcut(resid,groupnums,labels=False)
-            groupedmean=m1slice.groupby('Group')['LogReturn'].mean()
-            groupedstd=m1slice.groupby('Group')['LogReturn'].std()
-            groupedfactormean=  m1slice.groupby('Group')['Factor'].mean()
-            correlation, p_value = spearmanr(groupedfactormean, groupedmean)
- 
-            return pd.Series({'newfactor':resid,'groupedmean':groupedmean,'groupedstd':groupedstd,'IC':correlation,'P':p_value,'tvalues':tvalues,'params':params})    
+                industry_columns=m1slice.drop(columns=base_factors.columns.tolist()+['Factor','LogReturn']).dropna(axis=1,how='all')
+                x=base_factors.join(industry_columns)
+                x=sm.add_constant(x)
+                x=x.dropna(axis=0,how='any')
+                y=y.loc[x.index.values]
+                model=sm.OLS(y,x)
+                result=model.fit()
+                resid=result.resid#新因子
+                resid.name='newfactor'
+                ##收益率因子回归测试
+                x1=x.join(resid)
+                y1=m1slice['LogReturn'].loc[x1.index.values]
+                model1=sm.OLS(y1,x1)
+                result1=model1.fit()
+                resid_return=result1.resid
+                factor_return=result1.params['newfactor']
+                tvalues=result1.tvalues
+                ######分组测试#####
+                
+                params=result.params
+                m1slice['Group']=pd.qcut(resid,groupnums,labels=False,duplicates='drop')
+                grouped=m1slice.groupby('Group')
+                groupedmean=grouped['LogReturn'].mean()
+                groupedstd=grouped['LogReturn'].std()
+                grouped_StockCodes=m1slice.groupby('Group').apply(lambda x: x.index.get_level_values('StockCodes').tolist())
+                groupedfactormean=  m1slice.groupby('Group')['Factor'].mean()
+                correlation, p_value = spearmanr(groupedfactormean, groupedmean)
+                #####分组测试#####
+                #####因子收益率回归#####
+
+                #####因子收益率回归#####
+                return pd.Series({'newfactor':resid,'factor_return':factor_return,'resid_return':resid_return,'groupedmean':groupedmean,'groupedstd':groupedstd,'IC':correlation,'P':p_value,'T':tvalues['newfactor'],'params':params,'grouped_StockCodes':grouped_StockCodes})    
 
       
-        resultdata=m1.groupby('TradingDates').apply(m1dailycount)
+        resultdata=m1.groupby('TradingDates').apply(m1dailycount,self.groupnums)
         self.BackTestResult=resultdata
-        self.newfactor_df = pd.concat(resultdata['newfactor'].values, 
-                         keys=resultdata['newfactor'].index)
-        self.Tvalues=pd.DataFrame(resultdata['tvalues'])
-        self.Params=pd.DataFrame(resultdata['params'])
+        self.newfactor_df = pd.concat(self.BackTestResult['newfactor'].values, 
+                         keys=self.BackTestResult['newfactor'].index)
+        self.factor_return=pd.DataFrame(self.BackTestResult['factor_return'])
+        self.T=pd.DataFrame(self.BackTestResult['T'])
+        self.Params=pd.DataFrame(self.BackTestResult['params'])
 
-        self.IC=pd.DataFrame(resultdata['IC'])
-        self.P=pd.DataFrame(resultdata['P'])
-        self.GroupedMeanReturn=pd.concat(resultdata['groupedmean'].values, 
-                         keys=resultdata['groupedmean'].index)
-        self.GroupedStdReturn=pd.concat(resultdata['groupedstd'].values,
-                         keys=resultdata['groupedstd'].index)
-
+        self.IC=pd.DataFrame(self.BackTestResult['IC'])
+        self.P=pd.DataFrame(self.BackTestResult['P'])
+        self.GroupedMeanReturn=pd.concat(self.BackTestResult['groupedmean'].values, 
+                         keys=self.BackTestResult['groupedmean'].index)
+        self.GroupedStdReturn=pd.concat(self.BackTestResult['groupedstd'].values,
+                         keys=self.BackTestResult['groupedstd'].index)
+ 
+        self.grouped_StockCodes=pd.concat(self.BackTestResult['grouped_StockCodes'].values,
+                         keys=self.BackTestResult['grouped_StockCodes'].index)
         return resultdata
    
 
@@ -416,7 +460,7 @@ class Single_Factor_Test():
         self.GroupedMeanReturn=pd.DataFrame(mean_return_group.flatten(),index=index)
         self.GroupedStdReturn=pd.DataFrame(std_return_group.flatten(),index=index)
         self.GroupedMeanFactor=pd.DataFrame(mean_factor_group.flatten(),index=index)
-        self.mean_factor_group=pd.DataFrame(mean_factor_group.flatten(),index=index)
+       
         # self.GroupedMeanReturn= 
         # self.GroupedStdReturn= 
         # self.Tvalues=pd.DataFrame(resultdata['tvalues'])  
@@ -427,44 +471,76 @@ class Single_Factor_Test():
     def data_save(self,savepath=None):
         if savepath==None:
             savepath=self.tempdatapath
-        self.newfactor_df.to_pickle(os.path.join(savepath,'newfactor.pkl'))
-        self.IC.to_pickle(os.path.join(savepath,'IC.pkl'))
-        self.P.to_pickle(os.path.join(savepath,'P.pkl'))
-        self.GroupedMeanReturn.to_pickle(os.path.join(savepath,'GroupedMeanReturn.pkl'))
-        self.GroupedStdReturn.to_pickle(os.path.join(savepath,'GroupedStdReturn.pkl'))
-        self.GroupedMeanFactor.to_pickle(os.path.join(savepath,'GroupedMeanFactor.pkl'))
-        self.mean_factor_group.to_pickle(os.path.join(savepath,'mean_factor_group.pkl'))
 
-        pass
-    def data_plot(self):
+        with open('[SingleFactorTest].ini', 'r') as f:
+            config = f.read()        
+        data={
+            'newfactor':self.newfactor_df,
+            'IC':self.IC,
+            'P':self.P,
+            'GroupedMeanReturn':self.GroupedMeanReturn,
+            'GroupedStdReturn':self.GroupedStdReturn,
+            'grouped_StockCodes':self.grouped_StockCodes,
+            'config':config
+        }
+        with open(os.path.join(savepath,self.factor_name+'data.pkl'),'wb') as f:
+            pickle.dump(data,f)
+ 
+    def data_plot(self,savepath=None):
+        if savepath==None:
+            savepath=self.tempdatapath
+
         meanreturn=self.GroupedMeanReturn.groupby(level=0).mean()
         relative_meanreturn=self.GroupedMeanReturn-meanreturn
-        cumsum_relative_meanreturn=relative_meanreturn.groupby(level=1).cumsum()    
-        plt.figure()
-        for i in range(0,self.groupnums):
-            plt.plot(cumsum_relative_meanreturn.xs(i,level=1),label='Group'+str(i)) 
-        plt.legend()
-        plt.show()
+        cumsum_relative_meanreturn=relative_meanreturn.groupby(level=1).cumsum() 
 
-        pass
+        fig,axs=plt.subplots(2,gridspec_kw={'height_ratios': [4, 1]})
+        for i in range(0,self.groupnums):
+            axs[0].plot(cumsum_relative_meanreturn.xs(i,level=1),label='Group'+str(i))
+        axs[0].legend(loc='upper left')   
+        self.T.rolling(120).mean().plot(ax=axs[1] ) 
+        self.IC.rolling(120).mean().plot(ax=axs[1] )
+        axs[1].legend()
+        axs[1].grid(True)
+        plt.savefig(os.path.join(savepath,self.factor_name+'_figure.png'))
+        plt.show()
+        plt.close()
+
 
 if __name__ == '__main__':
     PriceDf=pd.read_pickle(r'E:\Documents\PythonProject\StockProject\StockData\Price.pkl')
     test=Single_Factor_Test(r'E:\Documents\PythonProject\StockProject\MultiFactors\[SingleFactorTest].ini')
-    test.filtered_stocks=PickupStocksByAmount(PriceDf,windows=5,para=10000000)
-    test.data_loading('GTJA_191_alpha_001')
+    test.filtered_stocks=PickupStocksByAmount(PriceDf)
+    test.data_loading('alpha_003')
     test.data_preprocessing()
     test.data_backtest_one_hot()
     test.data_plot()
-  # test.data_backtest_nearest() 
+    test.data_save()
 
-    test.data_reloading_factor('SUE_yoy_4') 
-    test.data_preprocessing()
-    test.data_backtest_one_hot()
-    test.data_plot() 
+    
+    # test.data_reloading_base('MarketCap')
+    # test.data_preprocessing()
+    # test.data_backtest_one_hot()
+    # test.data_plot()
+    # test.data_save()
 
-    test.data_reloading_factor('SUE_ss_4_hd5') 
-    test.data_preprocessing()
-    test.data_backtest_one_hot()
-    test.data_plot() 
+    for i in range(1,190):
+        if i <=120:
+            continue
+        alpha = f'alpha_{i:03}'
+        print(alpha)
+        try:
+            test.data_reloading_factor(alpha)
+            test.data_preprocessing()
+            test.data_backtest_one_hot()
+            test.data_plot()
+            test.data_save()
+        except:
+            continue
+
+
+    
+ 
+
+ 
 
