@@ -748,7 +748,7 @@ class GTJA_191:
         #part1 = pd.rolling_corr(temp1, temp2, 6)
         part1=temp1.rolling(window=6).corr(temp2)
         #result = pd.rolling_sum(part1, 2)
-        result = part.rolling(window=2).sum()
+        result = part1.rolling(window=2).sum()
         result = result.rank(axis=1, pct=True)
         alpha = result.shift() 
         return alpha.stack()
@@ -838,9 +838,9 @@ class GTJA_191:
         #temp3 = pd.rolling_corr(temp2, sum_vol, 14)
         temp3 = temp2.rolling(window=14).corr(sum_vol)
         temp3 = temp3*-1
-        part2 = temp3.rolling(window=m).apply(lambda x: x * weight2)
+        part2 = temp3.rolling(12).apply(lambda x: np.sum(x * weight2))
         part2.rank(axis=1, pct=True)
-        result = part1 - part2.iloc 
+        result = part1 - part2 
         alpha = result
         alpha = alpha[(alpha < np.inf) & (alpha > -np.inf)]
         alpha = alpha.dropna().shift()
@@ -966,8 +966,8 @@ class GTJA_191:
         seq2 = [2 * i / (m * (m + 1)) for i in range(1, m + 1)]
         weight1 = np.array(seq1)
         weight2 = np.array(seq2)
-        part1 = temp1.rolling(window=n).apply(lambda x: x * weight1)
-        part1 = part1.rolling(window=4).apply(rolling_ranks)
+        part1 = temp1.rolling(window=6).apply(lambda x: np.sum(x * weight1))
+        part1 = part1.rolling(window=4).apply(self.func_rank)
         temp2 = self.avg_price.diff(3)
         part2 = temp2.rolling(window=m).apply(lambda x: x * weight2)
         part2 = part1.rolling(window=4).rank(axis=0, pct=True)
@@ -2813,8 +2813,8 @@ class GTJA_191:
         data1 = self.low.rolling(8).apply(self.func_rank)
         data2 = self.volume.rolling(60).mean().rolling(17).apply(self.func_rank)
         data3 = data1.rolling(window=5).corr(data2).rolling(window=19).apply(self.func_rank)
-        
-        rank2 = rank2.rolling(7).apply(self.func_rank)
+        data4 =data3.rolling(16).apply(self.func_decaylinear)
+        rank2 = data4.rolling(7).apply(self.func_rank)
         alpha = (rank2 - rank1).shift()
         return alpha.stack()
     # def alpha_139(self):
@@ -3921,7 +3921,9 @@ if __name__ == '__main__':
     begindate=PriceDf.index.get_level_values(0).min()
     enddate=PriceDf.index.get_level_values(0).max()
     FactorMaker=GTJA_191(begindate,enddate,PriceDf)
-  
+    alpha=FactorMaker.alpha_039()
+    pd.to_pickle(alpha,datapath+'\\'+'alpha_039.pkl')
+
     for i in range(1,191):
         method_name = f'alpha_{i:03d}'
         method = getattr(FactorMaker, method_name)
