@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt
 import pickle
 
 def print_memory_usage():
+    #当前内存占用
     process = psutil.Process(os.getpid())
     print("Memory Usage: %.2f MB" % (process.memory_info().rss / 1024 / 1024))
 
@@ -66,19 +67,7 @@ def Normlization(x_input,method='zscore'):
             cdf_values=(np.argsort(np.argsort(x))+0.5)/len(x)
             x=stats.norm.ppf(cdf_values)
     return x
-
-# """ def calculate_r_pvalue(x, y):
-#     n = len(x)
-#     r = np.corrcoef(x, y)[0, 1]
-#     t = r * np.sqrt((n-2) / (1-r*r))
-#     df = n - 2
-
-#     # 计算 t 分布的累积分布函数
-#     Ix = 0.5 * gamma(df / 2) * gamma(0.5) / gamma((df + 1) / 2)
-#     for i in range(1, df + 1):
-#         Ix = Ix * i / (i + 0.5)
-#     p = 1 - Ix
-#     return r, p """
+ 
 
 def cal_IC_P_GroupReturn_inday(newfactor,next_log_return,groupnum=10):
     sort_indice=np.argsort(newfactor)
@@ -88,9 +77,7 @@ def cal_IC_P_GroupReturn_inday(newfactor,next_log_return,groupnum=10):
     mean_return_group=[np.mean(x) for x in sorted_return_group]
     std_return_group=[np.std(x) for x in sorted_return_group]
     mean_factor_group=[np.mean(x) for x in sorted_factor_group]
-
     IC,P=spearmanr(mean_factor_group,mean_return_group)
- 
     return IC,P,mean_return_group,std_return_group,mean_factor_group,sorted_indice_group
 
 def PickupStocksByAmount(PriceDF,windows=5,para=10000000,mclimit=100000000):
@@ -133,9 +120,9 @@ class Single_Factor_Test():
         self.filtered_stocks=PickupStocksByAmount(PriceDF,windows=5,para=10000000)
             
 
-    def data_loading(self,factor_name,c_type='one_hot'):
-        #加载数据
-        self.factor_name=factor_name
+    def data_loading_1st_time(self,c_type='one_hot'):
+        #第一次加载数据，不加载测试因子
+         
         if self.backtesttradingprice=='o2o':
             if self.backtesttype=='daily':
                 self.next_log_return=pd.read_pickle(os.path.join(self.datasavepath,'LogReturn_daily_o2o.pkl'))
@@ -150,18 +137,14 @@ class Single_Factor_Test():
                 self.next_log_return=pd.read_pickle(os.path.join(self.datasavepath,'LogReturn_weekly_vwap.pkl'))
             if self.backtesttype=='monthly':
                 self.next_log_return=pd.read_pickle(os.path.join(self.datasavepath,'LogReturn_monthly_vwap.pkl'))
-        self.next_log_return=self.next_log_return.sort_index(level=0)
-        #读取下期收益数据  本日时间戳买进，下个时间戳卖出的收益    
+        self.next_log_return=self.next_log_return.sort_index(level=0)#读取下期收益数据  本日时间戳买进，下个时间戳卖出的收益    
+        
         self.backtestdates=self.next_log_return.index.get_level_values(0).unique().sort_values()
         self.backtestdates=self.backtestdates[self.backtestdates>=pd.to_datetime(self.BeginDate,format='%Y-%m-%d')]
-        self.backtestdates=self.backtestdates[self.backtestdates<=pd.to_datetime(self.EndDate,format='%Y-%m-%d')]
-        #读取回测日期
-        self.factor_data=pd.read_pickle(os.path.join(self.datasavepath,factor_name+'.pkl'))
-        self.factor_data=self.factor_data.sort_index(level=0).to_frame()
-        self.factor_data=self.factor_data.rename(columns={self.factor_data.columns[0]: 'Factor'}) #读取因子数据
-       
+        self.backtestdates=self.backtestdates[self.backtestdates<=pd.to_datetime(self.EndDate,format='%Y-%m-%d')]#读取回测日期
  
-        if type(self.base_name)==list:
+
+        if type(self.base_name)==list:#考虑基准因子为多个的情况
             for i in range(0,len(base_name)):
                 temp=pd.read_pickle(os.path.join(self.datasavepath,self.base_name[i]+'.pkl')).to_frame(name='BaseFactor'+str(i+1))
  
@@ -171,10 +154,7 @@ class Single_Factor_Test():
                     base_data=pd.merge(self.base_data,temp,left_index=True,right_index=True)
         elif type(self.base_name)==str:
             base_data=pd.read_pickle(os.path.join(self.datasavepath,self.base_name+'.pkl')).to_frame(name='BaseFactor')  
- 
-
-        #读取基准数据
-        self.base_data=base_data.sort_index(level=0)
+        self.base_data=base_data.sort_index(level=0)#读取基准数据
 
         if c_type=='one_hot':
             self.classification_data=pd.read_pickle(os.path.join(self.datasavepath,self.c_name+'.pkl'))
@@ -184,35 +164,29 @@ class Single_Factor_Test():
             self.classification_data = self.classification_data.drop_duplicates(subset=['TradingDates', 'StockCodes'])
             # 将索引转换回来
             self.classification_data = self.classification_data.set_index(['TradingDates', 'StockCodes'])
+            if hasattr(self,'filtered_stocks'):#以filtered_stocks为所有数据索引
+                base_data=self.base_data.reindex(self.filtered_stocks.index).groupby(level=1).fillna(method='ffill')
+                next_log_return=self.next_log_return.reindex(self.filtered_stocks.index).groupby(level=1).fillna(0)
+                classification_data=self.classification_data.reindex(self.filtered_stocks.index).groupby(level=1).fillna(method='ffill')
+                self.merged_data= pd.concat([base_data, next_log_return, classification_data], axis=1)
+                duplicated_indices = self.merged_data.index.duplicated()
+                self.merged_data = self.merged_data[~duplicated_indices]
+            else:
+                print('股票池未过滤')
+        if c_type=='nearest':
+            raise ValueError('暂不支持最近邻分类器')
 
-
-    def data_preprocessing(self):
-        if hasattr(self,'filtered_stocks'):
-            common_index=self.filtered_stocks.index.intersection(self.factor_data.index)
-            common_index=common_index.intersection(self.next_log_return.index)
-            next_log_return=self.next_log_return.loc[common_index]
-        else:
-            print('需要生成股票池') 
-            return
-        factor=self.factor_data#在因子制备过程中都已经控制了因子值是当天开盘可用的，不需要进行日期上的移动
-        basedata=self.base_data
-        factor=factor.reindex(next_log_return.index).groupby(level=1).fillna(method='ffill')
-        basedata=basedata.reindex(next_log_return.index).groupby(level=1).fillna(method='ffill')
-        
-        self.merged_data=next_log_return.join([factor,basedata],how='inner').sort_index(level=0).drop_duplicates()
-        # 找出重复的索引
-        duplicated_indices = self.merged_data.index.duplicated()
-        # 删除重复的行
-        self.merged_data = self.merged_data[~duplicated_indices]
-        
-
-
-    def data_reloading_factor(self,newfactorname):
-        self.factor_name=newfactorname
+    def data_loading_factor(self,factor_name):
+        self.factor_name=factor_name
         self.factor_data=pd.read_pickle(os.path.join(self.datasavepath,self.factor_name+'.pkl'))
-        self.factor_data=self.factor_data.sort_index(level=0).to_frame().rename(columns={0:'Factor'}) #读取因子数据
-
-    def data_reloading_base(self,newbasename ):
+        self.factor_data=self.factor_data.sort_index(level=0).to_frame().rename(columns={0:'Factor'})
+        factor_data=self.factor_data.reindex(self.merged_data.index).groupby(level=1).fillna(method='ffill')
+        self.merged_data['Factor']=factor_data
+ 
+    def data_reloading_base(self,newbasename ):#替换基准因子值
+        #删除原有basefactor
+        columns_to_drop = [col for col in self.base_data.columns if 'BaseFactor' in col]
+        self.merged_data.drop(columns=columns_to_drop, inplace=True)
         #重新加载基准数据
         if type(newbasename)==list:
             for i in range(0,len(newbasename)):
@@ -220,86 +194,89 @@ class Single_Factor_Test():
                 if i==0:
                     base_data=temp
                 else:
-                    base_data=pd.merge(self.base_data,temp,left_index=True,right_index=True)
+                    base_data=pd.merge(base_data,temp,left_index=True,right_index=True)
         elif type(newbasename)==str:
             base_data=pd.read_pickle(os.path.join(self.datasavepath,newbasename+'.pkl')).to_frame(name='BaseFactor')   
-        self.base_data=base_data.loc[self.factor_data.index.get_level_values(0).unique()].sort_index(level=0) 
+        self.base_data=base_data 
+        base_data=base_data.reindex(self.merged_data.index).groupby(level=1).fillna(method='ffill')
+        self.merged_data=pd.concat([self.merged_data,base_data],axis=1)
+
 
    
 
 
-    def data_backtest_one_hot(self,groupnums=None,NetralBase=False):
+    def data_backtest_one_hot(self,factor_name,groupnums=None,NetralBase=False):
+        self.data_loading_factor(factor_name)
         if groupnums==None:
             groupnums=self.groupnums
         else:
             self.groupnums=groupnums
 
-        if hasattr(self,'classification_data'):
+        if hasattr(self,'merged_data'):
             pass
         else:
-            self.classification_data=pd.read_pickle(os.path.join(self.datasavepath,self.c_name+'.pkl'))
-            # 将索引转换为列
-            self.classification_data = self.classification_data.reset_index()
-            # 去除重复的行
-            self.classification_data = self.classification_data.drop_duplicates(subset=['TradingDates', 'StockCodes'])
-            # 将索引转换回来
-            self.classification_data = self.classification_data.set_index(['TradingDates', 'StockCodes']) 
+            print('ReloadingData')
+            self.data_loading_1st_time()
 
-       
-        m1=self.merged_data.join(self.classification_data,on=['TradingDates','StockCodes'],how='left').sort_index(level=0)
-        m1=m1.groupby('StockCodes', group_keys=False).apply(lambda group:group.fillna(method='ffill'))
+        m1=self.merged_data.copy()
         m1=m1.loc[(m1.index.get_level_values(0)>=pd.to_datetime(self.BeginDate,format='%Y-%m-%d'))&((m1.index.get_level_values(0)<=pd.to_datetime(self.EndDate,format='%Y-%m-%d')))]
  
         def m1dailycount(m1slice,groupnums):
            # print(m1slice.index.get_level_values(0).unique())
             y=m1slice['Factor']
-            y=Remove_Outlier(y,method='IQR',para=5)
-            y=Normlization(y,method='zscore').to_frame()
-            if y.std().values[0]<=0.00001:#如果因子是布尔值等击中离散型，则不做去极值，只做标准化
+            y=Remove_Outlier(y,method='IQR',para=5)#去极值
+            y=Normlization(y,method='zscore').to_frame()# 标准化
+            y=y.fillna(0)   #无效值填充为0
+            if y.std().values[0]<=0.00001:#如果因子是布尔值等 离散型，则不做去极值，只做标准化
                 y=m1slice['Factor']
-                y=Normlization(y,method='zscore').to_frame()
-            y=y.fillna(0)
-            if (y==0).all().all():
+                y=Normlization(y,method='zscore').to_frame()# 标准化
+            y=y.fillna(0)#无效值填充为0
+
+            if (y==0).all().all():#当日因子值全为0，不需要进行回归分析
                 print(m1slice.index.get_level_values(0).unique())
                 resid=y
+                factor_return=0
+                resid_return=m1slice['LogReturn']
                 groupedmean  = pd.DataFrame({'Group': [0]*10}, index=range(10))
                 groupedmean.index=groupedmean.index.astype('float')
                 groupedstd  = pd.DataFrame({'Group': [0]*10}, index=range(10))
                 groupedstd.index=groupedmean.index.astype('float')          
                 correlation=np.nan
                 p_value=np.nan
-                tvalues=[]
+                tvalues=np.nan
                 params=[]
-                return pd.Series({'newfactor':resid,'groupedmean':groupedmean,'groupedstd':groupedstd,'IC':correlation,'P':p_value,'tvalues':tvalues,'params':params})    
+                grouped_StockCodes=[]
+                return pd.Series({'newfactor':resid,'factor_return':factor_return,'resid_return':resid_return,'groupedmean':groupedmean,'groupedstd':groupedstd,'IC':correlation,'P':p_value,'T':tvalues,'params':params,'grouped_StockCodes':grouped_StockCodes})    
 
+      
             else:
-                base_factors =m1slice[m1slice.filter(like='BaseFactor').columns]
+                base_factors =m1slice[m1slice.filter(like='BaseFactor').columns].copy()
                 basesize=len(base_factors.columns)
                 for i in range(basesize):
                     base_factors.iloc[:,i]=Remove_Outlier(base_factors.iloc[:,i],method='IQR',para=5)
                     base_factors.iloc[:,i]=Normlization(base_factors.iloc[:,i],method='zscore')
-
-                industry_columns=m1slice.drop(columns=base_factors.columns.tolist()+['Factor','LogReturn']).dropna(axis=1,how='all')
-                x=base_factors.join(industry_columns)
-                x=sm.add_constant(x)
+                base_factors=base_factors.fillna(0)
+                industry_columns=m1slice.drop(columns=base_factors.columns.tolist()+['Factor','LogReturn']).dropna(axis=1,how='all')#行业独热编码,剔除在所有分类上都为nan的行
+                x=base_factors.join(industry_columns)#基准因子+行业独热编码
+                x=sm.add_constant(x)#添加常数项
                 x=x.dropna(axis=0,how='any')
                 y=y.loc[x.index.values]
                 model=sm.OLS(y,x)
                 result=model.fit()
-                resid=result.resid#新因子
-                resid.name='newfactor'
+                newfactor=result.resid#新因子
+                newfactor.name='newfactor'
                 ##收益率因子回归测试
-                x1=x.join(resid)
+                x1=x.join(newfactor)
                 y1=m1slice['LogReturn'].loc[x1.index.values]
                 model1=sm.OLS(y1,x1)
                 result1=model1.fit()
-                resid_return=result1.resid
+                resid_return=result1.resid#残差收益率
                 factor_return=result1.params['newfactor']
                 tvalues=result1.tvalues
                 ######分组测试#####
                 
                 params=result.params
-                m1slice['Group']=pd.qcut(resid,groupnums,labels=False,duplicates='drop')
+                m1slice['Group']=pd.qcut(newfactor,groupnums,labels=False,duplicates='drop')
                 grouped=m1slice.groupby('Group')
                 groupedmean=grouped['LogReturn'].mean()
                 groupedstd=grouped['LogReturn'].std()
@@ -307,10 +284,8 @@ class Single_Factor_Test():
                 groupedfactormean=  m1slice.groupby('Group')['Factor'].mean()
                 correlation, p_value = spearmanr(groupedfactormean, groupedmean)
                 #####分组测试#####
-                #####因子收益率回归#####
-
-                #####因子收益率回归#####
-                return pd.Series({'newfactor':resid,'factor_return':factor_return,'resid_return':resid_return,'groupedmean':groupedmean,'groupedstd':groupedstd,'IC':correlation,'P':p_value,'T':tvalues['newfactor'],'params':params,'grouped_StockCodes':grouped_StockCodes})    
+ 
+                return pd.Series({'newfactor':newfactor,'factor_return':factor_return,'resid_return':resid_return,'groupedmean':groupedmean,'groupedstd':groupedstd,'IC':correlation,'P':p_value,'T':tvalues['newfactor'],'params':params,'grouped_StockCodes':grouped_StockCodes})    
 
       
         resultdata=m1.groupby('TradingDates').apply(m1dailycount,self.groupnums)
@@ -363,7 +338,7 @@ class Single_Factor_Test():
                     temp=np.where(self.StockCodes_unstacked==a)[0][0]
                 StockCode_in_Nearest_indice.append(temp)
             self.StockCodes_Unstacked_indice_of_Nearest=np.array(StockCode_in_Nearest_indice)
-            #按照NearestStockCodes的顺序，在StockCodes_unstacked中的索引
+            #按照NearestStockCodes的顺序，在StockCodes_unstacked中的索引 """
 
 
 
@@ -465,7 +440,7 @@ class Single_Factor_Test():
         # self.GroupedStdReturn= 
         # self.Tvalues=pd.DataFrame(resultdata['tvalues'])  
 
-
+  
 
 
     def data_save(self,savepath=None):
@@ -478,6 +453,7 @@ class Single_Factor_Test():
             'newfactor':self.newfactor_df,
             'IC':self.IC,
             'P':self.P,
+            'T':self.T,
             'GroupedMeanReturn':self.GroupedMeanReturn,
             'GroupedStdReturn':self.GroupedStdReturn,
             'grouped_StockCodes':self.grouped_StockCodes,
@@ -498,10 +474,18 @@ class Single_Factor_Test():
         for i in range(0,self.groupnums):
             axs[0].plot(cumsum_relative_meanreturn.xs(i,level=1),label='Group'+str(i))
         axs[0].legend(loc='upper left')   
-        self.T.rolling(120).mean().plot(ax=axs[1] ) 
-        self.IC.rolling(120).mean().plot(ax=axs[1] )
-        axs[1].legend()
-        axs[1].grid(True)
+        ax2 = axs[1].twinx()  # 创建第二个 y 轴
+        line1 = self.T.rolling(120).mean().plot(ax=ax2, color='b', label='self.T')  # 使用第二个 y 轴绘制 self.T
+        line2 = self.IC.rolling(120).mean().plot(ax=axs[1], color='r', label='self.IC')  # 使用原始 y 轴绘制 self.IC
+
+        ax2.yaxis.label.set_color('b')  # 设置第二个 y 轴的标签颜色
+        axs[1].yaxis.label.set_color('r')  # 设置原始 y 轴的标签颜色
+
+        # 如果需要，你还可以设置每个 y 轴的标签
+        ax2.set_ylabel('T')
+        axs[1].set_ylabel('IC')
+
+
         plt.savefig(os.path.join(savepath,self.factor_name+'_figure.png'))
         plt.show()
         plt.close()
@@ -510,14 +494,23 @@ class Single_Factor_Test():
 if __name__ == '__main__':
     PriceDf=pd.read_pickle(r'E:\Documents\PythonProject\StockProject\StockData\Price.pkl')
     test=Single_Factor_Test(r'E:\Documents\PythonProject\StockProject\MultiFactors\[SingleFactorTest].ini')
-    test.filtered_stocks=PickupStocksByAmount(PriceDf)
-    test.data_loading('alpha_003')
-    test.data_preprocessing()
-    test.data_backtest_one_hot()
+    test.filtered_stocks=PickupStocksByAmount(PriceDf)#股票池过滤
+    test.data_loading_1st_time()
+    test.data_backtest_one_hot('alpha_035')
     test.data_plot()
     test.data_save()
 
-    
+    for i in range(1,60):
+        if i <=35:
+            continue
+        alpha = f'alpha_{i:03}'
+        print(alpha)
+        try:
+            test.data_backtest_one_hot(alpha)
+            test.data_plot()
+            test.data_save()
+        except:
+            continue    
     # test.data_reloading_base('MarketCap')
     # test.data_preprocessing()
     # test.data_backtest_one_hot()

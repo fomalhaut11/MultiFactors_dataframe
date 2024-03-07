@@ -3,7 +3,7 @@ import scipy as sp
 import numpy as np
 import pandas as pd
 import pymssql
- 
+import SingleFactorTest as sft
 
 # from api import get_index_stocks, get_price
 #改写成pandas 0.18之后的语法
@@ -92,16 +92,10 @@ class GTJA_191:
     #     alpha = alpha.dropna()
     #     return alpha
     def alpha_001(self):
-        data1 = self.volume.diff(periods=1).rank(axis=1, pct=True).values
-        data2 = ((self.close - self.open_price) / self.open_price).rank(axis=1, pct=True).values
-        alpha = np.full(data1.shape, np.nan)
-        for i in range(np.shape(data1)[1]):
-            for j in range(np.shape(data1)[0]):
-                if j<7:
-                    continue
-                else:
-                    alpha[j,i] =  np.corrcoef(data1[j-7:j,i],data2[j-7:j,i])[0,1]#左开右闭，本日可用
-        alpha = pd.DataFrame(alpha,index=self.close.index,columns=self.close.columns)
+        data1 = self.volume.diff(periods=1).rank(axis=1, pct=True) 
+        data2 = ((self.close - self.open_price) / self.open_price).rank(axis=1, pct=True) 
+        alpha=data1.rolling(window=6).corr(data2)
+        alpha=alpha.shift()
         return alpha.stack() 
 
 
@@ -172,14 +166,10 @@ class GTJA_191:
     #     return alpha.dropna()
 
     def alpha_004(self):
-        #condition1 = (pd.rolling_std(self.close, 8) < pd.rolling_sum(self.close, 2) / 2)
+       
         condition1=(self.adj_close.rolling(window=8,min_periods=1).std()<self.adj_close.rolling(window=2,min_periods=1).sum()/2)
-        # condition2 = (pd.rolling_sum(self.close, 2) / 2 < (
-        #             pd.rolling_sum(self.close, 8) / 8 - pd.rolling_std(self.close, 8)))
         condition2=(self.adj_close.rolling(window=2,min_periods=1).sum()/2<(self.adj_close.rolling(window=8,min_periods=1).sum()/8-self.adj_close.rolling(window=8,min_periods=1).std()))
-        # condition3 = (1 <= self.volume / pd.rolling_mean(self.volume, 20))
         condition3=(1<=self.volume/self.volume.rolling(window=20,min_periods=1).mean())
-
         indicator1 = pd.DataFrame(np.ones(self.close.shape), index=self.close.index,
                                   columns=self.close.columns)  # [condition2]
         indicator2 = -pd.DataFrame(np.ones(self.close.shape), index=self.close.index,
@@ -395,7 +385,7 @@ class GTJA_191:
     def alpha_017(self):
         
         temp1=self.avg_price.rolling(window=15,min_periods=1).max()
-        temp2 = (self.close - temp1).dropna()
+        temp2 = (self.close - temp1) 
         part1 = temp2.rank(axis=1, pct=True)
         part2 = self.close.diff(5)
         result = part1 ** part2
@@ -461,28 +451,24 @@ class GTJA_191:
     def alpha_021(self):
         # 计算滚动窗口的平均值
         A = self.close.rolling(window=6, min_periods=1).mean()
-
         # 创建一个数组 B，其值为 [1, 2, 3, 4, 5, 6]
         B = np.arange(1, 7)
+        Avalue=A.values
+        Slope=np.zeros(Avalue.shape)
+        Pvalue=np.zeros(Avalue.shape)
+        for i in range(Avalue.shape[1]):
+            for j in range(Avalue.shape[0]):
+                if j>=5:
+                    if   np.unique(Avalue[j-5:j+1,i]).size > 1:
+                        Slope[j,i],_,_,Pvalue[j,i],_=sp.stats.linregress(Avalue[j-5:j+1,i],B)
 
-        # 对 A 的每一列应用一个函数，该函数计算列中的值和 B 的线性回归
-        temp = A.apply(lambda x: x.rolling(window=6, min_periods=1).apply(lambda y:np.nan if len(set(y))<2 else sp.stats.linregress(y, B[:len(y)])[0], raw=False), axis=0)
-
-
-        # 创建一个列表，包含所有 p 值大于 0.05 的索引
-        drop_list = [i for i in range(len(temp)) if temp[i][3] > 0.05]
-
-        # 从 temp 中删除这些索引
-        temp.drop(temp.index[drop_list], inplace=True)
-
-        # 创建一个列表，包含剩余索引的斜率
-        beta_list = [temp[i].slope for i in range(len(temp))]
-
-        # 创建一个 Series，其值为 beta_list，索引为 temp 的索引
-        alpha = pd.Series(beta_list, index=temp.index).shift() 
-
-        # 返回滚动窗口的数据
-        return A
+        temp=pd.DataFrame(Slope,index=A.index,columns=A.columns)
+        temp2=pd.DataFrame(Pvalue,index=A.index,columns=A.columns)
+        mask=temp2>0.05
+        temp[mask]=np.nan
+        alpha = temp.shift()
+        return alpha.stack()
+ 
 
     ##################################################################
     # def alpha_022(self):
@@ -496,9 +482,7 @@ class GTJA_191:
     #     alpha = result.iloc[-1, :]
     #     return alpha.dropna()
     def alpha_022(self):
-        #part1 = (self.close - pd.rolling_mean(self.close, 6)) / pd.rolling_mean(self.close, 6)
         part1 = (self.close- self.close.rolling(window=6,min_periods=1).mean()) / self.close.rolling(window=6,min_periods=1).mean()
-        #temp = (self.close - pd.rolling_mean(self.close, 6)) / pd.rolling_mean(self.close, 6)
         temp = (self.close - self.close.rolling(window=6,min_periods=1).mean()) / self.close.rolling(window=6,min_periods=1).mean()
         part2 = temp.shift(3)
         result = part1 - part2
@@ -523,10 +507,8 @@ class GTJA_191:
     #     return alpha.dropna()
     def alpha_023(self):
         condition1 = (self.close > self.close.shift())
-        #temp1 = pd.rolling_std(self.close, 20)[condition1]
         temp1=self.close.rolling(window=20,min_periods=1).std()[condition1]
         temp1 = temp1.fillna(0)
-       # temp2 = pd.rolling_std(self.close, 20)[~condition1]
         temp2 = self.close.rolling(window=20,min_periods=1).std()[~condition1]
         temp2 = temp2.fillna(0)
         part1 = temp1.ewm(alpha=1.0/20).mean()
@@ -575,7 +557,7 @@ class GTJA_191:
         seq = [2 * i / (n * (n + 1)) for i in range(1, n + 1)]
         weight = np.array(seq)
 
-        temp1 = temp.rolling(window=9).apply(lambda x: x * weight)
+        temp1 = temp.rolling(window=9).apply(lambda x: np.sum(x * weight))
         ret = self.close.pct_change()
         rank_sum_ret = ret.sum().rank(pct=True)
         part2 = 1 - temp1.sum()
@@ -597,7 +579,7 @@ class GTJA_191:
     def alpha_026(self):
         part1=self.close.rolling(window=7).mean()-self.close
         delay5=self.close.shift(5)
-        part2=pd.rolling(window=230,min_periods=1).corr(self.avg_price,delay5)
+        part2=self.avg_price.rolling(window=230,min_periods=1).corr(delay5)
         alpha=part1+part2
         return alpha.shift().stack()
     ##################################################################
@@ -662,8 +644,8 @@ class GTJA_191:
         temp2 = self.volume.rank(axis=1, pct=True)
         temp3 = temp1.rolling(window=3).corr(temp2)
         temp3 = temp3[(temp3 < np.inf) & (temp3 > -np.inf)].fillna(0)
-        result = (temp3.rank(axis=1, pct=True)).rolling(window=3).sum()
-        alpha = -result.cumsum().shift() 
+        result = (temp3.rank(axis=1, pct=True)).rolling(window=3).sum()*-1
+        alpha = result.shift() 
         return alpha.stack()
     ##################################################################
     # def alpha_033(self):
@@ -979,9 +961,6 @@ class GTJA_191:
         part1 = self.open_price * 0.4 + self.close * 0.6
         n = 6
         m = 10
-        def rolling_ranks(s):
-            return s.rank(pct=True)
-
         temp1=self.low.rolling(window=10).mean().rolling(window=7).corr(self.volume)
         seq1 = [2 * i / (n * (n + 1)) for i in range(1, n + 1)]
         seq2 = [2 * i / (m * (m + 1)) for i in range(1, m + 1)]
@@ -991,9 +970,9 @@ class GTJA_191:
         part1 = part1.rolling(window=4).apply(rolling_ranks)
         temp2 = self.avg_price.diff(3)
         part2 = temp2.rolling(window=m).apply(lambda x: x * weight2)
-        part2 = part1.rolling(window=4).apply(rolling_rank)
+        part2 = part1.rolling(window=4).rank(axis=0, pct=True)
         alpha = part1  + part2 
-        alpha = alpha.dropna().shift()
+        alpha = alpha.shift()
         return alpha.stack()
     ##################################################################
     # def alpha_045(self):
@@ -1062,8 +1041,7 @@ class GTJA_191:
     #     alpha = result.iloc[-1, :].dropna()
     #     return alpha
     def alpha_047(self):
-       # part1 = pd.rolling_max(self.high, 6) - self.close
-       # part2 = pd.rolling_max(self.high, 6) - pd.rolling_min(self.low, 6)
+ 
 
         part1 = self.high.rolling(window=6,min_periods=1).max() - self.close
         part2 = self.high.rolling(window=6,min_periods=1).max() - self.low.rolling(window=6,min_periods=1).min()
@@ -1230,9 +1208,7 @@ class GTJA_191:
         part1 = self.open_price - self.open_price.rolling(window=12).min()
         part1 = part1.rank(pct=True)
         temp1 = (self.high + self.low) / 2
-      #  temp1 = pd.rolling_sum(temp1, 19)
         temp1 = temp1.rolling(window=20,min_periods=1).sum()
-       # temp2 = pd.rolling_sum(pd.rolling_mean(self.volume, 40), 19)
         temp2 = self.volume.rolling(window=40,min_periods=1).mean().rolling(window=20,min_periods=1).sum()
         part2= temp1.rolling(window=13).corr(temp2)
         
@@ -3936,7 +3912,8 @@ class GTJA_191:
         return alpha.stack()
 
  
-
+ 
+ 
 
 if __name__ == '__main__':
     datapath=r'E:\Documents\PythonProject\StockProject\StockData'
@@ -3944,8 +3921,29 @@ if __name__ == '__main__':
     begindate=PriceDf.index.get_level_values(0).min()
     enddate=PriceDf.index.get_level_values(0).max()
     FactorMaker=GTJA_191(begindate,enddate,PriceDf)
-    # alpha_003=FactorMaker.alpha_003()
-    # pd.to_pickle(alpha_003,datapath+'\\'+'alpha_003.pkl')
+  
+    for i in range(1,191):
+        method_name = f'alpha_{i:03d}'
+        method = getattr(FactorMaker, method_name)
+        print(i)
+        if i<=41:
+            continue
+
+        try:
+            alpha=method()
+            alpha1= pd.read_pickle(datapath+'\\'+f'{method_name}.pkl')
+            dif=alpha-alpha1
+            isallzero=(dif[dif.notnull()]==0).all().all()
+            if isallzero:
+                print(f'{method_name} is all zero')
+            else:
+                pd.to_pickle(alpha, datapath + '\\' + f'{method_name}.pkl')
+                print(f'{method_name} is not all zero')
+        except Exception as e:
+            print(f"Error occurred while executing {method_name}: {e}")
+
+
+
 
     # for i in range(60):
     #     print(i)
@@ -3962,14 +3960,36 @@ if __name__ == '__main__':
     #     except Exception as e:
     #         print(f"Error occurred while executing {method_name}: {e}")
     for  i in range (191):
-        if i<=149:
+        if i<=34:
             continue
         print(i)
         try:
             method_name = f'alpha_{i:03d}'
-            method = getattr(FactorMaker, method_name)
-            alpha=method()
-            pd.to_pickle(alpha,datapath+'\\'+f'{method_name}.pkl')
+            filepath=os.path.join(datapath,f'{method_name}.pkl')
+            if not os.path.exists(filepath):
+                print(method_name)
+                method = getattr(FactorMaker, method_name)
+                alpha=method()
+                pd.to_pickle(alpha,datapath+'\\'+f'{method_name}.pkl')
         except Exception as e:
             print(f"Error occurred while executing {method_name}: {e}")
-            
+
+
+    test=sft.Single_Factor_Test(r'E:\Documents\PythonProject\StockProject\MultiFactors\[SingleFactorTest].ini')
+    test.filtered_stocks=sft.PickupStocksByAmount(PriceDf)#股票池过滤
+    test.data_loading_1st_time()
+    test.data_backtest_one_hot('alpha_047')
+    test.data_plot()
+    test.data_save()    
+
+    for i in range(1,190):
+        if i <=25:
+            continue
+        alpha = f'alpha_{i:03}'
+        print(alpha)
+        try:
+            test.data_backtest_one_hot(alpha)
+            test.data_plot()
+            test.data_save()
+        except:
+            continue       
