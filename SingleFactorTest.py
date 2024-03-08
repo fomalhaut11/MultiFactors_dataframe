@@ -496,12 +496,12 @@ if __name__ == '__main__':
     test=Single_Factor_Test(r'E:\Documents\PythonProject\StockProject\MultiFactors\[SingleFactorTest].ini')
     test.filtered_stocks=PickupStocksByAmount(PriceDf)#股票池过滤
     test.data_loading_1st_time()
-    test.data_backtest_one_hot('alpha_035')
-    test.data_plot()
-    test.data_save()
+    # test.data_backtest_one_hot('alpha_035')
+    # test.data_plot()
+    # test.data_save()
 
     for i in range(1,60):
-        if i <=0:
+        if i <=20:
             continue
         alpha = f'alpha_{i:03}'
         print(alpha)
