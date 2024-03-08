@@ -501,7 +501,7 @@ if __name__ == '__main__':
     test.data_save()
 
     for i in range(1,60):
-        if i <=35:
+        if i <=0:
             continue
         alpha = f'alpha_{i:03}'
         print(alpha)

@@ -727,8 +727,10 @@ class GTJA_191:
         temp2=temp2.rolling(window=17).corr(self.volume)
        
         part2 = temp2.rolling(window=m).apply(lambda x:weighted_sum(x,weight2),raw=False)
-        alpha = np.minimum(part1, -part2,axis=1)
-        alpha = alpha[(alpha < np.inf) & (alpha > -np.inf)].shift()
+        part2neg=part2*-1
+        result=part1.combine(part2neg,lambda x1,x2:np.minimum(x1,x2))
+        
+        alpha =  result.shift()
        
         return alpha.stack()
     ##################################################################
@@ -827,7 +829,7 @@ class GTJA_191:
 
         weight1 = np.array(seq1)
         weight2 = np.array(seq2)
-        part1 = temp1.rolling(window=n).apply(lambda x: x * weight1)
+        part1 = temp1.rolling(window=n).apply(lambda x: np.sum(x * weight1))
         part1 = part1.rank(axis=1, pct=True)
 
         temp2 = 0.3 * self.avg_price + 0.7 * self.open_price
@@ -969,7 +971,7 @@ class GTJA_191:
         part1 = temp1.rolling(window=6).apply(lambda x: np.sum(x * weight1))
         part1 = part1.rolling(window=4).apply(self.func_rank)
         temp2 = self.avg_price.diff(3)
-        part2 = temp2.rolling(window=m).apply(lambda x: x * weight2)
+        part2 = temp2.rolling(window=m).apply(lambda x: np.sum(x * weight2))
         part2 = part1.rolling(window=4).rank(axis=0, pct=True)
         alpha = part1  + part2 
         alpha = alpha.shift()
@@ -3921,28 +3923,27 @@ if __name__ == '__main__':
     begindate=PriceDf.index.get_level_values(0).min()
     enddate=PriceDf.index.get_level_values(0).max()
     FactorMaker=GTJA_191(begindate,enddate,PriceDf)
-    alpha=FactorMaker.alpha_039()
-    pd.to_pickle(alpha,datapath+'\\'+'alpha_039.pkl')
+ 
 
-    for i in range(1,191):
-        method_name = f'alpha_{i:03d}'
-        method = getattr(FactorMaker, method_name)
-        print(i)
-        if i<=41:
-            continue
+    # for i in range(1,191):
+    #     method_name = f'alpha_{i:03d}'
+    #     method = getattr(FactorMaker, method_name)
+    #     print(i)
+    #     if i<=41:
+    #         continue
 
-        try:
-            alpha=method()
-            alpha1= pd.read_pickle(datapath+'\\'+f'{method_name}.pkl')
-            dif=alpha-alpha1
-            isallzero=(dif[dif.notnull()]==0).all().all()
-            if isallzero:
-                print(f'{method_name} is all zero')
-            else:
-                pd.to_pickle(alpha, datapath + '\\' + f'{method_name}.pkl')
-                print(f'{method_name} is not all zero')
-        except Exception as e:
-            print(f"Error occurred while executing {method_name}: {e}")
+    #     try:
+    #         alpha=method()
+    #         alpha1= pd.read_pickle(datapath+'\\'+f'{method_name}.pkl')
+    #         dif=alpha-alpha1
+    #         isallzero=(dif[dif.notnull()]==0).all().all()
+    #         if isallzero:
+    #             print(f'{method_name} is all zero')
+    #         else:
+    #             pd.to_pickle(alpha, datapath + '\\' + f'{method_name}.pkl')
+    #             print(f'{method_name} is not all zero')
+    #     except Exception as e:
+    #         print(f"Error occurred while executing {method_name}: {e}")
 
 
 
