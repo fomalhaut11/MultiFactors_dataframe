@@ -387,7 +387,7 @@ class GTJA_191:
         temp1=self.avg_price.rolling(window=15,min_periods=1).max()
         temp2 = (self.close - temp1) 
         part1 = temp2.rank(axis=1, pct=True)
-        part2 = self.close.diff(5)
+        part2 = self.close.diff(5)/self.close.shift(5)
         result = part1 ** part2
         alpha = result.shift()  
         return alpha.stack() 
@@ -911,7 +911,7 @@ class GTJA_191:
         part2 = part2.rank(axis=1, pct=True)
         result = -part1 * part2
         alpha = result 
-        alpha = alpha[(alpha < np.inf) & (alpha > -np.inf)].shift()
+        alpha = alpha.shift()
        
         return alpha.stack()
     ##################################################################
@@ -2380,9 +2380,9 @@ class GTJA_191:
     def alpha_114(self):
         # ((rank(delay(((high-low)/(sum(close,5)/5)),2))*rank(rank(volume)))/(((high-low)/(sum(close,5)/5))/(vwap-close)))
         #####################
-        #data1 = (self.high - self.low) / (pd.rolling_sum(self.close, window=5) / 5)
         data1 = (self.high - self.low) / (self.close.rolling(window=5).mean())
-        rank1 = (data1.iloc[-2, :]).rank(axis=0, pct=True)
+        delay1=data1.shift(2)
+        rank1 =delay1.rank(axis=1,pct=True)
         rank2 = ((self.volume.rank(axis=1, pct=True)).rank(axis=1, pct=True)) 
  
         data2 = (((self.high - self.low) / (self.close.rolling(window=5).mean())) / (
@@ -3923,76 +3923,25 @@ if __name__ == '__main__':
     begindate=PriceDf.index.get_level_values(0).min()
     enddate=PriceDf.index.get_level_values(0).max()
     FactorMaker=GTJA_191(begindate,enddate,PriceDf)
- 
-
-    # for i in range(1,191):
-    #     method_name = f'alpha_{i:03d}'
-    #     method = getattr(FactorMaker, method_name)
-    #     print(i)
-    #     if i<=41:
-    #         continue
-
-    #     try:
-    #         alpha=method()
-    #         alpha1= pd.read_pickle(datapath+'\\'+f'{method_name}.pkl')
-    #         dif=alpha-alpha1
-    #         isallzero=(dif[dif.notnull()]==0).all().all()
-    #         if isallzero:
-    #             print(f'{method_name} is all zero')
-    #         else:
-    #             pd.to_pickle(alpha, datapath + '\\' + f'{method_name}.pkl')
-    #             print(f'{method_name} is not all zero')
-    #     except Exception as e:
-    #         print(f"Error occurred while executing {method_name}: {e}")
-
-
-
-
-    # for i in range(60):
-    #     print(i)
-    #     if i<54:
-    #         continue
-    #     if i>=56: 
-    #         continue        
-      
-    #     method_name = f'alpha_{i:03d}'  # 格式化方法名，例如 'alpha_001'
-    #     method = getattr(FactorMaker, method_name)  # 获取方法
-    #     try:
-    #         alpha = method()  # 调用方法
-    #         pd.to_pickle(alpha, datapath + '\\' + f'{method_name}.pkl')
-    #     except Exception as e:
-    #         print(f"Error occurred while executing {method_name}: {e}")
-    for  i in range (191):
-        if i<=34:
-            continue
-        print(i)
-        try:
-            method_name = f'alpha_{i:03d}'
-            filepath=os.path.join(datapath,f'{method_name}.pkl')
-            if not os.path.exists(filepath):
-                print(method_name)
-                method = getattr(FactorMaker, method_name)
-                alpha=method()
-                pd.to_pickle(alpha,datapath+'\\'+f'{method_name}.pkl')
-        except Exception as e:
-            print(f"Error occurred while executing {method_name}: {e}")
-
-
-    test=sft.Single_Factor_Test(r'E:\Documents\PythonProject\StockProject\MultiFactors\[SingleFactorTest].ini')
     test.filtered_stocks=sft.PickupStocksByAmount(PriceDf)#股票池过滤
     test.data_loading_1st_time()
-    test.data_backtest_one_hot('alpha_047')
-    test.data_plot()
-    test.data_save()    
 
-    for i in range(1,190):
-        if i <=25:
+    for i in range(1,191):
+        if i<=0:
             continue
         alpha = f'alpha_{i:03}'
         print(alpha)
+        alpha = f'alpha_{i:03d}'
+        method = getattr(FactorMaker, alpha)
+
         try:
+            alphadata =method()
+            pd.to_pickle(alphadata, datapath + '\\' + f'{alpha}.pkl')
             test.data_backtest_one_hot(alpha)
             test.data_plot()
             test.data_save()
         except:
-            continue       
+            break
+
+
+ 

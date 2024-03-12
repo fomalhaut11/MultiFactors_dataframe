@@ -275,10 +275,27 @@ def half_decay_factor(DateCount_df,factorDF,para=20,show=False):
     minvalues= DateCount_df.min(axis=1)
     minvalues[minvalues<0]=np.nan
     indice=logbase**minvalues
-    df=factorDF*indice
+    df=factorDF*indicen
     return df
-def none_linear_marketcap(MarketCap,para=0.5):
+def none_linear_marketcap(MarketCap):#非线性市值因子
+    logmc=np.log(MarketCap) 
+    logmc3=logmc**3
+    data = pd.DataFrame({
+    'logmc': logmc,
+    'logmc3': logmc3
+    }) 
+ 
+    def regress1(data1):
+        y=data1['logmc3']
+        x=sm.add_constant(data1['logmc'])
+        try:
+            results=sm.OLS(y,x).fit()
+            return results.resid
+        except:
+            return pd.Series(np.nan,index=data1.index)
      
+    df = data.groupby(level=0).apply(regress1).reset_index(level=1, drop=True)
+    df=df.groupby(level=0).shift(1)
     return df
     
 
@@ -313,6 +330,9 @@ if __name__=='__main__':
     PriceDf=None
 
     MarketCap=pd.read_pickle(datapath+'\\'+'MarketCap.pkl')
+    none_linear_marketcap=none_linear_marketcap(MarketCap)
+    pd.to_pickle(none_linear_marketcap,datasavepath+r'\none_linear_marketcap.pkl')#非线性市值因子
+
     factorDF=RoE(x1)
     pd.to_pickle(factorDF,datasavepath+r'\ROE.pkl')
     factorDF=RoE_zscores(x1,r_method='ttm',e_method='avg',len1=8)

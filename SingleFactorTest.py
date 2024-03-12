@@ -234,21 +234,21 @@ class Single_Factor_Test():
 
             if (y==0).all().all():#当日因子值全为0，不需要进行回归分析
                 print(m1slice.index.get_level_values(0).unique())
-                resid=y
-                factor_return=0
-                resid_return=m1slice['LogReturn']
+                factor_return=0#因子收益率
+                resid_return=m1slice['LogReturn']#残差收益率
                 groupedmean  = pd.DataFrame({'Group': [0]*10}, index=range(10))
                 groupedmean.index=groupedmean.index.astype('float')
                 groupedstd  = pd.DataFrame({'Group': [0]*10}, index=range(10))
                 groupedstd.index=groupedmean.index.astype('float')          
                 correlation=np.nan
                 p_value=np.nan
-                tvalues=np.nan
+                t_return=np.nan
+                p_return=np.nan
+
                 params=[]
                 grouped_StockCodes=[]
-                return pd.Series({'newfactor':resid,'factor_return':factor_return,'resid_return':resid_return,'groupedmean':groupedmean,'groupedstd':groupedstd,'IC':correlation,'P':p_value,'T':tvalues,'params':params,'grouped_StockCodes':grouped_StockCodes})    
+                return pd.Series({'newfactor':newfactor,'factor_return':factor_return,'resid_return':resid_return,'groupedmean':groupedmean,'groupedstd':groupedstd,'IC':correlation,'P':p_value,'T_retreg':t_return,'P_retreg':p_return,'params':params,'grouped_StockCodes':grouped_StockCodes})    
 
-      
             else:
                 base_factors =m1slice[m1slice.filter(like='BaseFactor').columns].copy()
                 basesize=len(base_factors.columns)
@@ -262,7 +262,7 @@ class Single_Factor_Test():
                 x=x.dropna(axis=0,how='any')
                 y=y.loc[x.index.values]
                 model=sm.OLS(y,x)
-                result=model.fit()
+                result=model.fit()#因子暴露回归
                 newfactor=result.resid#新因子
                 newfactor.name='newfactor'
                 ##收益率因子回归测试
@@ -272,7 +272,8 @@ class Single_Factor_Test():
                 result1=model1.fit()
                 resid_return=result1.resid#残差收益率
                 factor_return=result1.params['newfactor']
-                tvalues=result1.tvalues
+                t_return=result1.tvalues['newfactor']
+                p_return=result1.pvalues['newfactor']
                 ######分组测试#####
                 
                 params=result.params
@@ -285,7 +286,7 @@ class Single_Factor_Test():
                 correlation, p_value = spearmanr(groupedfactormean, groupedmean)
                 #####分组测试#####
  
-                return pd.Series({'newfactor':newfactor,'factor_return':factor_return,'resid_return':resid_return,'groupedmean':groupedmean,'groupedstd':groupedstd,'IC':correlation,'P':p_value,'T':tvalues['newfactor'],'params':params,'grouped_StockCodes':grouped_StockCodes})    
+                return pd.Series({'newfactor':newfactor,'factor_return':factor_return,'resid_return':resid_return,'groupedmean':groupedmean,'groupedstd':groupedstd,'IC':correlation,'P':p_value,'T_retreg':t_return,'P_retreg':p_return,'params':params,'grouped_StockCodes':grouped_StockCodes})    
 
       
         resultdata=m1.groupby('TradingDates').apply(m1dailycount,self.groupnums)
@@ -293,7 +294,7 @@ class Single_Factor_Test():
         self.newfactor_df = pd.concat(self.BackTestResult['newfactor'].values, 
                          keys=self.BackTestResult['newfactor'].index)
         self.factor_return=pd.DataFrame(self.BackTestResult['factor_return'])
-        self.T=pd.DataFrame(self.BackTestResult['T'])
+        self.T=pd.DataFrame(self.BackTestResult['T_retreg'])
         self.Params=pd.DataFrame(self.BackTestResult['params'])
 
         self.IC=pd.DataFrame(self.BackTestResult['IC'])
@@ -475,9 +476,9 @@ class Single_Factor_Test():
             axs[0].plot(cumsum_relative_meanreturn.xs(i,level=1),label='Group'+str(i))
         axs[0].legend(loc='upper left')   
         ax2 = axs[1].twinx()  # 创建第二个 y 轴
-        line1 = self.T.rolling(120).mean().plot(ax=ax2, color='b', label='self.T')  # 使用第二个 y 轴绘制 self.T
-        line2 = self.IC.rolling(120).mean().plot(ax=axs[1], color='r', label='self.IC')  # 使用原始 y 轴绘制 self.IC
-
+        line1 = self.T.rolling(120).mean().plot(ax=ax2, color='b',label=None)  # 使用第二个 y 轴绘制 self.T
+        line2 = self.IC.rolling(120).mean().plot(ax=axs[1], color='r',label=None)  # 使用原始 y 轴绘制 self.IC
+ 
         ax2.yaxis.label.set_color('b')  # 设置第二个 y 轴的标签颜色
         axs[1].yaxis.label.set_color('r')  # 设置原始 y 轴的标签颜色
 
@@ -496,20 +497,25 @@ if __name__ == '__main__':
     test=Single_Factor_Test(r'E:\Documents\PythonProject\StockProject\MultiFactors\[SingleFactorTest].ini')
     test.filtered_stocks=PickupStocksByAmount(PriceDf)#股票池过滤
     test.data_loading_1st_time()
-    # test.data_backtest_one_hot('alpha_035')
-    # test.data_plot()
-    # test.data_save()
+    test.data_backtest_one_hot('alpha_114')
+    test.data_plot()
+    test.data_save()
 
-    for i in range(1,60):
-        if i <=20:
+    for i in range(1,190):
+        if i <=55:
             continue
         alpha = f'alpha_{i:03}'
         print(alpha)
-        try:
-            test.data_backtest_one_hot(alpha)
-            test.data_plot()
-            test.data_save()
-        except:
+        if os.path.exists(os.path.join(test.tempdatapath,alpha+'data.pkl')):
+            try:
+                test.data_backtest_one_hot(alpha)
+                test.data_plot()
+                test.data_save()
+            except:
+                print(f"Error occurred while executing {alpha} ")
+                break
+        else:
+            print(f"{alpha} data not found")
             continue    
     # test.data_reloading_base('MarketCap')
     # test.data_preprocessing()
@@ -517,19 +523,7 @@ if __name__ == '__main__':
     # test.data_plot()
     # test.data_save()
 
-    for i in range(1,190):
-        if i <=120:
-            continue
-        alpha = f'alpha_{i:03}'
-        print(alpha)
-        try:
-            test.data_reloading_factor(alpha)
-            test.data_preprocessing()
-            test.data_backtest_one_hot()
-            test.data_plot()
-            test.data_save()
-        except:
-            continue
+ 
 
 
     
