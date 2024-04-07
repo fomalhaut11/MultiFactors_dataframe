@@ -145,13 +145,13 @@ class Single_Factor_Test():
  
 
         if type(self.base_name)==list:#考虑基准因子为多个的情况
-            for i in range(0,len(base_name)):
+            for i in range(0,len(self.base_name)):
                 temp=pd.read_pickle(os.path.join(self.datasavepath,self.base_name[i]+'.pkl')).to_frame(name='BaseFactor'+str(i+1))
  
                 if i==0:
                     base_data=temp
                 else:
-                    base_data=pd.merge(self.base_data,temp,left_index=True,right_index=True)
+                    base_data=pd.merge(base_data,temp,left_index=True,right_index=True)
         elif type(self.base_name)==str:
             base_data=pd.read_pickle(os.path.join(self.datasavepath,self.base_name+'.pkl')).to_frame(name='BaseFactor')  
         self.base_data=base_data.sort_index(level=0)#读取基准数据
@@ -217,9 +217,14 @@ class Single_Factor_Test():
         else:
             print('ReloadingData')
             self.data_loading_1st_time()
+        factorbegindate=self.factor_data.index.get_level_values(0).unique().sort_values()[0]
+        factorenddate=self.factor_data.index.get_level_values(0).unique().sort_values()[-1]
+
+        begindate=max(pd.to_datetime(self.BeginDate,format='%Y-%m-%d'),factorbegindate)
+        enddate=min(  pd.to_datetime(self.EndDate,  format='%Y-%m-%d'),factorenddate)
 
         m1=self.merged_data.copy()
-        m1=m1.loc[(m1.index.get_level_values(0)>=pd.to_datetime(self.BeginDate,format='%Y-%m-%d'))&((m1.index.get_level_values(0)<=pd.to_datetime(self.EndDate,format='%Y-%m-%d')))]
+        m1=m1.loc[(m1.index.get_level_values(0)>=begindate)&((m1.index.get_level_values(0)<=enddate))]
  
         def m1dailycount(m1slice,groupnums):
            # print(m1slice.index.get_level_values(0).unique())
@@ -247,7 +252,7 @@ class Single_Factor_Test():
 
                 params=[]
                 grouped_StockCodes=[]
-                return pd.Series({'newfactor':newfactor,'factor_return':factor_return,'resid_return':resid_return,'groupedmean':groupedmean,'groupedstd':groupedstd,'IC':correlation,'P':p_value,'T_retreg':t_return,'P_retreg':p_return,'params':params,'grouped_StockCodes':grouped_StockCodes})    
+                return pd.Series({'newfactor':y,'factor_return':factor_return,'resid_return':resid_return,'groupedmean':groupedmean,'groupedstd':groupedstd,'IC':correlation,'P':p_value,'T_retreg':t_return,'P_retreg':p_return,'params':params,'grouped_StockCodes':grouped_StockCodes})    
 
             else:
                 base_factors =m1slice[m1slice.filter(like='BaseFactor').columns].copy()
@@ -463,7 +468,7 @@ class Single_Factor_Test():
         with open(os.path.join(savepath,self.factor_name+'data.pkl'),'wb') as f:
             pickle.dump(data,f)
  
-    def data_plot(self,savepath=None):
+    def data_plot(self,meanlen=12,savepath=None):
         if savepath==None:
             savepath=self.tempdatapath
 
@@ -476,8 +481,8 @@ class Single_Factor_Test():
             axs[0].plot(cumsum_relative_meanreturn.xs(i,level=1),label='Group'+str(i))
         axs[0].legend(loc='upper left')   
         ax2 = axs[1].twinx()  # 创建第二个 y 轴
-        line1 = self.T.rolling(120).mean().plot(ax=ax2, color='b',label=None)  # 使用第二个 y 轴绘制 self.T
-        line2 = self.IC.rolling(120).mean().plot(ax=axs[1], color='r',label=None)  # 使用原始 y 轴绘制 self.IC
+        line1 = self.T.dropna().rolling(meanlen).mean().plot(ax=ax2, color='b',label=None)  # 使用第二个 y 轴绘制 self.T
+        line2 = self.IC.dropna().rolling(meanlen).mean().plot(ax=axs[1], color='r',label=None)  # 使用原始 y 轴绘制 self.IC
  
         ax2.yaxis.label.set_color('b')  # 设置第二个 y 轴的标签颜色
         axs[1].yaxis.label.set_color('r')  # 设置原始 y 轴的标签颜色
@@ -490,15 +495,17 @@ class Single_Factor_Test():
         plt.savefig(os.path.join(savepath,self.factor_name+'_figure.png'))
         plt.show()
         plt.close()
-
+        print('T>2ratio:',len(self.T[self.T.abs()>2].dropna())/len(self.T.dropna()))
 
 if __name__ == '__main__':
     PriceDf=pd.read_pickle(r'E:\Documents\PythonProject\StockProject\StockData\Price.pkl')
     test=Single_Factor_Test(r'E:\Documents\PythonProject\StockProject\MultiFactors\[SingleFactorTest].ini')
     test.filtered_stocks=PickupStocksByAmount(PriceDf)#股票池过滤
+    #test.base_name=['LogMarketCap','PS_ss','PE_ss','ROE_ratio_zscores_4']
     test.data_loading_1st_time()
-    test.data_backtest_one_hot('alpha_052')
-    test.data_plot()
+    
+    test.data_backtest_one_hot('hs300_20day_beta')
+    test.data_plot(meanlen=120)
     test.data_save()
 
     for i in range(1,190):
