@@ -3913,20 +3913,53 @@ class GTJA_191:
         alpha = alpha.shift()
         return alpha.stack()
 
+
+def Main_Data_Renew() -> None:
+    datapath=r'E:\Documents\PythonProject\StockProject\StockData'
+    savedatapath=r'E:\Documents\PythonProject\StockProject\StockData\RawFactors_alpha191'
+    PriceDf=pd.read_pickle(datapath+'\\'+'Price.pkl')
+    begindate=PriceDf.index.get_level_values(0).min()
+    enddate=PriceDf.index.get_level_values(0).max()
+    FactorMaker=GTJA_191(begindate,enddate,PriceDf)
+    
+    test=sft.Single_Factor_Test(r'E:\Documents\PythonProject\StockProject\MultiFactors\[SingleFactorTest].ini')
+    test.filtered_stocks=sft.PickupStocksByAmount(PriceDf)#股票池过滤
  
+    test.data_loading_1st_time()
+    #miss1:27
+    for i in range(1,27):
+        if i<=0:
+            continue
+        alpha = f'alpha_{i:03}'
+
+        method = getattr(FactorMaker, alpha)
+
+        try:
+            alphadata =method()
+            pd.to_pickle(alphadata, savedatapath + '\\' + f'{alpha}.pkl')
+            test.data_backtest_one_hot(alpha)
+            test.data_plot()
+            test.data_save()
+        except:
+            continue
+    return  
  
  
 
 if __name__ == '__main__':
     datapath=r'E:\Documents\PythonProject\StockProject\StockData'
+    savedatapath=r'E:\Documents\PythonProject\StockProject\StockData\RawFactors_alpha191'
     PriceDf=pd.read_pickle(datapath+'\\'+'Price.pkl')
     begindate=PriceDf.index.get_level_values(0).min()
     enddate=PriceDf.index.get_level_values(0).max()
     FactorMaker=GTJA_191(begindate,enddate,PriceDf)
+    
+    test=sft.Single_Factor_Test(r'E:\Documents\PythonProject\StockProject\MultiFactors\[SingleFactorTest].ini')
     test.filtered_stocks=sft.PickupStocksByAmount(PriceDf)#股票池过滤
+ 
     test.data_loading_1st_time()
-
-    for i in range(1,191):
+    #miss1:27
+    for i in range(1,27):
         if i<=0:
             continue
         alpha = f'alpha_{i:03}'
@@ -3936,12 +3969,12 @@ if __name__ == '__main__':
 
         try:
             alphadata =method()
-            pd.to_pickle(alphadata, datapath + '\\' + f'{alpha}.pkl')
+            pd.to_pickle(alphadata, savedatapath + '\\' + f'{alpha}.pkl')
             test.data_backtest_one_hot(alpha)
             test.data_plot()
             test.data_save()
         except:
-            break
+            continue
 
 
  

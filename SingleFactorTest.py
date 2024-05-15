@@ -104,6 +104,7 @@ class Single_Factor_Test():
 
         self.BeginDate = config.get('SingleFactorTest', 'BeginDate')#回测开始日期
         self.EndDate = config.get('SingleFactorTest', 'EndDate')#回测结束日期
+        self.EndDate_tag = 'default' #如果使用default，则默认测试结束日期为因子的最新日期
         self.backtesttype = config.get('SingleFactorTest', 'backtesttype')#回测交易频率 daily weekly monthly
         self.datasavepath = config.get('SingleFactorTest', 'datasavepath')#数据存储路径
         self.tempdatapath = config.get('SingleFactorTest', 'tempdatapath')#临时数据存储路径
@@ -220,9 +221,11 @@ class Single_Factor_Test():
         factorbegindate=self.factor_data.index.get_level_values(0).unique().sort_values()[0]
         factorenddate=self.factor_data.index.get_level_values(0).unique().sort_values()[-1]
 
-        begindate=max(pd.to_datetime(self.BeginDate,format='%Y-%m-%d'),factorbegindate)
-        enddate=min(  pd.to_datetime(self.EndDate,  format='%Y-%m-%d'),factorenddate)
-
+        begindate = max(pd.to_datetime(self.BeginDate,format='%Y-%m-%d'), factorbegindate)
+        if self.EndDate_tag == 'EndDate':
+            enddate = min(  pd.to_datetime(self.EndDate,  format='%Y-%m-%d'), factorenddate)
+        elif self.EndDate_tag == 'default':
+            enddate = factorenddate
         m1=self.merged_data.copy()
         m1=m1.loc[(m1.index.get_level_values(0)>=begindate)&((m1.index.get_level_values(0)<=enddate))]
  
@@ -281,13 +284,17 @@ class Single_Factor_Test():
                 p_return=result1.pvalues['newfactor']
                 ######分组测试#####
                 
-                params=result.params
-                m1slice['Group']=pd.qcut(newfactor,groupnums,labels=False,duplicates='drop')
-                grouped=m1slice.groupby('Group')
-                groupedmean=grouped['LogReturn'].mean()
-                groupedstd=grouped['LogReturn'].std()
-                grouped_StockCodes=m1slice.groupby('Group').apply(lambda x: x.index.get_level_values('StockCodes').tolist())
-                groupedfactormean=  m1slice.groupby('Group')['Factor'].mean()
+                params = result.params
+                m1slice['Group'] = pd.qcut(newfactor, groupnums, labels=False, duplicates='drop')
+                print(m1slice.index.get_level_values(0).unique())
+                if m1slice.index.get_level_values(0).unique() == '2019-02-01':
+                    print(m1slice.index.get_level_values(0).unique())
+
+                grouped = m1slice.groupby('Group')
+                groupedmean = grouped['LogReturn'].mean()
+                groupedstd = grouped['LogReturn'].std()
+                grouped_StockCodes = m1slice.groupby('Group').apply(lambda x: x.index.get_level_values('StockCodes').tolist())
+                groupedfactormean =  m1slice.groupby('Group')['Factor'].mean()
                 correlation, p_value = spearmanr(groupedfactormean, groupedmean)
                 #####分组测试#####
  
@@ -295,6 +302,12 @@ class Single_Factor_Test():
 
       
         resultdata=m1.groupby('TradingDates').apply(m1dailycount,self.groupnums)
+
+        if resultdata['IC'].index.equals(resultdata['grouped_StockCodes'].index):
+            pass
+        else:
+            raise ValueError('IC和grouped_StockCodes的索引不相等')
+
         self.BackTestResult=resultdata
         self.newfactor_df = pd.concat(self.BackTestResult['newfactor'].values, 
                          keys=self.BackTestResult['newfactor'].index)
@@ -504,31 +517,31 @@ if __name__ == '__main__':
     #test.base_name=['LogMarketCap','PS_ss','PE_ss','ROE_ratio_zscores_4']
     test.data_loading_1st_time()
     
-    test.data_backtest_one_hot('hs300_20day_beta')
+    test.data_backtest_one_hot('alpha_041')
     test.data_plot(meanlen=120)
     test.data_save()
 
-    for i in range(1,190):
-        if i <=55:
-            continue
-        alpha = f'alpha_{i:03}'
-        print(alpha)
-        if os.path.exists(os.path.join(test.tempdatapath,alpha+'data.pkl')):
-            try:
-                test.data_backtest_one_hot(alpha)
-                test.data_plot()
-                test.data_save()
-            except:
-                print(f"Error occurred while executing {alpha} ")
-                break
-        else:
-            print(f"{alpha} data not found")
-            continue    
-    # test.data_reloading_base('MarketCap')
-    # test.data_preprocessing()
-    # test.data_backtest_one_hot()
-    # test.data_plot()
-    # test.data_save()
+    # for i in range(1,190):
+    #     if i <=55:
+    #         continue
+    #     alpha = f'alpha_{i:03}'
+    #     print(alpha)
+    #     if os.path.exists(os.path.join(test.tempdatapath,alpha+'data.pkl')):
+    #         try:
+    #             test.data_backtest_one_hot(alpha)
+    #             test.data_plot()
+    #             test.data_save()
+    #         except:
+    #             print(f"Error occurred while executing {alpha} ")
+    #             break
+    #     else:
+    #         print(f"{alpha} data not found")
+    #         continue    
+    # # test.data_reloading_base('MarketCap')
+    # # test.data_preprocessing()
+    # # test.data_backtest_one_hot()
+    # # test.data_plot()
+    # # test.data_save()
 
  
 

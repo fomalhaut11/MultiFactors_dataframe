@@ -480,9 +480,11 @@ def none_linear_marketcap(MarketCap):#非线性市值因子
     df = data.groupby(level=0).apply(regress1).reset_index(level=1, drop=True)
     df=df.groupby(level=0).shift(1)
     return df
+
+
 def log3marketcap(MarketCap):
-    logmc=np.log(MarketCap) 
-    logmc3=logmc**3
+    logmc = np.log(MarketCap) 
+    logmc3 = logmc**3
     return logmc3
 
 
@@ -562,9 +564,8 @@ def BetaFactorbyIndex(PriceDf,indexname,window=[20,60,120,240]):
  
 if __name__=='__main__':
     print('制作因子 start')
-    
     SDP.Main_Data_Renew()#StockDataPrepairing中的数据更新
-    datasavepath=r'E:\Documents\PythonProject\StockProject\StockData'
+    datasavepath=r'E:\Documents\PythonProject\StockProject\StockData\RawFactors' #原始因子存放
     datapath=    r'E:\Documents\PythonProject\StockProject\StockData'
     realead_dates=pd.read_pickle(datapath+'\\'+'realesed_dates_df.pkl')
     realead_dates_count_df=pd.read_pickle(datapath+'\\'+'realesed_dates_count_df.pkl')
@@ -581,12 +582,18 @@ if __name__=='__main__':
     cla.读取财报数据(begindate, int_today)
     x1=SDP.FactorMatrix_Report(StockData3dMatrix,cla)
     TradingDates=PriceDf.index.get_level_values(0).to_frame()
-    zz2000_20day_beta,zz2000_60day_beta,zz2000_120day_beta,zz2000_240day_beta=BetaFactorbyIndex(PriceDf,'中证2000')
 
+    zz2000_20day_beta,zz2000_60day_beta,zz2000_120day_beta,zz2000_240day_beta=BetaFactorbyIndex(PriceDf,'中证2000')
     pd.to_pickle(zz2000_20day_beta,datasavepath+r'\zz2000_20day_beta.pkl')
     pd.to_pickle(zz2000_60day_beta,datasavepath+r'\zz2000_60day_beta.pkl')
     pd.to_pickle(zz2000_120day_beta,datasavepath+r'\zz2000_120day_beta.pkl')
     pd.to_pickle(zz2000_240day_beta,datasavepath+r'\zz2000_240day_beta.pkl')
+
+    zz500_20day_beta,zz500_60day_beta,zz500_120day_beta,zz500_240day_beta=BetaFactorbyIndex(PriceDf,'中证500')
+    pd.to_pickle(zz500_20day_beta,datasavepath+r'\zz500_20day_beta.pkl')
+    pd.to_pickle(zz500_60day_beta,datasavepath+r'\zz500_60day_beta.pkl')
+    pd.to_pickle(zz500_120day_beta,datasavepath+r'\zz500_120day_beta.pkl')
+    pd.to_pickle(zz500_240day_beta,datasavepath+r'\zz500_240day_beta.pkl')
 
     # zz500_20day_beta=BetaFactorbyIndex(PriceDf,'中证500',window=20)
     # pd.to_pickle(zz500_20day_beta,datasavepath+r'\zz500_20day_beta.pkl')
@@ -702,7 +709,7 @@ if __name__=='__main__':
 
 
     ep=pd.read_pickle(datasavepath+r'\EP_ttm.pkl')
-    sp=pd.read_pickle(datasavepath+r'\SP.pkl')
+    sp=pd.read_pickle(datasavepath+r'\SP_ttm.pkl')
     PE=1/ep
     g=pd.read_pickle(datasavepath+r'\DEDUCTEDPROFIT_yoy.pkl')
     PEG=ep*g
@@ -719,5 +726,7 @@ if __name__=='__main__':
     none_linear_marketcap=pd.read_pickle(datasavepath+r'\none_linear_marketcap.pkl')
     df=roe_d_g*100/none_linear_marketcap
     pd.to_pickle(df,datasavepath+r'\ROEzscores_4_t_profitgrowth_divide_none_linear_marketcap.pkl')
+    
+
     
     alpha191.Main_Data_Renew()
