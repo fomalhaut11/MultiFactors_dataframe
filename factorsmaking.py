@@ -567,7 +567,7 @@ if __name__=='__main__':
     SDP.Main_Data_Renew()#StockDataPrepairing中的数据更新
     datasavepath=r'E:\Documents\PythonProject\StockProject\StockData\RawFactors' #原始因子存放
     datapath=    r'E:\Documents\PythonProject\StockProject\StockData'
-    realead_dates=pd.read_pickle(datapath+'\\'+'realesed_dates_df.pkl')
+    
     realead_dates_count_df=pd.read_pickle(datapath+'\\'+'realesed_dates_count_df.pkl')
     today=datetime.today()
     int_today=int(today.strftime('%Y%m%d'))

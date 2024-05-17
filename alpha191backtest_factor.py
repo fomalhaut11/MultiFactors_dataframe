@@ -24,17 +24,21 @@ class GTJA_191:
         :param index: stock universe, and also used as benchmark
         """
         #security = get_index_stocks(index)
-        begin_date_pd=pd.to_datetime(begin_date,format='%Y%m%d')
-        end_date_pd=pd.to_datetime(end_date,format='%Y%m%d')
-        datasavepath=r'E:\Documents\PythonProject\StockProject\StockData'
-        if benchmark_price0==None:
-            price =PriceDataFrame.loc[(PriceDataFrame.index.get_level_values(0)>=begin_date_pd)&(PriceDataFrame.index.get_level_values(0)<=end_date_pd)]
+        begin_date_pd = pd.to_datetime(begin_date,format='%Y%m%d')
+        end_date_pd = pd.to_datetime(end_date,format='%Y%m%d')
+        datasavlepath=r'E:\Documents\PythonProject\StockProject\StockData'
+
+        if 'adjfactor' not in PriceDataFrame.columns:
+            PriceDataFrame['adjfactor'] = 1
+
+        if benchmark_price0 == None:
+            price = PriceDataFrame.loc[(PriceDataFrame.index.get_level_values(0)>=begin_date_pd)&(PriceDataFrame.index.get_level_values(0)<=end_date_pd)]
             dailyreturn_c = price.groupby(level=1).apply(lambda x: pd.Series(np.log((x['c']*x['adjfactor'])/(x['c']*x['adjfactor']).shift(1)), index=x.index)).reset_index(level=0, drop=True)
-            dailyreturn_gap= price.groupby(level=1).apply(lambda x: pd.Series(np.log((x['o']*x['adjfactor'])/(x['c']*x['adjfactor']).shift(1)), index=x.index)).reset_index(level=0, drop=True)
-            dailyreturn_oc= price.groupby(level=1).apply(lambda x: pd.Series(np.log((x['o']*x['adjfactor'])/(x['c']*x['adjfactor'])), index=x.index)).reset_index(level=0, drop=True)
+            dailyreturn_gap = price.groupby(level=1).apply(lambda x: pd.Series(np.log((x['o']*x['adjfactor'])/(x['c']*x['adjfactor']).shift(1)), index=x.index)).reset_index(level=0, drop=True)
+            dailyreturn_oc = price.groupby(level=1).apply(lambda x: pd.Series(np.log((x['o']*x['adjfactor'])/(x['c']*x['adjfactor'])), index=x.index)).reset_index(level=0, drop=True)
              
             benchmark_price0 = dailyreturn_c.groupby(level=0).mean().cumsum() 
-            benchmark_price0_o =benchmark_price0+dailyreturn_oc.groupby(level=0).mean()#开盘价相比于收盘价的变动，所以是加号
+            benchmark_price0_o = benchmark_price0+dailyreturn_oc.groupby(level=0).mean()#开盘价相比于收盘价的变动，所以是加号
         else:
             price =PriceDataFrame.loc[(PriceDataFrame.index.get_level_values(0)>=begin_date_pd)&(PriceDataFrame.index.get_level_values(0)<=end_date_pd)&(PriceDataFrame.index.get_level_values(1).isin(security))]
             benchmark_price=benchmark_price0.loc[(benchmark_price0.index>=begin_date_pd)&(benchmark_price0.index<=end_date_pd)]
@@ -51,15 +55,19 @@ class GTJA_191:
         # self.benchmark_open_price = benchmark_price.loc[:, 'open']
         # self.benchmark_close_price = benchmark_price.loc[:, 'close']
         priceunstack=price.unstack(level='StockCodes')
+
         self.adjfactor=priceunstack['adjfactor']
         self.open_price=priceunstack['o']
         self.close=priceunstack['c']
         self.low=priceunstack['l']
         self.high=priceunstack['h']
-        self.avg_price=priceunstack['vwap']
+        if 'vwap' in priceunstack.columns:
+            self.avg_price = priceunstack['vwap']
+            self.amount=priceunstack['v']*priceunstack['vwap']
         self.prev_close=priceunstack['c'].shift(1) 
         self.volume=priceunstack['v'] 
-        self.amount=priceunstack['v']*priceunstack['vwap']
+        
+            
         self.benchmark_open_price=benchmark_price0_o
         self.benchmark_close_price=benchmark_price0
         self.adj_close=priceunstack['c']*priceunstack['adjfactor']/priceunstack['adjfactor'].iloc[-1]
@@ -3958,8 +3966,8 @@ if __name__ == '__main__':
     test.filtered_stocks=sft.PickupStocksByAmount(PriceDf)#股票池过滤
  
     test.data_loading_1st_time()
-    #miss1:27
-    for i in range(1,27):
+    
+    for i in range(1,191):
         if i<=0:
             continue
         alpha = f'alpha_{i:03}'
