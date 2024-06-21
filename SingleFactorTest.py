@@ -54,18 +54,36 @@ def Remove_Outlier(input_x,method='IQR',para=3):
 def Normlization(x_input,method='zscore'):
     #标准化
     x=x_input.copy()
-    if type(x)==pd.core.frame.DataFrame or type(x)==pd.core.series.Series:
-        if method=='zscore':
-            x=(x-x.mean())/x.std()
-        if method=='ppf':
-            cdf_values=(np.argsort(np.argsort(x))+0.5)/len(x)
-            x=stats.norm.ppf(cdf_values)
+    if type(x)==pd.core.frame.DataFrame:
+
+        if  x.std().item()<=0.000001  :
+            x=x*0
+        else:
+            if method=='zscore':
+                x=(x-x.mean())/x.std()
+            if method=='ppf':
+                cdf_values=(np.argsort(np.argsort(x))+0.5)/len(x)
+                x=stats.norm.ppf(cdf_values)
+
+
+    if type(x)==pd.core.series.Series:
+        if  x.std()<=0.000001:
+            x=x*0
+        else:
+            if method=='zscore':
+                x=(x-x.mean())/x.std()
+            if method=='ppf':
+                cdf_values=(np.argsort(np.argsort(x))+0.5)/len(x)
+                x=stats.norm.ppf(cdf_values)
     if type(x)==np.ndarray:
-        if method=='zscore':
-            x=(x-np.mean(x))/np.std(x)
-        if method=='ppf':
-            cdf_values=(np.argsort(np.argsort(x))+0.5)/len(x)
-            x=stats.norm.ppf(cdf_values)
+        if np.std(x)<=0.000001:
+            x=x*0
+        else:
+            if method=='zscore':
+                x=(x-np.mean(x))/np.std(x)
+            if method=='ppf':
+                cdf_values=(np.argsort(np.argsort(x))+0.5)/len(x)
+                x=stats.norm.ppf(cdf_values)
     return x
  
 
@@ -223,7 +241,7 @@ class Single_Factor_Test():
 
         begindate = max(pd.to_datetime(self.BeginDate,format='%Y-%m-%d'), factorbegindate)
         if self.EndDate_tag == 'EndDate':
-            enddate = min(  pd.to_datetime(self.EndDate,  format='%Y-%m-%d'), factorenddate)
+            enddate = min(pd.to_datetime(self.EndDate,  format='%Y-%m-%d'), factorenddate)
         elif self.EndDate_tag == 'default':
             enddate = factorenddate
         m1=self.merged_data.copy()
