@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt
 import pickle
 import SingleFactorTest as SFT
 
+
 def FactorCombining(pickfacorlist):
     for i in range(len(pickfactor)):
         filestr = pickfactor[i] + 'data.pkl'
@@ -69,12 +70,16 @@ def get_HoldingStocks(factorname,datasavepath1=r'E:\Documents\PythonProject\Stoc
     Holdingweight=df/df.groupby('TradingDates').sum()
 
     return Holdingweight
+
+
 def get_IndexWeight():
     datasavepath = r'E:\Documents\PythonProject\StockProject\StockData'
     filestr='IndexWeight.pkl'
     data1 = pd.read_pickle(os.path.join(datasavepath,filestr))
     data1['weight']=data1['weight']/data1['weight'].sum()
     return data1
+
+    
 if __name__ == '__main__':
     Holdingweight=get_HoldingStocks('BP_t_profitgrowth_zz2000_20day_beta_spg_log3marketcap_SUE_ss_4_hd5_alpha001_alpha032')
     risk=RiskExposure('LogMarketCap',Holdingweight,'raw',weight=None)

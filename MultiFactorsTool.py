@@ -15,6 +15,8 @@ import sys
 file_path =r'E:\Documents\PythonProject\StockProject'
 sys.path.append(file_path)
 import SingleFactorTest as SFT
+
+
 def FactorCombining(pickfacorlist,datasavepath=r'E:\Documents\PythonProject\StockProject\StockData\TestTempData'):
     for i in range(len(pickfactor)):
         filestr = pickfactor[i] + 'data.pkl'
