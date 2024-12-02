@@ -8,6 +8,7 @@ import importlib
 import psutil
 import pickle
 import h5py
+import pulp
 import os
 import gc
 import torch
@@ -58,6 +59,13 @@ def FactorCombiningAnalysis(pickfactor,stockreturndata,datasavepath=r'E:\Documen
             reiduals.groupby(level=0).apply(lambda x: sm.OLS(sm.add_constant(stockreturndata),x).fit().tvalues['newfactor'])
             factor[pickfactor[i]] = residuals.loc[factor.index]*data2sign  
     return factor.sum(axis=1)  
+
+def weight_linear_program_numpy(
+        factors_explosure,
+        benchmark_explosure,
+        constraints,
+        logreturn    ):
+    prob = pulp.LpProblem('WeightOptimization', pulp.LpMaximize)
 
 if __name__ == '__main__':
     datasavepath=r'E:\Documents\PythonProject\StockProject\StockData'

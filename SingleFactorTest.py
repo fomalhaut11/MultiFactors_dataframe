@@ -176,7 +176,8 @@ class Single_Factor_Test():
         self.base_data=base_data.sort_index(level=0)#读取基准数据
 
         if c_type=='one_hot':
-            self.classification_data=pd.read_pickle(os.path.join(self.datasavepath,self.c_name+'.pkl'))
+            classification_path = os.path.join(self.datasavepath + r'\Classificationdata')
+            self.classification_data=pd.read_pickle(os.path.join(classification_path,self.c_name+'.pkl'))
             # 将索引转换为列
             self.classification_data = self.classification_data.reset_index()
             # 去除重复的行

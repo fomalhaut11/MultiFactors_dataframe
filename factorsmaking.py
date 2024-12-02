@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import os 
 import sys
 #import GTJA_Alpha191 as a191
 file_path =r'E:\Documents\PythonProject\StockProject'
@@ -27,10 +28,11 @@ import statsmodels.api as sm
     # f1expanding=x1.FactorExpanding()
     # factorDF=x1.ExpandedFactor2DataFrame(f1expanding)
     return factorDF """
-def factor_ROE_YoY(StockData3dMatrix,cla):
-    x1=SDP.FactorMatrix_Report(StockData3dMatrix,cla)
-    x2=SDP.FactorMatrix_Report(StockData3dMatrix,cla)
-    x1.Title('lrb','DEDUCTEDPROFIT')
+
+def factor_ROE_YoY(StockData3dMatrix, cla):
+    x1=SDP.FactorMatrix_Report(StockData3dMatrix, cla)
+    x2=SDP.FactorMatrix_Report(StockData3dMatrix, cla)
+    x1.Title('lrb', 'DEDUCTEDPROFIT')
     x2.Title('fzb','EQY_BELONGTO_PARCOMSH')
     f1=x1.InitFactor()
     f2=x2.InitFactor()
