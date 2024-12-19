@@ -625,11 +625,9 @@ if __name__=='__main__':
     factorDF=SP_ss(x1,MarketCap)
     pd.to_pickle(factorDF,datasavepath+r'\SP_ss.pkl')
 
-
     factorDF,factorDF_zscores=DEDUCTEDPROFIT_yoy(x1)
     pd.to_pickle(factorDF,datasavepath+r'\DEDUCTEDPROFIT_yoy.pkl')
     pd.to_pickle(factorDF_zscores,datasavepath+r'\DEDUCTEDPROFIT_yoy_zscores_4.pkl')
-
 
     zz500=SDP.GetWideBaseByDateSerries(alldates,指数类型="沪深交易所核心指数", 指数code='000905')
     zz500Weight=IndexComponentWeight(zz500,FreeMarketCap)
@@ -638,13 +636,9 @@ if __name__=='__main__':
     hs300Weight=IndexComponentWeight(hs300,FreeMarketCap)
     pd.to_pickle(hs300Weight,datasavepath+r'\hs300Weight.pkl')
   
-  
     hs300dayk=SDP.IndexPoint(indexname='沪深300')
     zz500dayk=SDP.IndexPoint(indexname='中证500')
    
-
- 
-
     factorDF=RoE(x1)
     pd.to_pickle(factorDF,datasavepath+r'\ROE.pkl')
     
@@ -668,7 +662,6 @@ if __name__=='__main__':
     factorDF,factorDF_zscores=FreeCashflow_ratio(x1,4)#自由现金流入小计同比增长率
     pd.to_pickle(factorDF,datasavepath+r'\FreeCashflow_ratio.pkl')
     pd.to_pickle(factorDF_zscores,datasavepath+r'\FreeCashflow_ratio_zscores_4.pkl')
-
 
     factorDF=SUE_ss(x1,4)
     pd.to_pickle(factorDF,datasavepath+r'\SUE_ss_4.pkl')
@@ -694,7 +687,6 @@ if __name__=='__main__':
     pd.to_pickle(factorDF,datasavepath+r'\wet_profit_ratio.pkl')
     pd.to_pickle(factorDF_zscores,datasavepath+r'\wet_profit_ratio_zscores_8.pkl')
  
- 
     SUE_ss_4=pd.read_pickle(datasavepath+r'\SUE_ss_4.pkl')
     SUE_ss_4_hd20= half_decay_factor(realead_dates_count_df,SUE_ss_4,para=5,show=False)
     pd.to_pickle(SUE_ss_4_hd20,datasavepath+r'\SUE_ss_4_hd5.pkl')
@@ -708,7 +700,6 @@ if __name__=='__main__':
     qr=pd.read_pickle(datasavepath+r'\QuickRatio.pkl')
     gw_divide_qr=gw/qr
     pd.to_pickle(gw_divide_qr,datasavepath+r'\GOODWILLRatio_divide_QuickRatio.pkl')
-
 
     ep=pd.read_pickle(datasavepath+r'\EP_ttm.pkl')
     sp=pd.read_pickle(datasavepath+r'\SP_ttm.pkl')
@@ -728,7 +719,5 @@ if __name__=='__main__':
     none_linear_marketcap=pd.read_pickle(datasavepath+r'\none_linear_marketcap.pkl')
     df=roe_d_g*100/none_linear_marketcap
     pd.to_pickle(df,datasavepath+r'\ROEzscores_4_t_profitgrowth_divide_none_linear_marketcap.pkl')
-    
-
     
     alpha191.Main_Data_Renew()

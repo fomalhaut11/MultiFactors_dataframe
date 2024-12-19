@@ -40,9 +40,7 @@ def Newey_West(ret, q = 2, tao = 252):
         V = V + (1 - i/(1+q)) * (Gammai + Gammai.T)
     
     return(pd.DataFrame(V, columns = names, index = names))
-    
-    
-    
+        
 
 def eigen_risk_adj(covmat, T = 1000, M = 100, scale_coef = 1.4):
     '''
@@ -83,8 +81,6 @@ def eigen_risk_adj(covmat, T = 1000, M = 100, scale_coef = 1.4):
     F0_hat = U0 @ D0_hat @ U0.T           #调整后的因子协方差矩阵
     return(pd.DataFrame(F0_hat, columns = covmat.columns, index = covmat.columns))
 
-    
-
 
 def eigenfactor_bias_stat(cov, ret, predlen = 1):
     '''
@@ -108,10 +104,7 @@ def eigenfactor_bias_stat(cov, ret, predlen = 1):
     plt.plot(bias_stat)
     return(bias_stat)
     
-
-
- 
-    
+   
 def progressbar(cur, total, txt):
     '''
     显示进度条
@@ -119,8 +112,6 @@ def progressbar(cur, total, txt):
     percent = '{:.2%}'.format(cur / total)
     print("\r[%-50s] %s" % ('=' * int(math.floor(cur * 50 / total)), percent) + txt, end = '')
     
-
-
 
 def group_mean_std(x):
     '''
@@ -141,7 +132,7 @@ def shrink(x, group_weight_mean, q):
     SH_est = v * group_weight_mean[x['group']][0] + (1-v) * np.abs(x['volatility'])    #贝叶斯收缩估计量
     return(SH_est)
     
-
+    
 def bayes_shrink(volatility, capital, ngroup = 10, q = 1):
     '''
     使用市值对特异性收益率波动率进行贝叶斯收缩，以保证波动率估计在样本外的持续性

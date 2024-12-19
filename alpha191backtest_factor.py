@@ -1731,7 +1731,7 @@ class GTJA_191:
       #  result = pd.ewma(100 * part1 / part2, alpha=1.0 / 20)
         result = (100*part1/part2).ewm(alpha=1.0/alphadown).mean()
         alpha = result.shift()
-        return alpha
+        return alpha.stack()
     #############################################################################
     # def alpha_083(self):
     #     part1 = self.high.rank(axis=0, pct=True)
@@ -1962,8 +1962,9 @@ class GTJA_191:
     #     alpha = alpha.dropna()
     #     return alpha
     def alpha_092(self, window1=3, window2=180, window3=13, window4=5, window5=15):
-        delta = (self.close*0.35+self.avg_price*0.65)-(self.close *0.35+self.avg_price*0.65).diff(2)
-        rank1 = delta.rolling(window1).apply(self.func_decaylinear).rank(axis=1,pct=True)
+        delta = (self.close * 0.35+self.avg_price*0.65) -\
+            (self.close * 0.35 + self.avg_price*0.65).diff(2)
+        rank1 = delta.rolling(window1).apply(self.func_decaylinear).rank(axis=1, pct=True)
         vm1 = self.volume.rolling(window2).mean()
         cor1 = vm1.rolling(window3).corr(self.close).abs()
         cor1 = cor1.replace([np.inf, -np.inf], 1)
@@ -2074,6 +2075,7 @@ class GTJA_191:
     #     alpha = right_value.iloc[-1, :]
     #     alpha = alpha.dropna()
     #     return alpha
+
     def alpha_098(self, window1=100, window2=3):
         # ((((DELTA((SUM(CLOSE,100)/100),100)/DELAY(CLOSE,100))<0.05)||((DELTA((SUM(CLOSE,100)/100),100)/DELAY(CLOSE,100))==0.05))?(-1*(CLOSE-TSMIN(CLOSE,100))):(-1*DELTA(CLOSE,3))) #
         sum_close = self.close.rolling(window1).sum()
@@ -2103,13 +2105,14 @@ class GTJA_191:
         alpha = (-rank1.rolling(window1).cov(rank2)).rank(axis=1, pct=True)
         alpha = alpha.rank(axis=1, pct=True)
         alpha = alpha.shift()
-        return alpha.stack()
-    #
+        return alpha.stack()   
+ 
     # def alpha_100(self):
     #     # STD(VOLUME,20) #
     #     alpha = self.volume.iloc[-20:, :].std()
     #     alpha = alpha.dropna()
     #     return alpha
+
     def alpha_100(self, window1=20):
         # STD(VOLUME,20) #
         alpha = self.volume.rolling(window1).std()
@@ -2741,7 +2744,6 @@ class GTJA_191:
         #### alpha_133
         #### ((20 - HIGHDAY(HIGH, 20)) / 20)*100 - ((20 - LOWDAY(LOW, 20)) / 20)*100
         ##
-
         alpha = (20 - self.high.rolling(20).apply(self.func_highday)) / 20 * 100 \
                 - (20 - self.low.rolling(20).apply(self.func_lowday)) / 20 * 100
         alpha = alpha.shift()
@@ -3937,7 +3939,7 @@ def Main_Data_Renew() -> None:
  
     test.data_loading_1st_time()
     #miss1:27
-    for i in range(1,190):
+    for i in range(1,191):
         if i<=1:
             continue
         alpha = f'alpha_{i:03}'
