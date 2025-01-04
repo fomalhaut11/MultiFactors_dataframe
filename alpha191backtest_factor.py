@@ -5,48 +5,82 @@ import pandas as pd
 import SingleFactorTest as sft
 
 # from api import get_index_stocks, get_price
-#改写成pandas 0.18之后的语法
+# 改写成pandas 0.18之后的语法
 # 所有因子值都是当天开盘可用的
 
 
-
-
- 
-
-
-
 class GTJA_191:
-    def __init__(
-            self, begin_date, end_date,
-            PriceDataFrame, benchmark_price0=None):
+    def __init__(self, begin_date, end_date, PriceDataFrame, benchmark_price0=None):
         """
 
         :param begin_date end_date  format='%Y%m%d'
         :param index: stock universe, and also used as benchmark
         """
-        #security = get_index_stocks(index)
-        begin_date_pd = pd.to_datetime(begin_date, format='%Y%m%d')
-        end_date_pd = pd.to_datetime(end_date, format='%Y%m%d')
-        datasavlepath = r'E:\Documents\PythonProject\StockProject\StockData'
+        # security = get_index_stocks(index)
+        begin_date_pd = pd.to_datetime(begin_date, format="%Y%m%d")
+        end_date_pd = pd.to_datetime(end_date, format="%Y%m%d")
+        datasavlepath = r"E:\Documents\PythonProject\StockProject\StockData"
 
-        if 'adjfactor' not in PriceDataFrame.columns:
-            PriceDataFrame['adjfactor'] = 1
+        if "adjfactor" not in PriceDataFrame.columns:
+            PriceDataFrame["adjfactor"] = 1
 
         if benchmark_price0 == None:
-            price = PriceDataFrame.loc[(
-                PriceDataFrame.index.get_level_values(0) >= begin_date_pd) &
-                (PriceDataFrame.index.get_level_values(0) <= end_date_pd)]
-             
-            dailyreturn_c = price.groupby(level=1).apply(lambda x: pd.Series(np.log((x['c']*x['adjfactor'])/(x['c']*x['adjfactor']).shift(1)), index=x.index)).reset_index(level=0, drop=True)
-            dailyreturn_gap = price.groupby(level=1).apply(lambda x: pd.Series(np.log((x['o']*x['adjfactor'])/(x['c']*x['adjfactor']).shift(1)), index=x.index)).reset_index(level=0, drop=True)
-            dailyreturn_oc = price.groupby(level=1).apply(lambda x: pd.Series(np.log((x['o']*x['adjfactor'])/(x['c']*x['adjfactor'])), index=x.index)).reset_index(level=0, drop=True)
-             
-            benchmark_price0 = dailyreturn_c.groupby(level=0).mean().cumsum() 
-            benchmark_price0_o = benchmark_price0+dailyreturn_oc.groupby(level=0).mean()#开盘价相比于收盘价的变动，所以是加号
+            price = PriceDataFrame.loc[
+                (PriceDataFrame.index.get_level_values(0) >= begin_date_pd)
+                & (PriceDataFrame.index.get_level_values(0) <= end_date_pd)
+            ]
+
+            dailyreturn_c = (
+                price.groupby(level=1)
+                .apply(
+                    lambda x: pd.Series(
+                        np.log(
+                            (x["c"] * x["adjfactor"])
+                            / (x["c"] * x["adjfactor"]).shift(1)
+                        ),
+                        index=x.index,
+                    )
+                )
+                .reset_index(level=0, drop=True)
+            )
+            dailyreturn_gap = (
+                price.groupby(level=1)
+                .apply(
+                    lambda x: pd.Series(
+                        np.log(
+                            (x["o"] * x["adjfactor"])
+                            / (x["c"] * x["adjfactor"]).shift(1)
+                        ),
+                        index=x.index,
+                    )
+                )
+                .reset_index(level=0, drop=True)
+            )
+            dailyreturn_oc = (
+                price.groupby(level=1)
+                .apply(
+                    lambda x: pd.Series(
+                        np.log((x["o"] * x["adjfactor"]) / (x["c"] * x["adjfactor"])),
+                        index=x.index,
+                    )
+                )
+                .reset_index(level=0, drop=True)
+            )
+
+            benchmark_price0 = dailyreturn_c.groupby(level=0).mean().cumsum()
+            benchmark_price0_o = (
+                benchmark_price0 + dailyreturn_oc.groupby(level=0).mean()
+            )  # 开盘价相比于收盘价的变动，所以是加号
         else:
-            price = PriceDataFrame.loc[(PriceDataFrame.index.get_level_values(0)>=begin_date_pd)&(PriceDataFrame.index.get_level_values(0)<=end_date_pd)&(PriceDataFrame.index.get_level_values(1).isin(security))]
-            benchmark_price = benchmark_price0.loc[(benchmark_price0.index>=begin_date_pd)&(benchmark_price0.index<=end_date_pd)]
-    
+            price = PriceDataFrame.loc[
+                (PriceDataFrame.index.get_level_values(0) >= begin_date_pd)
+                & (PriceDataFrame.index.get_level_values(0) <= end_date_pd)
+                & (PriceDataFrame.index.get_level_values(1).isin(security))
+            ]
+            benchmark_price = benchmark_price0.loc[
+                (benchmark_price0.index >= begin_date_pd)
+                & (benchmark_price0.index <= end_date_pd)
+            ]
 
         # self.open_price = price.loc['open', :, :].dropna(axis=1, how='any')
         # self.close = price.loc['close', :, :].dropna(axis=1, how='any')
@@ -58,21 +92,26 @@ class GTJA_191:
         # self.amount = price.loc['turnover', :, :].dropna(axis=1, how='any')
         # self.benchmark_open_price = benchmark_price.loc[:, 'open']
         # self.benchmark_close_price = benchmark_price.loc[:, 'close']
-        priceunstack = price.unstack(level='StockCodes')
+        priceunstack = price.unstack(level="StockCodes")
 
-        self.adjfactor = priceunstack['adjfactor']
-        self.open_price = priceunstack['o']
-        self.close = priceunstack['c']
-        self.low = priceunstack['l']
-        self.high = priceunstack['h']
-        if 'vwap' in priceunstack.columns:
-            self.avg_price = priceunstack['vwap']
-            self.amount = priceunstack['v']*priceunstack['vwap']
-        self.prev_close = priceunstack['c'].shift(1) 
-        self.volume = priceunstack['v'] 
+        self.adjfactor = priceunstack["adjfactor"]
+        self.open_price = priceunstack["o"]
+        self.close = priceunstack["c"]
+        self.low = priceunstack["l"]
+        self.high = priceunstack["h"]
+        if "vwap" in priceunstack.columns:
+            self.avg_price = priceunstack["vwap"]
+            self.amount = priceunstack["v"] * priceunstack["vwap"]
+        self.prev_close = priceunstack["c"].shift(1)
+        self.volume = priceunstack["v"]
         self.benchmark_open_price = benchmark_price0_o
         self.benchmark_close_price = benchmark_price0
-        self.adj_close = priceunstack['c']*priceunstack['adjfactor']/priceunstack['adjfactor'].iloc[-1]
+        self.adj_close = (
+            priceunstack["c"]
+            * priceunstack["adjfactor"]
+            / priceunstack["adjfactor"].iloc[-1]
+        )
+
     @staticmethod
     def func_rank(na):
         data = rankdata(na)[-1] / rankdata(na).max()
@@ -82,7 +121,7 @@ class GTJA_191:
     @staticmethod
     def func_decaylinear(na):
         n = len(na)
-        decay_weights = np.arange(1, n + 1, 1)/(n*(n+1)/2)
+        decay_weights = np.arange(1, n + 1, 1) / (n * (n + 1) / 2)
         return (na * decay_weights).sum()
 
     @staticmethod
@@ -100,14 +139,15 @@ class GTJA_191:
     #     alpha = alpha.dropna()
     #     return alpha
     def alpha_001(self, window=6):
-        data1 = self.volume.diff(periods=1).rank(axis=1, pct=True) 
-        data2 = ((self.close - self.open_price) / self.open_price).rank(axis=1, pct=True) 
+        data1 = self.volume.diff(periods=1).rank(axis=1, pct=True)
+        data2 = ((self.close - self.open_price) / self.open_price).rank(
+            axis=1, pct=True
+        )
         alpha = data1.rolling(window).corr(data2)
         alpha = alpha.shift()
-        return alpha.stack() 
+        return alpha.stack()
 
-
- ##################################################################        
+    ##################################################################
     # def alpha_002(self):
     #     ##### -1 * delta((((close-low)-(high-close))/((high-low)),1))####
     #     result = ((self.close - self.low) - (self.high - self.close)) / ((self.high - self.low)).diff()
@@ -119,14 +159,17 @@ class GTJA_191:
     #     ##### -1 * delta((((close-low)-(high-close))/((high-low)),1))####
     #     m = ((self.close - self.low) - (self.high - self.close)) / ((self.high - self.low)).diff().shift()#移动一天，本日可用
     #     alpha = m[(m < np.inf) & (m > -np.inf)]
-    #     return alpha.stack() 
+    #     return alpha.stack()
 
     def alpha_002(self):
         ##### -1 * delta((((close-low)-(high-close))/((high-low)),1))####
-        m = ((self.close - self.low) - (self.high - self.close)) / ((self.high - self.low)).diff() 
-        alpha = m.replace([np.inf, -np.inf], 0).shift()#.shift()#移动一天，本日可用
-        return alpha.stack()         
- ##################################################################
+        m = ((self.close - self.low) - (self.high - self.close)) / (
+            (self.high - self.low)
+        ).diff()
+        alpha = m.replace([np.inf, -np.inf], 0).shift()  # .shift()#移动一天，本日可用
+        return alpha.stack()
+
+    ##################################################################
     # def alpha_003(self):
     #     delay1 = self.close.shift()
     #     # condtion1 = (self.close == delay1)
@@ -141,14 +184,18 @@ class GTJA_191:
     #     return alpha.dropna()
     def alpha_003(self, window=6):
         delay1 = self.adj_close.shift()
-        condition2 = (self.adj_close > delay1)
-        condition3 = (self.adj_close < delay1)
-        part2 = (self.adj_close - np.minimum(delay1[condition2], self.low[condition2]))  
-        part3 = (self.adj_close - np.maximum(delay1[condition3], self.low[condition3])) 
-        alpha = part2.fillna(0).rolling(window).sum()  + part3.fillna(0).rolling(window=6).sum()#移动一天，本日可用
+        condition2 = self.adj_close > delay1
+        condition3 = self.adj_close < delay1
+        part2 = self.adj_close - np.minimum(delay1[condition2], self.low[condition2])
+        part3 = self.adj_close - np.maximum(delay1[condition3], self.low[condition3])
+        alpha = (
+            part2.fillna(0).rolling(window).sum()
+            + part3.fillna(0).rolling(window=6).sum()
+        )  # 移动一天，本日可用
         alpha = alpha.shift()
-        return alpha.stack() 
- ##################################################################
+        return alpha.stack()
+
+    ##################################################################
     # def alpha_004(self):
     #     #condition1 = (pd.rolling_std(self.close, 8) < pd.rolling_sum(self.close, 2) / 2)
     #     codintion1=(self.close.rolling(window=8,min_periods=1).std()<self.close.rolling(window=2,min_periods=1).sum()/2)
@@ -174,28 +221,28 @@ class GTJA_191:
     #     return alpha.dropna()
 
     def alpha_004(self, window1=8, window2=2, window3=20):
-       
+
         condition1 = (
-            self.adj_close.rolling(window1, min_periods=1).std() <
-            self.adj_close.rolling(window2, min_periods=1).sum()/2)
-        condition2 = (
-            self.adj_close.rolling(window2, min_periods=1).sum()/2 < 
-            (
-                self.adj_close.rolling(window1, min_periods=1).sum()/8 - 
-                self.adj_close.rolling(window1, min_periods=1).std()
-            )
-                    )
+            self.adj_close.rolling(window1, min_periods=1).std()
+            < self.adj_close.rolling(window2, min_periods=1).sum() / 2
+        )
+        condition2 = self.adj_close.rolling(window2, min_periods=1).sum() / 2 < (
+            self.adj_close.rolling(window1, min_periods=1).sum() / 8
+            - self.adj_close.rolling(window1, min_periods=1).std()
+        )
         condition3 = (
-            1 <= self.volume/self.volume.rolling(window3, min_periods=1).mean()
-                    )
+            1 <= self.volume / self.volume.rolling(window3, min_periods=1).mean()
+        )
         indicator1 = pd.DataFrame(
-            np.ones(self.close.shape), 
+            np.ones(self.close.shape),
             index=self.close.index,
-            columns=self.close.columns)  # [condition2]
+            columns=self.close.columns,
+        )  # [condition2]
         indicator2 = -pd.DataFrame(
-            np.ones(self.close.shape), 
+            np.ones(self.close.shape),
             index=self.close.index,
-            columns=self.close.columns)  # [condition3]
+            columns=self.close.columns,
+        )  # [condition3]
         part0 = self.adj_close.rolling(window1, min_periods=1).mean()
         part1 = indicator2[condition1].fillna(0)
         part2 = (indicator1[~condition1][condition2]).fillna(0)
@@ -203,10 +250,10 @@ class GTJA_191:
         part4 = (indicator2[~condition1][~condition2][~condition3]).fillna(0)
 
         alpha = part0 + part1 + part2 + part3 + part4
-      
-        return alpha.shift().stack() 
 
- ##################################################################
+        return alpha.shift().stack()
+
+    ##################################################################
     # def alpha_005(self):
     #     ts_volume = (self.volume.iloc[-7:, :]).rank(axis=0, pct=True)
     #     ts_high = (self.high.iloc[-7:, :]).rank(axis=0, pct=True)
@@ -216,12 +263,12 @@ class GTJA_191:
     #     return alpha
     def alpha_005(self, window1=7, window2=5):
         def rank_pct(x):
-            return sorted(x).index(x[-1])/len(x)
+            return sorted(x).index(x[-1]) / len(x)
+
         ts_volume = self.volume.rolling(window1).apply(rank_pct)
         ts_high = self.high.rolling(window1).apply(rank_pct)
         corr_ts = ts_high.rolling(window2).corr(ts_volume).shift()
-        return corr_ts.stack() 
-
+        return corr_ts.stack()
 
     ##################################################################
     # def alpha_006(self):
@@ -238,20 +285,39 @@ class GTJA_191:
     #     alpha = (result.rank(axis=1, pct=True)).iloc[-1, :]  # cross section rank
     #     return alpha.dropna()
     def alpha_006(self):
-        
-        condition1 = ((self.open_price*self.adjfactor * 0.85 + self.high*self.adjfactor * 0.15).diff(4) > 1)
-        condition2 = ((self.open_price*self.adjfactor * 0.85 + self.high*self.adjfactor * 0.15).diff(4) == 1)
-        condition3 = ((self.open_price*self.adjfactor * 0.85 + self.high*self.adjfactor * 0.15).diff(4) < 1)
-        indicator1 = pd.DataFrame(np.ones(self.close.shape), index=self.close.index, columns=self.close.columns)
-        indicator2 = pd.DataFrame(np.zeros(self.close.shape), index=self.close.index, columns=self.close.columns)
-        indicator3 = -pd.DataFrame(np.ones(self.close.shape), index=self.close.index, columns=self.close.columns)
+
+        condition1 = (
+            self.open_price * self.adjfactor * 0.85 + self.high * self.adjfactor * 0.15
+        ).diff(4) > 1
+        condition2 = (
+            self.open_price * self.adjfactor * 0.85 + self.high * self.adjfactor * 0.15
+        ).diff(4) == 1
+        condition3 = (
+            self.open_price * self.adjfactor * 0.85 + self.high * self.adjfactor * 0.15
+        ).diff(4) < 1
+        indicator1 = pd.DataFrame(
+            np.ones(self.close.shape),
+            index=self.close.index,
+            columns=self.close.columns,
+        )
+        indicator2 = pd.DataFrame(
+            np.zeros(self.close.shape),
+            index=self.close.index,
+            columns=self.close.columns,
+        )
+        indicator3 = -pd.DataFrame(
+            np.ones(self.close.shape),
+            index=self.close.index,
+            columns=self.close.columns,
+        )
         part1 = indicator1[condition1].fillna(0)
         part2 = indicator2[condition2].fillna(0)
         part3 = indicator3[condition3].fillna(0)
         result = part1 + part2 + part3
-        alpha = (result.rank(axis=1, pct=True)).shift() # cross section rank
-        return alpha.stack() 
-     ##################################################################
+        alpha = (result.rank(axis=1, pct=True)).shift()  # cross section rank
+        return alpha.stack()
+
+    ##################################################################
     # def alpha_007(self):
     #     part1 = (np.maximum(self.avg_price - self.close, 3)).rank(axis=1, pct=True)
     #     part2 = (np.minimum(self.avg_price - self.close, 3)).rank(axis=1, pct=True)
@@ -265,10 +331,10 @@ class GTJA_191:
         part2 = (np.minimum(self.avg_price - self.close, window)).rank(axis=1, pct=True)
         part3 = (self.volume.diff(window)).rank(axis=1, pct=True)
         result = part1 + part2 * part3
-        alpha = result.shift() 
-        return alpha.stack() 
+        alpha = result.shift()
+        return alpha.stack()
 
-     ##################################################################
+    ##################################################################
     # def alpha_008(self):
     #     temp = (self.high + self.low) * 0.2 / 2 + self.avg_price * 0.8
     #     result = -temp.diff(4)
@@ -279,8 +345,9 @@ class GTJA_191:
         temp = (self.high + self.low) * 0.2 / 2 + self.avg_price * 0.8
         result = -temp.diff(window)
         alpha = result.rank(axis=1, pct=True)
-        alpha = alpha.shift()  
-        return alpha.stack()     
+        alpha = alpha.shift()
+        return alpha.stack()
+
     ##################################################################
     # def alpha_009(self):
     #     temp = (self.high + self.low) * 0.5 - (self.high.shift() + self.low.shift()) * 0.5 * (
@@ -288,13 +355,18 @@ class GTJA_191:
     #     result = pd.ewma(temp, alpha=2 / 7)
     #     alpha = result.iloc[-1, :]
     #     return alpha.dropna()
-  
+
     def alpha_009(self):
-        temp = (self.high + self.low) * 0.5 - (self.high.shift()*self.adjfactor/self.adjfactor.shift() + self.low.shift()*self.adjfactor/self.adjfactor.shift()) * 0.5 * (
-                    self.high - self.low) / self.volume  # 计算close_{i-1}
+        temp = (self.high + self.low) * 0.5 - (
+            self.high.shift() * self.adjfactor / self.adjfactor.shift()
+            + self.low.shift() * self.adjfactor / self.adjfactor.shift()
+        ) * 0.5 * (
+            self.high - self.low
+        ) / self.volume  # 计算close_{i-1}
         result = temp.ewm(alpha=2 / 7).mean()
-        alpha = result.shift()  
-        return alpha.stack()    
+        alpha = result.shift()
+        return alpha.stack()
+
     ##################################################################
     # def alpha_010(self):
     #     ret = self.close.pct_change()
@@ -307,14 +379,15 @@ class GTJA_191:
     #     return alpha.dropna()
 
     def alpha_010(self, window=20):
-        ret = (self.close*self.adjfactor).pct_change()
-        condition = (ret < 0)
+        ret = (self.close * self.adjfactor).pct_change()
+        condition = ret < 0
         part1 = (ret[condition].rolling(window).std()).fillna(0)
-        part2 = ((self.close*self.adjfactor)[~condition]).fillna(0)
+        part2 = ((self.close * self.adjfactor)[~condition]).fillna(0)
         result = np.maximum((part1 + part2) ** 2, 5)
-        alpha = result.rank(axis=1, pct=True).shift() 
-    
+        alpha = result.rank(axis=1, pct=True).shift()
+
         return alpha.stack()
+
     ##################################################################
     # def alpha_011(self):
     #     temp = ((self.close - self.low) - (self.high - self.close)) / (self.high - self.low)
@@ -323,10 +396,13 @@ class GTJA_191:
     #     return alpha.dropna()
 
     def alpha_011(self, window=6):
-        temp = ((self.close - self.low) - (self.high - self.close)) / (self.high - self.low)
+        temp = ((self.close - self.low) - (self.high - self.close)) / (
+            self.high - self.low
+        )
         result = temp * self.volume
-        alpha = result.rolling(window).sum().shift() 
-        return alpha.stack() 
+        alpha = result.rolling(window).sum().shift()
+        return alpha.stack()
+
     ##################################################################
     # def alpha_012(self):
     #    # vwap10 = pd.rolling_sum(self.avg_price, 10) / 10
@@ -340,15 +416,16 @@ class GTJA_191:
     #     return alpha.dropna()
 
     def alpha_012(self, window=10):
-       # vwap10 = pd.rolling_sum(self.avg_price, 10) / 10
+        # vwap10 = pd.rolling_sum(self.avg_price, 10) / 10
         vwap10 = self.avg_price.rolling(window, min_periods=1).mean()
         temp1 = self.open_price - vwap10
         part1 = temp1.rank(axis=1, pct=True)
         temp2 = (self.close - self.avg_price).abs()
         part2 = -temp2.rank(axis=1, pct=True)
         result = part1 * part2
-        alpha = result.shift()  
-        return alpha.stack() 
+        alpha = result.shift()
+        return alpha.stack()
+
     ##################################################################
     # def alpha_013(self):
     #     result = ((self.high - self.low) ** 0.5) - self.avg_price
@@ -357,8 +434,9 @@ class GTJA_191:
 
     def alpha_013(self):
         result = ((self.high - self.low) ** 0.5) - self.avg_price
-        alpha = result.shift()  
-        return alpha.stack() 
+        alpha = result.shift()
+        return alpha.stack()
+
     ##################################################################
     # def alpha_014(self):
     #     result = self.close - self.close.shift(5)
@@ -366,9 +444,12 @@ class GTJA_191:
     #     return alpha.dropna()
 
     def alpha_014(self, window=5):
-        result = (self.close*self.adjfactor) - (self.close*self.adjfactor).shift(window)
-        alpha = result.shift()  
-        return alpha.stack() 
+        result = (self.close * self.adjfactor) - (self.close * self.adjfactor).shift(
+            window
+        )
+        alpha = result.shift()
+        return alpha.stack()
+
     ##################################################################
     # def alpha_015(self):
     #     result = self.open_price / self.close.shift() - 1
@@ -376,9 +457,12 @@ class GTJA_191:
     #     return alpha.dropna()
 
     def alpha_015(self):
-        result = (self.open_price*self.adjfactor) / (self.close*self.adjfactor).shift() - 1
-        alpha = result.shift()  
-        return alpha.stack() 
+        result = (self.open_price * self.adjfactor) / (
+            self.close * self.adjfactor
+        ).shift() - 1
+        alpha = result.shift()
+        return alpha.stack()
+
     ##################################################################
     # def alpha_016(self):
     #     temp1 = self.volume.rank(axis=1, pct=True)
@@ -394,13 +478,14 @@ class GTJA_191:
     def alpha_016(self, window=5):
         temp1 = self.volume.rank(axis=1, pct=True)
         temp2 = self.avg_price.rank(axis=1, pct=True)
-       # part = pd.rolling_corr(temp1, temp2, 5)  #
-        part=temp1.rolling(window, min_periods=1).corr(temp2)
+        # part = pd.rolling_corr(temp1, temp2, 5)  #
+        part = temp1.rolling(window, min_periods=1).corr(temp2)
         part = part[(part < np.inf) & (part > -np.inf)]
         result = part.rolling(window).max()
-       
-        alpha =  result.shift()  
-        return alpha.stack() 
+
+        alpha = result.shift()
+        return alpha.stack()
+
     ##################################################################
     # def alpha_017(self):
     #     temp1 = pd.rolling_max(self.avg_price, 15)
@@ -413,12 +498,13 @@ class GTJA_191:
 
     def alpha_017(self, window=15, window2=5):
         temp1 = self.avg_price.rolling(window, min_periods=1).max()
-        temp2 = (self.close - temp1) 
+        temp2 = self.close - temp1
         part1 = temp2.rank(axis=1, pct=True)
-        part2 = self.close.diff(window2)/self.close.shift(window2)
-        result = part1 ** part2
-        alpha = result.shift()  
-        return alpha.stack() 
+        part2 = self.close.diff(window2) / self.close.shift(window2)
+        result = part1**part2
+        alpha = result.shift()
+        return alpha.stack()
+
     ##################################################################
     # def alpha_018(self):
     #     delay5 = self.close.shift(5)
@@ -429,8 +515,9 @@ class GTJA_191:
     def alpha_018(self, shiftl=5):
         delay5 = self.close.shift(shiftl)
         alpha = self.close / delay5
-        alpha = alpha.shift()  
-        return alpha.stack() 
+        alpha = alpha.shift()
+        return alpha.stack()
+
     ##################################################################
     # def alpha_019(self):
     #     delay5 = self.close.shift(5)
@@ -446,15 +533,16 @@ class GTJA_191:
 
     def alpha_019(self, shiftl=5):
         delay5 = self.close.shift(shiftl)
-        condition1 = (self.close < delay5)
-        condition3 = (self.close > delay5)
+        condition1 = self.close < delay5
+        condition3 = self.close > delay5
         part1 = (self.close[condition1] - delay5[condition1]) / delay5[condition1]
         part1 = part1.fillna(0)
         part2 = (self.close[condition3] - delay5[condition3]) / self.close[condition3]
         part2 = part2.fillna(0)
         result = part1 + part2
-        alpha = result.shift()  
-        return alpha.stack() 
+        alpha = result.shift()
+        return alpha.stack()
+
     ##################################################################
     # def alpha_020(self):
     #     delay6 = self.close.shift(6)
@@ -465,8 +553,9 @@ class GTJA_191:
     def alpha_020(self, shiftl=6):
         delay6 = self.close.shift(shiftl)
         result = (self.close - delay6) * 100 / delay6
-        alpha = result.shift()  
-        return alpha.stack() 
+        alpha = result.shift()
+        return alpha.stack()
+
     ##################################################################
     # def alpha_021(self):
     #     A = pd.rolling_mean(self.close, 6).iloc[-6:, :]
@@ -478,13 +567,13 @@ class GTJA_191:
     #     beta_list = [temp[i].slope for i in range(len(temp))]
     #     alpha = pd.Series(beta_list, index=temp.index)
     #     return alpha.dropna()
-    
+
     def alpha_021(self, window=6):
         # 计算滚动窗口的平均值
         A = self.close.rolling(window=6, min_periods=1).mean()
         # 创建一个数组 B，其值为 [1, 2, 3, 4, 5, 6]
-        w1 = window + 1 
-        w2 = window - 1 
+        w1 = window + 1
+        w2 = window - 1
         B = np.arange(1, w1)
         Avalue = A.values
         Slope = np.zeros(Avalue.shape)
@@ -492,9 +581,10 @@ class GTJA_191:
         for i in range(Avalue.shape[1]):
             for j in range(Avalue.shape[0]):
                 if j >= w2:
-                    if np.unique(Avalue[j-w2:j+1, i]).size > 1:
-                        Slope[j, i], _, _, Pvalue[j, i], _ = \
-                            sp.stats.linregress(Avalue[j-w2: j+1, i], B)
+                    if np.unique(Avalue[j - w2 : j + 1, i]).size > 1:
+                        Slope[j, i], _, _, Pvalue[j, i], _ = sp.stats.linregress(
+                            Avalue[j - w2 : j + 1, i], B
+                        )
 
         temp = pd.DataFrame(Slope, index=A.index, columns=A.columns)
         temp2 = pd.DataFrame(Pvalue, index=A.index, columns=A.columns)
@@ -502,6 +592,7 @@ class GTJA_191:
         temp[mask] = np.nan
         alpha = temp.shift()
         return alpha.stack()
+
     ##################################################################
     # def alpha_022(self):
     #     #part1 = (self.close - pd.rolling_mean(self.close, 6)) / pd.rolling_mean(self.close, 6)
@@ -513,20 +604,18 @@ class GTJA_191:
     #     result = pd.ewma(result, alpha=1.0 / 12)
     #     alpha = result.iloc[-1, :]
     #     return alpha.dropna()
-    
+
     def alpha_022(self, window=6, shiftl=3, alpha_under=12):
         part1 = (
-            (self.close - self.close.rolling(window, min_periods=1).mean()) /
-            self.close.rolling(window, min_periods=1).mean()
-            )
+            self.close - self.close.rolling(window, min_periods=1).mean()
+        ) / self.close.rolling(window, min_periods=1).mean()
         temp = (
-            (self.close - self.close.rolling(window, min_periods=1).mean()) /
-            self.close.rolling(window, min_periods=1).mean()
-            )
+            self.close - self.close.rolling(window, min_periods=1).mean()
+        ) / self.close.rolling(window, min_periods=1).mean()
         part2 = temp.shift(shiftl)
         result = part1 - part2
         result = result.ewm(alpha=1.0 / alpha_under).mean()
-        alpha = result.shift()  
+        alpha = result.shift()
         return alpha.stack()
         ##################################################################
 
@@ -545,16 +634,17 @@ class GTJA_191:
     #     alpha = result.iloc[-1, :]
     #     return alpha.dropna()
     def alpha_023(self, window=20):
-        condition1 = (self.close > self.close.shift())
+        condition1 = self.close > self.close.shift()
         temp1 = self.close.rolling(window, min_periods=1).std()[condition1]
         temp1 = temp1.fillna(0)
         temp2 = self.close.rolling(window, min_periods=1).std()[~condition1]
         temp2 = temp2.fillna(0)
-        part1 = temp1.ewm(alpha=1.0/window).mean()
-        part2 = temp2.ewm(alpha=1.0/window).mean()
+        part1 = temp1.ewm(alpha=1.0 / window).mean()
+        part2 = temp2.ewm(alpha=1.0 / window).mean()
         result = part1 * 100 / (part1 + part2)
-        alpha = result.shift()  
+        alpha = result.shift()
         return alpha.stack()
+
     ##################################################################
     # def alpha_024(self):
     #     delay5 = self.close.shift(5)
@@ -566,9 +656,10 @@ class GTJA_191:
     def alpha_024(self, shiftl=5):
         delay5 = self.close.shift(shiftl)
         result = self.close - delay5
-        result_ewma = result.ewm(alpha=1.0/5).mean()
-        alpha = result_ewma.shift()  
+        result_ewma = result.ewm(alpha=1.0 / 5).mean()
+        alpha = result_ewma.shift()
         return alpha.stack()
+
     ##################################################################
     # def alpha_025(self):
     #     n = 9
@@ -593,13 +684,14 @@ class GTJA_191:
         temp = self.volume / self.volume.rolling(20).mean()
         seq = [2 * i / (n * (n + 1)) for i in range(1, n + 1)]
         weight = np.array(seq)
-        temp1 = temp.rolling(window ).apply(lambda x: np.sum(x * weight))
+        temp1 = temp.rolling(window).apply(lambda x: np.sum(x * weight))
         ret = self.close.pct_change()
         rank_sum_ret = ret.sum().rank(pct=True)
         part2 = 1 - temp1.sum()
         part3 = 1 + rank_sum_ret
         alpha = -part1 * part2 * part3
         return alpha.shift().stack()
+
     ##################################################################
     # def alpha_026(self):
     #     part1 = pd.rolling_sum(self.close, 7) / 7 - self.close
@@ -611,11 +703,12 @@ class GTJA_191:
     #     return alpha.dropna()
 
     def alpha_026(self, window=7, shiftl=5, window2=230):
-        part1 = self.close.rolling(window).mean()-self.close
+        part1 = self.close.rolling(window).mean() - self.close
         delay5 = self.close.shift(shiftl)
         part2 = self.avg_price.rolling(window2, min_periods=1).corr(delay5)
-        alpha = part1+part2
+        alpha = part1 + part2
         return alpha.shift().stack()
+
     ##################################################################
     def alpha_027(self):
         raise NotImplementedError
@@ -633,15 +726,16 @@ class GTJA_191:
     def alpha_028(self, rolling_window=9, alpha_down=3):
         temp1 = self.close - self.low.rolling(rolling_window).min()
         temp2 = (
-            self.high.rolling(rolling_window).max() -
-            self.low.rolling(rolling_window).min()
-            )
+            self.high.rolling(rolling_window).max()
+            - self.low.rolling(rolling_window).min()
+        )
         part1 = 3 * pd.ewma(temp1 * 100 / temp2, alpha=1.0 / alpha_down)
         temp3 = pd.ewma(temp1 * 100 / temp2, alpha=1.0 / alpha_down)
         part2 = 2 * pd.ewma(temp3, alpha=1.0 / alpha_down)
         result = part1 - part2
-        alpha = result.shift()  
+        alpha = result.shift()
         return alpha.stack()
+
     ##################################################################
     # def alpha_029(self):
     #     delay6 = self.close.shift(6)
@@ -652,12 +746,13 @@ class GTJA_191:
     def alpha_029(self, window=6):
         delay6 = self.close.shift(window)
         result = (self.close - delay6) * self.volume / delay6
-        alpha = result.shift() 
+        alpha = result.shift()
         return alpha.stack()
 
     ##################################################################
     def alpha_030(self):
         raise NotImplementedError
+
     ##################################################################
     # def alpha_031(self):
     #     result = (self.close - self.close.rolling(12).mean()) * 100 / self.close.rolling(12).mean()
@@ -665,8 +760,12 @@ class GTJA_191:
     #     return alpha.dropna()
 
     def alpha_031(self, window=12):
-        result = (self.close - self.close.rolling(window).mean()) * 100 / self.close.rolling(window).mean()
-        alpha = result.shift() 
+        result = (
+            (self.close - self.close.rolling(window).mean())
+            * 100
+            / self.close.rolling(window).mean()
+        )
+        alpha = result.shift()
         return alpha.stack()
 
     ##################################################################
@@ -683,9 +782,10 @@ class GTJA_191:
         temp2 = self.volume.rank(axis=1, pct=True)
         temp3 = temp1.rolling(window).corr(temp2)
         temp3 = temp3[(temp3 < np.inf) & (temp3 > -np.inf)].fillna(0)
-        result = (temp3.rank(axis=1, pct=True)).rolling(window).sum()*-1
-        alpha = result.shift() 
+        result = (temp3.rank(axis=1, pct=True)).rolling(window).sum() * -1
+        alpha = result.shift()
         return alpha.stack()
+
     ###############################s###################################
     # def alpha_033(self):
     #     ret = self.close.pct_change()
@@ -693,7 +793,7 @@ class GTJA_191:
     #     temp1=self.low.rolling(window=5,min_periods=1).min()
     #     part1 = temp1.shift(5) - temp1
     #     part1 = part1.iloc[-1, :]
-    #     temp2 = (ret.rolling(240).sum() - ret.rolling(20).sum()) / 220     
+    #     temp2 = (ret.rolling(240).sum() - ret.rolling(20).sum()) / 220
     #     part2 = temp2.rank(axis=1, pct=True)
     #     part2 = part2.iloc[-1, :]
     #     temp3 = self.volume.iloc[-5:, :]
@@ -701,20 +801,23 @@ class GTJA_191:
     #     part3 = part3.iloc[-1, :]
     #     alpha = part1 + part2 + part3
     #     return alpha.dropna()
-    
+
     def alpha_033(self, window=5, window2=240, window3=20):
         ret = self.close.pct_change()
         temp1 = self.low.rolling(window, min_periods=1).min()
         part1 = temp1.shift(5) - temp1
         temp2 = (
-            ret.rolling(window2, min_periods=1).sum() - 
-            ret.rolling(window3, min_periods=1).sum()
-            ) / 220
+            ret.rolling(window2, min_periods=1).sum()
+            - ret.rolling(window3, min_periods=1).sum()
+        ) / 220
         part2 = temp2.rank(axis=1, pct=True)
-        temp3 = self.volume.rolling(window, min_periods=1).rank(axis=0, pct=True)  # TS_RANK
+        temp3 = self.volume.rolling(window, min_periods=1).rank(
+            axis=0, pct=True
+        )  # TS_RANK
         part3 = temp3
         alpha = part1 + part2 + part3
         return alpha.shift().stack()
+
     ##################################################################
     # def alpha_034(self):
     #     result = pd.rolling_mean(self.close, 12) / self.close
@@ -726,6 +829,7 @@ class GTJA_191:
         result = self.close.rolling(window, min_periods=1).mean() / self.close
         alpha = result.shift()
         return alpha.stack()
+
     ##################################################################
     # def alpha_035(self):
     #     n = 15
@@ -760,14 +864,16 @@ class GTJA_191:
             return (x * weight).sum()
 
         part1 = temp1.rolling(window=n).apply(
-            lambda x: weighted_sum(x, weight1), raw=False)
+            lambda x: weighted_sum(x, weight1), raw=False
+        )
         part1 = part1.rank(axis=1, pct=True)
         temp2 = 0.65 * self.open_price + 0.35 * self.open_price
-        temp2 = temp2.rolling(window=k).corr(self.volume)      
+        temp2 = temp2.rolling(window=k).corr(self.volume)
         part2 = temp2.rolling(window=m).apply(
-            lambda x: weighted_sum(x, weight2), raw=False)
-        part2neg = part2*-1
-        result = part1.combine(part2neg, lambda x1, x2: np.minimum(x1, x2))       
+            lambda x: weighted_sum(x, weight2), raw=False
+        )
+        part2neg = part2 * -1
+        result = part1.combine(part2neg, lambda x1, x2: np.minimum(x1, x2))
         alpha = result.shift()
         return alpha.stack()
 
@@ -788,8 +894,9 @@ class GTJA_191:
         part1 = temp1.rolling(window).corr(temp2)
         result = part1.rolling(window2).sum()
         result = result.rank(axis=1, pct=True)
-        alpha = result.shift() 
+        alpha = result.shift()
         return alpha.stack()
+
     ##################################################################
     # def alpha_037(self):
     #     ret = self.close.pct_change()
@@ -807,8 +914,9 @@ class GTJA_191:
         part1 = temp.rank(axis=1, pct=True)
         part2 = temp.shift(shiftl)
         result = -part1 - part2
-        alpha = result.shift() 
+        alpha = result.shift()
         return alpha.stack()
+
     ##################################################################
     # def alpha_038(self):
     #     #sum_20 = pd.rolling_sum(self.high, 20) / 20
@@ -820,13 +928,14 @@ class GTJA_191:
     #     return alpha
 
     def alpha_038(self, window=20, diffl=2):
-        #sum_20 = pd.rolling_sum(self.high, 20) / 20
+        # sum_20 = pd.rolling_sum(self.high, 20) / 20
         sum_20 = self.high.rolling(window).mean()
         delta2 = self.high.diff(diffl)
-        condition = (sum_20 < self.high)
+        condition = sum_20 < self.high
         result = -delta2[condition].fillna(0)
-        alpha = result.shift() 
+        alpha = result.shift()
         return alpha.stack()
+
     ##################################################################
     # def alpha_039(self):
     #     n = 8
@@ -857,9 +966,8 @@ class GTJA_191:
     #     alpha = alpha.dropna()
     #     return alpha
     def alpha_039(
-            self, n=8, m=12, window=180,
-            window2=37, window3=14, rolling_window=12
-            ):
+        self, n=8, m=12, window=180, window2=37, window3=14, rolling_window=12
+    ):
         temp1 = self.close.diff(2)
         seq1 = [2 * i / (n * (n + 1)) for i in range(1, n + 1)]
         seq2 = [2 * i / (m * (m + 1)) for i in range(1, m + 1)]
@@ -874,14 +982,15 @@ class GTJA_191:
         sum_vol = volume_180.rolling(window2).sum()
         # temp3 = pd.rolling_corr(temp2, sum_vol, 14)
         temp3 = temp2.rolling(window3).corr(sum_vol)
-        temp3 = temp3*-1
+        temp3 = temp3 * -1
         part2 = temp3.rolling(rolling_window).apply(lambda x: np.sum(x * weight2))
         part2.rank(axis=1, pct=True)
-        result = part1 - part2 
+        result = part1 - part2
         alpha = result
         alpha = alpha[(alpha < np.inf) & (alpha > -np.inf)]
         alpha = alpha.dropna().shift()
         return alpha.stack()
+
     ##################################################################
     # def alpha_040(self):
     #     delay1 = self.close.shift()
@@ -901,7 +1010,7 @@ class GTJA_191:
 
     def alpha_040(self, window=26):
         delay1 = self.close.shift()
-        condition = (self.close > delay1)
+        condition = self.close > delay1
         vol = self.volume[condition].fillna(0)
         # vol_sum = pd.rolling_sum(vol, 26)
         vol_sum = vol.rolling(window).sum()
@@ -909,7 +1018,7 @@ class GTJA_191:
         # vol1_sum = pd.rolling_sum(vol1, 26)
         vol1_sum = vol1.rolling(window).sum()
         result = 100 * vol_sum / vol1_sum
-        result = result 
+        result = result
         alpha = result.shift()
         return alpha.stack()
 
@@ -925,7 +1034,7 @@ class GTJA_191:
         delta_avg = self.avg_price.diff(diffn)
         part = np.maximum(delta_avg, maxn)
         result = -part.rank(axis=1, pct=True)
-        alpha = result.shift() 
+        alpha = result.shift()
         return alpha.stack()
 
     ##################################################################
@@ -945,9 +1054,10 @@ class GTJA_191:
         part2 = self.high.rolling(window1).std()
         part2 = part2.rank(axis=1, pct=True)
         result = -part1 * part2
-        alpha = result 
+        alpha = result
         alpha = alpha.shift()
         return alpha.stack()
+
     ##################################################################
     # def alpha_043(self):
     #     delay1 = self.close.shift()
@@ -963,14 +1073,15 @@ class GTJA_191:
 
     def alpha_043(self, window1=6):
         delay1 = self.close.shift()
-        condition1 = (self.close > delay1)
-        condition2 = (self.close < delay1)
+        condition1 = self.close > delay1
+        condition2 = self.close < delay1
         temp1 = self.volume[condition1].fillna(0)
         temp2 = -self.volume[condition2].fillna(0)
         result = temp1 + temp2
         result = result.rolling(window1).sum()
-        alpha = result.shift() 
+        alpha = result.shift()
         return alpha.stack()
+
     ##################################################################
     # def alpha_044(self):
     #     part1 = self.open_price * 0.4 + self.close * 0.6
@@ -994,11 +1105,8 @@ class GTJA_191:
     #     alpha = alpha.dropna()
     #     return alpha
 
-    def alpha_044(
-            self, p1=10, p2=7,
-            p3=6, p4=10, p5=4,
-            p6=3):
- 
+    def alpha_044(self, p1=10, p2=7, p3=6, p4=10, p5=4, p6=3):
+
         temp1 = self.low.rolling(p1).mean().rolling(p2).corr(self.volume)
         seq1 = [2 * i / (p3 * (p3 + 1)) for i in range(1, p3 + 1)]
         seq2 = [2 * i / (p4 * (p4 + 1)) for i in range(1, p4 + 1)]
@@ -1009,9 +1117,10 @@ class GTJA_191:
         temp2 = self.avg_price.diff(p6)
         part2 = temp2.rolling(p4).apply(lambda x: np.sum(x * weight2))
         part2 = part1.rolling(p5).rank(axis=0, pct=True)
-        alpha = part1 + part2 
+        alpha = part1 + part2
         alpha = alpha.shift()
         return alpha.stack()
+
     ##################################################################
     # def alpha_045(self):
     #     temp1 = self.close * 0.6 + self.open_price * 0.4
@@ -1034,8 +1143,9 @@ class GTJA_191:
         part2 = self.avg_price.rolling(window2).corr(temp2)
         part2 = part2.rank(axis=1, pct=True)
         result = part1 * part2
-        alpha = result.shift() 
+        alpha = result.shift()
         return alpha.stack()
+
     ##################################################################
     # def alpha_046(self):
     #     # part1 = pd.rolling_mean(self.close, 3)
@@ -1054,12 +1164,13 @@ class GTJA_191:
 
     def alpha_046(self, window=3, pace=2):
         part1 = self.close.rolling(window, min_periods=1).mean()
-        part2 = self.close.rolling(window*pace*1, min_periods=1).mean()
-        part3 = self.close.rolling(window*pace*2, min_periods=1).mean()
-        part4 = self.close.rolling(window*pace*4, min_periods=1).mean()
+        part2 = self.close.rolling(window * pace * 1, min_periods=1).mean()
+        part3 = self.close.rolling(window * pace * 2, min_periods=1).mean()
+        part4 = self.close.rolling(window * pace * 4, min_periods=1).mean()
         result = (part1 + part2 + part3 + part4) * 0.25 / self.close
-        alpha = result.shift() 
+        alpha = result.shift()
         return alpha.stack()
+
     ##################################################################
     # def alpha_047(self):
     #    # part1 = pd.rolling_max(self.high, 6) - self.close
@@ -1074,12 +1185,16 @@ class GTJA_191:
     #     return alpha
     def alpha_047(self, window=6):
         part1 = self.high.rolling(window, min_periods=1).max() - self.close
-        part2 = self.high.rolling(window, min_periods=1).max() - self.low.rolling(window, min_periods=1).min()
+        part2 = (
+            self.high.rolling(window, min_periods=1).max()
+            - self.low.rolling(window, min_periods=1).min()
+        )
         alpha = 1.0 / 9
         result = (100 * part1 / part2).ewm(alpha=alpha, adjust=False).mean()
 
-        alpha = result.shift() 
+        alpha = result.shift()
         return alpha.stack()
+
     ##################################################################
 
     # def alpha_048(self):
@@ -1107,29 +1222,59 @@ class GTJA_191:
     #     alpha = result.iloc[-1, :].dropna()
     #     return alpha
     def alpha_048(self, window1=5, window2=20):
-        condition1 = (self.close > self.close.shift())
-        condition2 = (self.close.shift() > self.close.shift(2))
-        condition3 = (self.close.shift(2) > self.close.shift(3))
+        condition1 = self.close > self.close.shift()
+        condition2 = self.close.shift() > self.close.shift(2)
+        condition3 = self.close.shift(2) > self.close.shift(3)
 
-        indicator1 = pd.DataFrame(np.ones(self.close.shape), index=self.close.index, columns=self.close.columns)[
-            condition1].fillna(0)
-        indicator2 = pd.DataFrame(np.ones(self.close.shape), index=self.close.index, columns=self.close.columns)[
-            condition2].fillna(0)
-        indicator3 = pd.DataFrame(np.ones(self.close.shape), index=self.close.index, columns=self.close.columns)[
-            condition3].fillna(0)
+        indicator1 = pd.DataFrame(
+            np.ones(self.close.shape),
+            index=self.close.index,
+            columns=self.close.columns,
+        )[condition1].fillna(0)
+        indicator2 = pd.DataFrame(
+            np.ones(self.close.shape),
+            index=self.close.index,
+            columns=self.close.columns,
+        )[condition2].fillna(0)
+        indicator3 = pd.DataFrame(
+            np.ones(self.close.shape),
+            index=self.close.index,
+            columns=self.close.columns,
+        )[condition3].fillna(0)
 
-        indicator11 = -pd.DataFrame(np.ones(self.close.shape), index=self.close.index, columns=self.close.columns)[
-            (~condition1) & (self.close != self.close.shift())].fillna(0)
-        indicator22 = -pd.DataFrame(np.ones(self.close.shape), index=self.close.index, columns=self.close.columns)[
-            (~condition2) & (self.close.shift() != self.close.shift(2))].fillna(0)
-        indicator33 = -pd.DataFrame(np.ones(self.close.shape), index=self.close.index, columns=self.close.columns)[
-            (~condition3) & (self.close.shift(2) != self.close.shift(3))].fillna(0)
+        indicator11 = -pd.DataFrame(
+            np.ones(self.close.shape),
+            index=self.close.index,
+            columns=self.close.columns,
+        )[(~condition1) & (self.close != self.close.shift())].fillna(0)
+        indicator22 = -pd.DataFrame(
+            np.ones(self.close.shape),
+            index=self.close.index,
+            columns=self.close.columns,
+        )[(~condition2) & (self.close.shift() != self.close.shift(2))].fillna(0)
+        indicator33 = -pd.DataFrame(
+            np.ones(self.close.shape),
+            index=self.close.index,
+            columns=self.close.columns,
+        )[(~condition3) & (self.close.shift(2) != self.close.shift(3))].fillna(0)
 
-        summ = indicator1 + indicator2 + indicator3 + indicator11 + indicator22 + indicator33
-       
-        result = -summ * self.volume.rolling(window1, min_periods=1).sum() / self.volume.rolling(window2, min_periods=1).sum()
-        alpha = result.shift() 
+        summ = (
+            indicator1
+            + indicator2
+            + indicator3
+            + indicator11
+            + indicator22
+            + indicator33
+        )
+
+        result = (
+            -summ
+            * self.volume.rolling(window1, min_periods=1).sum()
+            / self.volume.rolling(window2, min_periods=1).sum()
+        )
+        alpha = result.shift()
         return alpha.stack()
+
     ##################################################################
     # def alpha_049(self):
     #     delay_high = self.high.shift()
@@ -1150,8 +1295,8 @@ class GTJA_191:
     def alpha_049(self, window=12):
         delay_high = self.high.shift()
         delay_low = self.low.shift()
-        condition1 = (self.high + self.low >= delay_high + delay_low)
-        condition2 = (self.high + self.low <= delay_high + delay_low)
+        condition1 = self.high + self.low >= delay_high + delay_low
+        condition2 = self.high + self.low <= delay_high + delay_low
         part1 = np.maximum(np.abs(self.high - delay_high), np.abs(self.low - delay_low))
         part1 = part1[~condition1]
         part1 = part1.rolling(window).sum()
@@ -1159,7 +1304,7 @@ class GTJA_191:
         part2 = part2[~condition2]
         part2 = part2.rolling(window).sum()
         result = part1 / (part1 + part2)
-        alpha = result.shift() 
+        alpha = result.shift()
         return alpha.stack()
 
     ##################################################################
@@ -1183,8 +1328,9 @@ class GTJA_191:
         delay = ((self.high + self.low + self.close) / 3).shift()
         part1 = (np.maximum(self.high - delay, 0)).rolling(window).sum()
         part2 = (np.maximum(delay - self.low, 0)).rolling(window).sum()
-        alpha = part1 + part2 
+        alpha = part1 + part2
         return alpha.shift().stack()
+
     ##################################################################
     # def alpha_053(self):
     #     delay = self.close.shift()
@@ -1196,10 +1342,11 @@ class GTJA_191:
     def alpha_053(self, window=12):
         delay = self.close.shift()
         condition = self.close > delay
-        result = self.close[condition] 
+        result = self.close[condition]
         alpha = result.rolling(window).count() * 100 / 12
-          
+
         return alpha.shift().stack()
+
     ##################################################################
     # def alpha_054(self):
     #     part1 = (self.close - self.open_price).abs()
@@ -1214,7 +1361,7 @@ class GTJA_191:
         part2 = self.close - self.open_price
         part1 = part2.abs().rolling(window).std()
         part3 = self.close.rolling(window).corr(self.open_price)
-        result = (part1 + part2 + part3) 
+        result = part1 + part2 + part3
         alpha = result.rank(pct=True).shift()
         return alpha.stack()
 
@@ -1239,15 +1386,17 @@ class GTJA_191:
     #     part1 = part1.apply(lambda x: 0 if x < 1 else None)
     #     alpha = part1.fillna(1)
     #     return alpha.dropna()
-    def alpha_056(
-            self, window1=12, 
-            window2=20, window3=40, 
-            window4=13, window5=4):
+    def alpha_056(self, window1=12, window2=20, window3=40, window4=13, window5=4):
         part1 = self.open_price - self.open_price.rolling(window1).min()
         part1 = part1.rank(pct=True)
         temp1 = (self.high + self.low) / 2
         temp1 = temp1.rolling(window1, min_periods=1).sum()
-        temp2 = self.volume.rolling(window3, min_periods=1).mean().rolling(window2, min_periods=1).sum()
+        temp2 = (
+            self.volume.rolling(window3, min_periods=1)
+            .mean()
+            .rolling(window2, min_periods=1)
+            .sum()
+        )
         part2 = temp1.rolling(window5).corr(temp2)
         part2 = (part2.rank(pct=1)) ** 5
         part2 = part2.rank(pct=1)
@@ -1255,6 +1404,7 @@ class GTJA_191:
         part1 = part1.applymap(lambda x: 0 if x < 1 else None)
         alpha = part1.fillna(1).shift()
         return alpha.stack()
+
     ##################################################################
     # def alpha_057(self):
     #   #  part1 = self.close - pd.rolling_min(self.low, 9)
@@ -1270,9 +1420,10 @@ class GTJA_191:
     def alpha_057(self, window=9, alphadown=3):
         part1 = self.close - self.low.rolling(window).min()
         part2 = self.high.rolling(window).max() - self.low.rolling(window).min()
-        result = (100 * part1 / part2).ewm(alpha=1.0/alphadown).mean()
-        alpha = result.shift() 
+        result = (100 * part1 / part2).ewm(alpha=1.0 / alphadown).mean()
+        alpha = result.shift()
         return alpha.stack()
+
     ##################################################################
     # def alpha_058(self):
     #     delay = self.close.shift()
@@ -1284,8 +1435,8 @@ class GTJA_191:
     def alpha_058(self, window=20):
         delay = self.close.shift()
         condition = self.close > delay
-        result = self.close[condition].rolling(window).count()*100/20
-        alpha = result.shift() 
+        result = self.close[condition].rolling(window).count() * 100 / 20
+        alpha = result.shift()
         return alpha.stack()
         ##################################################################
 
@@ -1303,13 +1454,14 @@ class GTJA_191:
 
     def alpha_059(self, window=20):
         delay = self.close.shift()
-        condition1 = (self.close > delay)
-        condition2 = (self.close < delay)
+        condition1 = self.close > delay
+        condition2 = self.close < delay
         part1 = np.minimum(self.low[condition1], delay[condition1]).fillna(0)
         part2 = np.maximum(self.high[condition2], delay[condition2]).fillna(0)
         result = self.close - part1 - part2
         alpha = result.rolling(window).sum().shift()
         return alpha.stack()
+
     ##################################################################
     # def alpha_060(self):
     #     part1 = (self.close.iloc[-20:, :] - self.low.iloc[-20:, :]) - (
@@ -1321,10 +1473,11 @@ class GTJA_191:
 
     def alpha_060(self, window=20):
         part1 = (self.close - self.low) - (self.high - self.close)
-        part2 = self.high - self.low 
+        part2 = self.high - self.low
         result = self.volume * part1 / part2
         alpha = result.rolling(window).sum().shift()
         return alpha.stack()
+
     ##################################################################
     # def alpha_061(self):
     #     n = 12
@@ -1354,7 +1507,7 @@ class GTJA_191:
         n = 12
         m = 17
         temp1 = self.avg_price.diff()
-        temp1 = temp1 
+        temp1 = temp1
         seq1 = [2 * i / (n * (n + 1)) for i in range(1, n + 1)]
         seq2 = [2 * i / (m * (m + 1)) for i in range(1, m + 1)]
 
@@ -1372,6 +1525,7 @@ class GTJA_191:
         pmax = part1.where(part1 > part2, merged)
         alpha = pmax.shift()
         return alpha.stack()
+
     ##################################################################
     # def alpha_062(self):
     #     volume_rank = self.volume.rank(axis=1, pct=1)
@@ -1404,7 +1558,8 @@ class GTJA_191:
         part2 = part2.ewm(alpha=1.0 / alphadown).mean()
         result = part1 * 100 / part2
         alpha = result.shift()
-        return alpha.stack() 
+        return alpha.stack()
+
     ##################################################################
     # def alpha_064(self):
     #     n = 4
@@ -1430,9 +1585,13 @@ class GTJA_191:
     #     alpha = alpha[(alpha < np.inf) & (alpha > -np.inf)]
     #     alpha = alpha.dropna()
     #     return alpha
-    def alpha_064(self, n=4, m=14,window1=4, window2=60):
- 
-        temp1 = self.avg_price.rank(axis=1, pct=1).rolling(n, min_periods=1).corr(self.volume.rank(axis=1, pct=1))
+    def alpha_064(self, n=4, m=14, window1=4, window2=60):
+
+        temp1 = (
+            self.avg_price.rank(axis=1, pct=1)
+            .rolling(n, min_periods=1)
+            .corr(self.volume.rank(axis=1, pct=1))
+        )
         seq1 = [2 * i / (n * (n + 1)) for i in range(1, n + 1)]
         seq2 = [2 * i / (m * (m + 1)) for i in range(1, m + 1)]
         weight1 = np.array(seq1)
@@ -1440,11 +1599,15 @@ class GTJA_191:
         part1 = temp1.rolling(n).apply(lambda x: np.sum(x * weight1))
         part1 = part1.rank(axis=1, pct=True)
 
-        temp2 = self.close.rank(axis=1, pct=1).rolling(window1).corr(self.volume.rolling(window2).mean())
+        temp2 = (
+            self.close.rank(axis=1, pct=1)
+            .rolling(window1)
+            .corr(self.volume.rolling(window2).mean())
+        )
         temp2 = np.maximum(temp2, 13)
         part2 = temp2.rolling(window=m).apply(lambda x: np.sum(x * weight2))
         part2 = -part2.rank(axis=1, pct=1)
-        pmax=part1.where(part1 > part2, part2)
+        pmax = part1.where(part1 > part2, part2)
         alpha = pmax.shift()
         return alpha.stack()
 
@@ -1457,6 +1620,7 @@ class GTJA_191:
         alpha = self.close.rolling(window1).mean() / self.close
         alpha = alpha.shift()
         return alpha.stack()
+
     ##################################################################
     # def alpha_066(self):
     #     part1 = self.close.iloc[-6:, :]
@@ -1468,6 +1632,7 @@ class GTJA_191:
         alpha = (self.close - part1) / part1
         alpha = alpha.shift()
         return alpha.stack()
+
     ##################################################################
     # def alpha_067(self):
     #     temp1 = self.close - self.close.shift()
@@ -1489,14 +1654,14 @@ class GTJA_191:
         part2 = temp2.ewm(alpha=1.0 / alphadown).mean()
         result = part1 * 100 / part2
         alpha = result.shift()
-        return alpha.stack()      
+        return alpha.stack()
 
     ##################################################################
     def alpha_068(self, alphadown=15):
         part1 = (self.high + self.low) / 2 - self.high.shift()
         part2 = 0.5 * self.low.shift() * (self.high - self.low) / self.volume
         result = (part1 + part2) * 100
-       # result = pd.ewma(result, alpha=2.0 / 15)
+        # result = pd.ewma(result, alpha=2.0 / 15)
         result = result.ewm(alpha=2.0 / alphadown).mean()
         alpha = result.shift()
         return alpha.stack()
@@ -1512,9 +1677,10 @@ class GTJA_191:
     #     alpha = self.amount.iloc[-6:, :].std().dropna()
     #     return alpha
     def alpha_070(self, window1=6):
- 
+
         alpha = self.amount.rolling(window1).std().shift()
         return alpha.stack()
+
     #############################################################################
     # def alpha_071(self):
     #     # (CLOSE-MEAN(CLOSE,24))/MEAN(CLOSE,24)*100
@@ -1524,10 +1690,14 @@ class GTJA_191:
     #     alpha = data.iloc[-1].dropna()
     #     return alpha
     def alpha_071(self, window1=24):
- 
-        data = self.close - self.close.rolling(window1).mean() / self.close.rolling(window1).mean()
+
+        data = (
+            self.close
+            - self.close.rolling(window1).mean() / self.close.rolling(window1).mean()
+        )
         alpha = data.shift()
         return alpha.stack()
+
     #############################################################################
     # def alpha_072(self):
     #     # SMA((TSMAX(HIGH,6)-CLOSE)/(TSMAX(HIGH,6)-TSMIN(LOW,6))*100,15,1)
@@ -1542,11 +1712,12 @@ class GTJA_191:
     def alpha_072(self, windows1=6, alphadown=15):
         # SMA((TSMAX(HIGH,6)-CLOSE)/(TSMAX(HIGH,6)-TSMIN(LOW,6))*100,15,1)
         #
-       # data1 = pd.rolling_max(self.high, 6) - self.close
+        # data1 = pd.rolling_max(self.high, 6) - self.close
         data1 = self.high.rolling(windows1).max() - self.close
         data2 = self.high.rolling(windows1).max() - self.low.rolling(windows1).min()
-        alpha = (data1 / data2 *100).ewm(alpha=1/alphadown).mean().shift()
+        alpha = (data1 / data2 * 100).ewm(alpha=1 / alphadown).mean().shift()
         return alpha.stack()
+
     #############################################################################
     def alpha_073(self):
         raise NotImplementedError
@@ -1570,18 +1741,19 @@ class GTJA_191:
     def alpha_074(self, window1=20, window2=40, window3=7, window4=6):
         # (RANK(CORR(SUM(((LOW * 0.35) + (VWAP * 0.65)), 20), SUM(MEAN(VOLUME,40), 20), 7)) + RANK(CORR(RANK(VWAP), RANK(VOLUME), 6)))
         #
-       # data1 = pd.rolling_sum((self.low * 0.35 + self.avg_price * 0.65), window=20)
-        data1 = (self.low*0.35+self.avg_price*0.65).rolling(window1).sum()
-       # data2 = pd.rolling_mean(self.volume, window=40)
+        # data1 = pd.rolling_sum((self.low * 0.35 + self.avg_price * 0.65), window=20)
+        data1 = (self.low * 0.35 + self.avg_price * 0.65).rolling(window1).sum()
+        # data2 = pd.rolling_mean(self.volume, window=40)
         data2 = self.volume.rolling(window2).mean()
-       # rank1 = pd.rolling_corr(data1, data2, window=7).rank(axis=1, pct=True)
+        # rank1 = pd.rolling_corr(data1, data2, window=7).rank(axis=1, pct=True)
         rank1 = data1.rolling(window3).corr(data2).rank(axis=1, pct=True)
         data3 = self.avg_price.rank(axis=1, pct=True)
         data4 = self.volume.rank(axis=1, pct=True)
-       # rank2 = pd.rolling_corr(data3, data4, window=6).rank(axis=1, pct=True)
+        # rank2 = pd.rolling_corr(data3, data4, window=6).rank(axis=1, pct=True)
         rank2 = data3.rolling(window4).corr(data4).rank(axis=1, pct=True)
         alpha = (rank1 + rank2).shift()
         return alpha.stack()
+
     #############################################################################
     def alpha_075(self):
         # COUNT(CLOSE>OPEN & BANCHMARKINDEXCLOSE<BANCHMARKINDEXOPEN,50)/COUNT(BANCHMARKINDEXCLOSE<BANCHMARKINDEXOPEN,50)
@@ -1593,7 +1765,7 @@ class GTJA_191:
         # data4 = data2[data2 > data3]
         # alpha = 1 - data4.isnull().sum(axis=0) / len(data1)
         raise NotImplementedError
- 
+
     #############################################################################
     # def alpha_076(self):
     #     # STD(ABS((CLOSE/DELAY(CLOSE,1)-1))/VOLUME,20)/MEAN(ABS((CLOSE/DELAY(CLOSE,1)-1))/VOLUME,20)
@@ -1604,11 +1776,12 @@ class GTJA_191:
     #     return alpha
     def alpha_076(self, window1=20):
         # STD(ABS((CLOSE/DELAY(CLOSE,1)-1))/VOLUME,20)/MEAN(ABS((CLOSE/DELAY(CLOSE,1)-1))/VOLUME,20)
-        data0= abs((self.close / ((self.prev_close - 1) / self.volume)))
+        data0 = abs((self.close / ((self.prev_close - 1) / self.volume)))
         data1 = data0.rolling(window1).std()
         data2 = data0.rolling(window1).mean()
         alpha = (data1 / data2).shift()
         return alpha.stack()
+
     #############################################################################
     # def alpha_077(self):
     #     # MIN(RANK(DECAYLINEAR(((((HIGH + LOW) / 2) + HIGH)  -  (VWAP + HIGH)), 20)), RANK(DECAYLINEAR(CORR(((HIGH + LOW) / 2), MEAN(VOLUME,40), 3), 6)))
@@ -1629,21 +1802,30 @@ class GTJA_191:
     def alpha_077(self, window1=20, window2=40, window3=3, window4=6):
         # MIN(RANK(DECAYLINEAR(((((HIGH + LOW) / 2) + HIGH)  -  (VWAP + HIGH)), 20)), RANK(DECAYLINEAR(CORR(((HIGH + LOW) / 2), MEAN(VOLUME,40), 3), 6)))
         #
-        data1 = ((self.high + self.low) / 2 + self.high - (self.avg_price + self.high)) 
+        data1 = (self.high + self.low) / 2 + self.high - (self.avg_price + self.high)
         decay_weights = np.arange(1, window1 + 1, 1)[::-1]
         decay_weights = decay_weights / decay_weights.sum()
-        rank1 = data1.rolling(window=window1).apply(lambda x:np.sum(x * decay_weights)).rank(axis=1, pct=True)
- 
+        rank1 = (
+            data1.rolling(window=window1)
+            .apply(lambda x: np.sum(x * decay_weights))
+            .rank(axis=1, pct=True)
+        )
+
         data2_0 = (self.high + self.low) / 2
         data2_1 = self.volume.rolling(window2).mean()
         data2 = data2_0.rolling(window3).corr(data2_1)
- 
+
         decay_weights2 = np.arange(1, window4 + 1, 1)[::-1]
         decay_weights2 = decay_weights2 / decay_weights2.sum()
-        rank2 = data2.rolling(window4).apply(lambda x: np.sum(x * decay_weights2)).rank(axis=1, pct=True)
-        
+        rank2 = (
+            data2.rolling(window4)
+            .apply(lambda x: np.sum(x * decay_weights2))
+            .rank(axis=1, pct=True)
+        )
+
         alpha = rank1.where(rank1 < rank2, rank2).shift()
         return alpha.stack()
+
     #############################################################################
     # def alpha_078(self):
     #     # ((HIGH+LOW+CLOSE)/3-MA((HIGH+LOW+CLOSE)/3,12))/(0.015*MEAN(ABS(CLOSE-MEAN((HIGH+LOW+CLOSE)/3,12)),12))
@@ -1663,15 +1845,15 @@ class GTJA_191:
         # data1 = (self.high + self.low + self.close) / 3 - pd.rolling_mean((self.high + self.low + self.close) / 3,
         #                                                                   window=12)
 
-        data1 = (
-            (self.high + self.low + self.close) / 3 - 
-            ((self.high + self.low + self.close) / 3).rolling(rolling_window).mean()
-            )
+        data1 = (self.high + self.low + self.close) / 3 - (
+            (self.high + self.low + self.close) / 3
+        ).rolling(rolling_window).mean()
         data20 = (self.high + self.low + self.close) / 3
         data2 = abs(self.close - data20.rolling(rolling_window).mean())
         data3 = data2.rolling(rolling_window).mean() * p1
         alpha = (data1 / data3).shift()
         return alpha.stack()
+
     #############################################################################
     # def alpha_079(self):
     #     # SMA(MAX(CLOSE-DELAY(CLOSE,1),0),12,1)/SMA(ABS(CLOSE-DELAY(CLOSE,1)),12,1)*100
@@ -1682,12 +1864,17 @@ class GTJA_191:
     #     data2 = (abs(self.close-self.prev_close)).ewm(alpha=1/12).mean()
     #     alpha = (data1 / data2 * 100).iloc[-1].dropna()
     #     return alpha
-    
+
     def alpha_079(self, alphadown=12):
-        data1 = (np.maximum((self.close - self.prev_close), 0)).ewm(alpha=1 / alphadown).mean()
-        data2 = (abs(self.close-self.prev_close)).ewm(alpha=1/alphadown).mean()
+        data1 = (
+            (np.maximum((self.close - self.prev_close), 0))
+            .ewm(alpha=1 / alphadown)
+            .mean()
+        )
+        data2 = (abs(self.close - self.prev_close)).ewm(alpha=1 / alphadown).mean()
         alpha = (data1 / data2 * 100).shift()
         return alpha.stack()
+
     #############################################################################
     # def alpha_080(self):
     #     # (VOLUME-DELAY(VOLUME,5))/DELAY(VOLUME,5)*100
@@ -1698,8 +1885,11 @@ class GTJA_191:
     def alpha_080(self, shiftl=5):
         # (VOLUME-DELAY(VOLUME,5))/DELAY(VOLUME,5)*100
         #
-        alpha = ((self.volume - self.volume.shift(shiftl)) / self.volume.shift(shiftl) * 100).shift()
+        alpha = (
+            (self.volume - self.volume.shift(shiftl)) / self.volume.shift(shiftl) * 100
+        ).shift()
         return alpha.stack()
+
     #############################################################################
     # def alpha_081(self):
     #    # result = pd.ewma(self.volume, alpha=2.0 / 21)
@@ -1708,10 +1898,11 @@ class GTJA_191:
     #     return alpha
 
     def alpha_081(self, alphadown=21):
-       # result = pd.ewma(self.volume, alpha=2.0 / 21)
+        # result = pd.ewma(self.volume, alpha=2.0 / 21)
         result = self.volume.ewm(alpha=2.0 / alphadown).mean()
         alpha = result.shift()
         return alpha.stack()
+
     #############################################################################
     # def alpha_082(self):
     #  #   part1 = pd.rolling_max(self.high, 6) - self.close
@@ -1724,14 +1915,15 @@ class GTJA_191:
     #     return alpha
 
     def alpha_082(self, window1=6, alphadown=20):
-     #   part1 = pd.rolling_max(self.high, 6) - self.close
+        #   part1 = pd.rolling_max(self.high, 6) - self.close
         part1 = self.high.rolling(window1).max() - self.close
-      #  part2 = pd.rolling_max(self.high, 6) - pd.rolling_min(self.low, 6)
+        #  part2 = pd.rolling_max(self.high, 6) - pd.rolling_min(self.low, 6)
         part2 = self.high.rolling(window1).max() - self.low.rolling(window1).min()
-      #  result = pd.ewma(100 * part1 / part2, alpha=1.0 / 20)
-        result = (100*part1/part2).ewm(alpha=1.0/alphadown).mean()
+        #  result = pd.ewma(100 * part1 / part2, alpha=1.0 / 20)
+        result = (100 * part1 / part2).ewm(alpha=1.0 / alphadown).mean()
         alpha = result.shift()
         return alpha.stack()
+
     #############################################################################
     # def alpha_083(self):
     #     part1 = self.high.rank(axis=0, pct=True)
@@ -1747,6 +1939,7 @@ class GTJA_191:
         result = part1.rolling(window1).corr(part2)
         alpha = -result.shift()
         return alpha.stack()
+
     #############################################################################
     # def alpha_084(self):
     #     condition1 = (self.close > self.close.shift())
@@ -1758,13 +1951,14 @@ class GTJA_191:
     #     return alpha
 
     def alpha_084(self, window1=20):
-        condition1 = (self.close > self.close.shift())
-        condition2 = (self.close < self.close.shift())
+        condition1 = self.close > self.close.shift()
+        condition2 = self.close < self.close.shift()
         part1 = self.volume[condition1].fillna(0)
         part2 = -self.volume[condition2].fillna(0)
-        result = part1 + part2 
+        result = part1 + part2
         alpha = result.rolling(window1).sum().shift()
         return alpha.stack()
+
     #############################################################################
     # def alpha_085(self):
     #     temp1 = self.volume.iloc[-20:, :] / self.volume.iloc[-20:, :].mean()
@@ -1780,15 +1974,16 @@ class GTJA_191:
     #     return alpha.dropna()
     def alpha_085(self, window1=20, window2=7):
         temp1mean = self.volume.rolling(window1).mean()
-        temp1 = self.volume/temp1mean
+        temp1 = self.volume / temp1mean
         part1 = temp1.rank(axis=1, pct=True)
         delta = self.close.diff(window2)
-        temp2 = delta.rolling(window1).apply(lambda x:x.rank(pct=True).iloc[-1])
-        part2 = temp2 
+        temp2 = delta.rolling(window1).apply(lambda x: x.rank(pct=True).iloc[-1])
+        part2 = temp2
         part2 = part2
         alpha = part1 * part2
         alpha = alpha.shift()
         return alpha.stack()
+
     #############################################################################
     # def alpha_086(self):
 
@@ -1813,12 +2008,20 @@ class GTJA_191:
 
         delay10 = self.close.shift(shiftl1)
         delay20 = self.close.shift(shiftl2)
-        indicator1 = pd.DataFrame(-np.ones(self.close.shape), index=self.close.index, columns=self.close.columns)
-        indicator2 = pd.DataFrame(np.ones(self.close.shape), index=self.close.index, columns=self.close.columns)
+        indicator1 = pd.DataFrame(
+            -np.ones(self.close.shape),
+            index=self.close.index,
+            columns=self.close.columns,
+        )
+        indicator2 = pd.DataFrame(
+            np.ones(self.close.shape),
+            index=self.close.index,
+            columns=self.close.columns,
+        )
 
         temp = (delay20 - delay10) / 10 - (delay10 - self.close) / 10
-        condition1 = (temp > 0.25)
-        condition2 = (temp < 0)
+        condition1 = temp > 0.25
+        condition2 = temp < 0
         temp2 = (self.close - self.close.shift()) * indicator1
 
         part1 = indicator1[condition1].fillna(0)
@@ -1828,6 +2031,7 @@ class GTJA_191:
         alpha = result.shift()
 
         return alpha.stack()
+
     #############################################################################
     # def alpha_087(self):
     #     n = 7
@@ -1859,14 +2063,23 @@ class GTJA_191:
         seq2 = [2 * i / (m * (m + 1)) for i in range(1, m + 1)]
         weight1 = np.array(seq1)
         weight2 = np.array(seq2)
-        part1 = temp1.rolling(window=n).apply(lambda x: np.sum(x * weight1)).rank(axis=1, pct=True)
+        part1 = (
+            temp1.rolling(window=n)
+            .apply(lambda x: np.sum(x * weight1))
+            .rank(axis=1, pct=True)
+        )
         temp2 = self.low - self.avg_price
         temp3 = self.open_price - 0.5 * (self.high + self.low)
         temp2 = temp2 / temp3
-        part2 = -temp2.rolling(window=m).apply(lambda x: np.sum(x * weight2)).rank(axis=1, pct=True)
-        alpha = part1 + part2 
+        part2 = (
+            -temp2.rolling(window=m)
+            .apply(lambda x: np.sum(x * weight2))
+            .rank(axis=1, pct=True)
+        )
+        alpha = part1 + part2
         alpha = alpha.shift()
         return alpha.stack()
+
     # def alpha_88(self):
     #     # (close-delay(close,20))/delay(close,20)*100
     #     ####################
@@ -1878,15 +2091,18 @@ class GTJA_191:
     def alpha_088(self, shiftl=20, n=1):
         # (close-delay(close,20))/delay(close,20)*100
         ####################
-        alpha = (self.close-self.close.shift(shiftl))/self.close.shift(shiftl+n)*100
+        alpha = (
+            (self.close - self.close.shift(shiftl)) / self.close.shift(shiftl + n) * 100
+        )
         alpha = alpha.shift()
         return alpha.stack()
+
     # def alpha_89(self):
     #     # 2*(sma(close,13,2)-sma(close,27,2)-sma(sma(close,13,2)-sma(close,27,2),10,2))
     #     ######################
     #     # data1 = pd.ewma(self.close, span=12, adjust=False)
     #     # data2 = pd.ewma(self.close, span=26, adjust=False)
-    #     # data3 = pd.ewma(data1 - data2, span=9, adjust=False)     
+    #     # data3 = pd.ewma(data1 - data2, span=9, adjust=False)
     #     data1 = self.close.ewm(span=12,adjust=False).mean()
     #     data2 = self.close.ewm(span=26,adjust=False).mean()
     #     data3= (data1-data2).ewm(span=9,adjust=False).mean()
@@ -1897,8 +2113,8 @@ class GTJA_191:
     def alpha_089(self, span1=12, span2=26, span3=9):
         data1 = self.close.ewm(span1, adjust=False).mean()
         data2 = self.close.ewm(span2, adjust=False).mean()
-        data3 = (data1-data2).ewm(span3, adjust=False).mean()
-        alpha = ((data1 - data2 - data3) * 2) 
+        data3 = (data1 - data2).ewm(span3, adjust=False).mean()
+        alpha = (data1 - data2 - data3) * 2
         alpha = alpha.shift()
         return alpha.stack()
 
@@ -1941,7 +2157,7 @@ class GTJA_191:
         # ((rank((close-max(close,5)))*rank(corr((mean(volume,40)),low,5)))*-1)
         #################
         data1 = self.close - self.close.rolling(window1).max()
-        rank1 = data1.rank(axis=1,pct=True)
+        rank1 = data1.rank(axis=1, pct=True)
         # mean = pd.rolling_mean(self.volume, window=40)
         mean = self.volume.rolling(window2).mean()
         corr = mean.rolling(window3).corr(self.low)
@@ -1962,9 +2178,12 @@ class GTJA_191:
     #     alpha = alpha.dropna()
     #     return alpha
     def alpha_092(self, window1=3, window2=180, window3=13, window4=5, window5=15):
-        delta = (self.close * 0.35+self.avg_price*0.65) -\
-            (self.close * 0.35 + self.avg_price*0.65).diff(2)
-        rank1 = delta.rolling(window1).apply(self.func_decaylinear).rank(axis=1, pct=True)
+        delta = (self.close * 0.35 + self.avg_price * 0.65) - (
+            self.close * 0.35 + self.avg_price * 0.65
+        ).diff(2)
+        rank1 = (
+            delta.rolling(window1).apply(self.func_decaylinear).rank(axis=1, pct=True)
+        )
         vm1 = self.volume.rolling(window2).mean()
         cor1 = vm1.rolling(window3).corr(self.close).abs()
         cor1 = cor1.replace([np.inf, -np.inf], 1)
@@ -1978,7 +2197,6 @@ class GTJA_191:
         alpha = alpha.shift()
         return alpha.stack()
 
-         
     # def alpha_93(self):
     #     # SUM((OPEN>=DELAY(OPEN,1)?0:MAX((OPEN-LOW),(OPEN-DELAY(OPEN,1)))),20) #
     #     cond = self.open_price >= self.open_price.shift()
@@ -2001,6 +2219,7 @@ class GTJA_191:
         alpha = data2.rolling(window1).sum()
         alpha = alpha.shift()
         return alpha.stack()
+
     # def alpha_94(self):
     #     # SUM((CLOSE>DELAY(CLOSE,1)?VOLUME:(CLOSE<DELAY(CLOSE,1)?-VOLUME:0)),30) #
     #     cond1 = self.close > self.prev_close
@@ -2022,6 +2241,7 @@ class GTJA_191:
         alpha = value.rolling(window1).sum()
         alpha = alpha.shift()
         return alpha.stack()
+
     # def alpha_95(self):
     #     # STD(AMOUNT,20) #
     #     alpha = self.amount.iloc[-20:, :].std()
@@ -2050,10 +2270,19 @@ class GTJA_191:
         # sma1 = pd.ewma(
         #     100 * (self.close - self.low.rolling(9).min()) / (self.high.rolling(9).max() - self.low.rolling(9).min()),
         #     span=5, adjust=False)
-        sma1 = (100*(self.close-self.low.rolling(window1).min())/(self.high.rolling(window1).max()-self.low.rolling(window1).min())).ewm(span=window2, adjust=False).mean()
-        alpha = sma1.ewm(span=window2, adjust=False).mean() 
+        sma1 = (
+            (
+                100
+                * (self.close - self.low.rolling(window1).min())
+                / (self.high.rolling(window1).max() - self.low.rolling(window1).min())
+            )
+            .ewm(span=window2, adjust=False)
+            .mean()
+        )
+        alpha = sma1.ewm(span=window2, adjust=False).mean()
         alpha = alpha.shift()
         return alpha.stack()
+
     # def alpha_97(self):
     #     # STD(VOLUME,10) #
     #     alpha = self.volume.iloc[-10:, :].std()
@@ -2065,6 +2294,7 @@ class GTJA_191:
         alpha = self.volume.rolling(window1).std()
         alpha = alpha.shift()
         return alpha.stack()
+
     # def alpha_98(self):
     #     # ((((DELTA((SUM(CLOSE,100)/100),100)/DELAY(CLOSE,100))<0.05)||((DELTA((SUM(CLOSE,100)/100),100)/DELAY(CLOSE,100))==0.05))?(-1*(CLOSE-TSMIN(CLOSE,100))):(-1*DELTA(CLOSE,3))) #
     #     sum_close = self.close.rolling(100).sum()
@@ -2079,13 +2309,16 @@ class GTJA_191:
     def alpha_098(self, window1=100, window2=3):
         # ((((DELTA((SUM(CLOSE,100)/100),100)/DELAY(CLOSE,100))<0.05)||((DELTA((SUM(CLOSE,100)/100),100)/DELAY(CLOSE,100))==0.05))?(-1*(CLOSE-TSMIN(CLOSE,100))):(-1*DELTA(CLOSE,3))) #
         sum_close = self.close.rolling(window1).sum()
-        cond = (sum_close / window1 - (sum_close / window1).shift(window1)) / self.close.shift(window1) <= 0.05
+        cond = (
+            sum_close / window1 - (sum_close / window1).shift(window1)
+        ) / self.close.shift(window1) <= 0.05
         left_value = -(self.close - self.close.rolling(window1).min())
         right_value = -(self.close - self.close.shift(window2))
         right_value[cond] = left_value[cond]
         alpha = right_value
         alpha = alpha.shift()
         return alpha.stack()
+
     #
     # def alpha_99(self):
     #     # (-1 * RANK(COVIANCE(RANK(CLOSE), RANK(VOLUME), 5))) #
@@ -2100,13 +2333,13 @@ class GTJA_191:
         # (-1 * RANK(COVIANCE(RANK(CLOSE), RANK(VOLUME), 5))) #
         # alpha = (-pd.rolling_cov(self.close.rank(axis=1, pct=True), self.volume.rank(axis=1, pct=True), window=5).rank(
         #     axis=1, pct=True)).iloc[-1, :]
-        rank1 = self.close.rank(axis=1, pct=True)*(-1)
+        rank1 = self.close.rank(axis=1, pct=True) * (-1)
         rank2 = self.volume.rank(axis=1, pct=True)
         alpha = (-rank1.rolling(window1).cov(rank2)).rank(axis=1, pct=True)
         alpha = alpha.rank(axis=1, pct=True)
         alpha = alpha.shift()
-        return alpha.stack()   
- 
+        return alpha.stack()
+
     # def alpha_100(self):
     #     # STD(VOLUME,20) #
     #     alpha = self.volume.iloc[-20:, :].std()
@@ -2118,6 +2351,7 @@ class GTJA_191:
         alpha = self.volume.rolling(window1).std()
         alpha = alpha.shift()
         return alpha.stack()
+
     #
     # def alpha_101(self):
     #     # ((RANK(CORR(CLOSE,SUM(MEAN(VOLUME,30),37),15))<RANK(CORR(RANK(((HIGH*0.1)+(VWAP*0.9))),RANK(VOLUME),11)))*-1) #
@@ -2133,15 +2367,17 @@ class GTJA_191:
     def alpha_101(self, window1=15, window2=30, window3=37, window4=11):
         # ((RANK(CORR(CLOSE,SUM(MEAN(VOLUME,30),37),15))<RANK(CORR(RANK(((HIGH*0.1)+(VWAP*0.9))),RANK(VOLUME),11)))*-1) #
         rank1 = (
-            self.close.rolling(window1).corr((self.volume.rolling(window2).mean()).rolling(window3).sum())).rank(
-            axis=1, pct=True)
+            self.close.rolling(window1).corr(
+                (self.volume.rolling(window2).mean()).rolling(window3).sum()
+            )
+        ).rank(axis=1, pct=True)
         rank2 = (self.high * 0.1 + self.avg_price * 0.9).rank(axis=1, pct=True)
         rank3 = self.volume.rank(axis=1, pct=True)
         rank4 = (rank2.rolling(window4).corr(rank3)).rank(axis=1, pct=True)
         alpha = -(rank1 < rank4)
         alpha = alpha.shift()
         return alpha.stack()
-     
+
     # def alpha_102(self):
     #     # SMA(MAX(VOLUME-DELAY(VOLUME,1),0),6,1)/SMA(ABS(VOLUME-DELAY(VOLUME,1)),6,1)*100 #
     #     max_cond = (self.volume - self.volume.shift()) > 0
@@ -2163,9 +2399,10 @@ class GTJA_191:
         # sma2 = pd.ewma((self.volume - self.volume.shift()).abs(), span=11, adjust=False)
         sma1 = max_data.ewm(span, adjust=False).mean()
         sma2 = (self.volume - self.volume.shift()).abs().ewm(span, adjust=False).mean()
-        alpha = (sma1 / sma2 * 100) 
+        alpha = sma1 / sma2 * 100
         alpha = alpha.shift()
         return alpha.stack()
+
     # def alpha_103(self):
     #     ##### ((20-LOWDAY(LOW,20))/20)*100
     #     ##
@@ -2175,10 +2412,10 @@ class GTJA_191:
 
     def alpha_103(self, window1=20):
         data1 = self.low.rolling(window1).apply(self.func_lowday)
-        data1 = (window1-data1)/window1*100
+        data1 = (window1 - data1) / window1 * 100
         alpha = data1.shift()
         return alpha.stack()
-  
+
     # def alpha_104(self):
     #     # (-1*(DELTA(CORR(HIGH,VOLUME,5),5)*RANK(STD(CLOSE,20)))) #
     #     corr = self.high.rolling(window=5).corr(self.volume)
@@ -2188,10 +2425,12 @@ class GTJA_191:
     def alpha_104(self, window1=5, window2=20):
         # (-1*(DELTA(CORR(HIGH,VOLUME,5),5)*RANK(STD(CLOSE,20)))) #
         corr = self.high.rolling(window1).corr(self.volume)
-        alpha = (-(corr - corr.shift(window1)) * ((self.close.rolling(window2).std()).rank(axis=1, pct=True))) 
+        alpha = -(corr - corr.shift(window1)) * (
+            (self.close.rolling(window2).std()).rank(axis=1, pct=True)
+        )
         alpha = alpha.shift()
         return alpha.stack()
-    
+
     # def alpha_105(self):
     #     # (-1*CORR(RANK(OPEN),RANK(VOLUME),10)) #
     #     alpha = -((self.open_price.rank(axis=1, pct=True)).iloc[-10:, :]).corrwith(
@@ -2199,12 +2438,12 @@ class GTJA_191:
     #     alpha = alpha.dropna()
     #     return alpha
     def alpha_105(self, window1=10):
-        temp1 = -1*self.open_price.rank(axis=1, pct=True)
+        temp1 = -1 * self.open_price.rank(axis=1, pct=True)
         temp2 = self.volume.rank(axis=1, pct=True)
         alpha = temp1.rolling(window1).corr(temp2)
         alpha = alpha.shift()
         return alpha.stack()
-     
+
     # def alpha_106(self):
     #     # CLOSE-DELAY(CLOSE,20) #
     #     alpha = (self.close - self.close.shift(20)).iloc[-1, :]
@@ -2212,10 +2451,10 @@ class GTJA_191:
     #     return alpha
     def alpha_106(self, shiftl=20):
         # CLOSE-DELAY(CLOSE,20) #
-        alpha = (self.close - self.close.shift(shiftl)) 
+        alpha = self.close - self.close.shift(shiftl)
         alpha = alpha.shift()
         return alpha.stack()
-     
+
     # def alpha_107(self):
     #     # (((-1*RANK((OPEN-DELAY(HIGH,1))))*RANK((OPEN-DELAY(CLOSE,1))))*RANK((OPEN-DELAY(LOW,1)))) #
     #     rank1 = -(self.open_price - self.high.shift()).rank(axis=1, pct=True)
@@ -2229,10 +2468,10 @@ class GTJA_191:
         rank1 = -(self.open_price - self.high.shift()).rank(axis=1, pct=True)
         rank2 = (self.open_price - self.close.shift()).rank(axis=1, pct=True)
         rank3 = (self.open_price - self.low.shift()).rank(axis=1, pct=True)
-        alpha = (rank1 * rank2 * rank3) 
+        alpha = rank1 * rank2 * rank3
         alpha = alpha.shift()
         return alpha.stack()
-     
+
     # def alpha_108(self):
     #     # ((RANK((HIGH-MIN(HIGH,2)))^RANK(CORR((VWAP),(MEAN(VOLUME,120)),6)))*-1) #
     #     min_cond = self.high > 2
@@ -2245,13 +2484,16 @@ class GTJA_191:
     #     return alpha
     def alpha_108(self, window1=2, window2=6, window3=120):
         # ((RANK((HIGH-MIN(HIGH,2)))^RANK(CORR((VWAP),(MEAN(VOLUME,120)),6)))*-1) #
-        min_cond = self.high.rolling(window1).min(window1) 
+        min_cond = self.high.rolling(window1).min(window1)
         data = (self.high - min_cond) / min_cond
         rank1 = data.rank(axis=1, pct=True)
-        rank2 = (self.avg_price.rolling(window=6).corr(self.volume.rolling(window3).mean())).rank(axis=1, pct=True)
-        alpha = (rank1 ** (-1*rank2)) 
+        rank2 = (
+            self.avg_price.rolling(window=6).corr(self.volume.rolling(window3).mean())
+        ).rank(axis=1, pct=True)
+        alpha = rank1 ** (-1 * rank2)
         alpha = alpha.shift()
         return alpha.stack()
+
     #
     # def alpha_109(self):
     #     # SMA(HIGH-LOW,10,2)/SMA(SMA(HIGH-LOW,10,2),10,2)#
@@ -2266,10 +2508,10 @@ class GTJA_191:
         data = self.high - self.low
         sma1 = data.ewm(span, adjust=False).mean()
         sma2 = sma1.ewm(span, adjust=False).mean()
-        alpha = (sma1 / sma2) 
+        alpha = sma1 / sma2
         alpha = alpha.shift()
         return alpha.stack()
-     
+
     # def alpha_110(self):
     #     # SUM(MAX(0,HIGH-DELAY(CLOSE,1)),20)/SUM(MAX(0,DELAY(CLOSE,1)-LOW),20)*100 #
     #     data1 = self.high - self.prev_close
@@ -2296,6 +2538,7 @@ class GTJA_191:
         alpha = sum1 / sum2 * 100
         alpha = alpha.shift()
         return alpha.stack()
+
     # def alpha_111(self):
     #     # sma(vol*((close-low)-(high-close))/(high-low),11,2)-sma(vol*((close-low)-(high-close))/(high-low),4,2)
     #     ######################
@@ -2310,14 +2553,19 @@ class GTJA_191:
     def alpha_111(self, span1=10, span=3):
         # sma(vol*((close-low)-(high-close))/(high-low),11,2)-sma(vol*((close-low)-(high-close))/(high-low),4,2)
         ######################
-        data1 = self.volume * ((self.close - self.low) - (self.high - self.close)) / (self.high - self.low)
+        data1 = (
+            self.volume
+            * ((self.close - self.low) - (self.high - self.close))
+            / (self.high - self.low)
+        )
         # x = pd.ewma(data1, span=10)
         # y = pd.ewma(data1, span=3)
         x = data1.ewm(span).mean()
         y = data1.ewm(span).mean()
-        alpha = (x - y) 
+        alpha = x - y
         alpha = alpha.shift()
         return alpha.stack()
+
     #
     # def alpha_112(self):
     #     # (SUM((CLOSE-DELAY(CLOSE,1)>0?CLOSE-DELAY(CLOSE,1):0),12)-SUM((CLOSE-DELAY(CLOSE,1)<0?ABS(CLOSE-DELAY(CLOSE,1)):0),12))/(SUM((CLOSE-DELAY(CLOSE,1)>0?CLOSE-DELAY(CLOSE,1):0),12)+SUM((CLOSE-DELAY(CLOSE,1)<0?ABS(CLOSE-DELAY(CLOSE,1)):0),12))*100 #
@@ -2344,9 +2592,10 @@ class GTJA_191:
         data2 = data2.abs()
         sum1 = data1.rolling(window).sum()
         sum2 = data2.rolling(window).sum()
-        alpha = ((sum1 - sum2) / (sum1 + sum2) * 100)   
+        alpha = (sum1 - sum2) / (sum1 + sum2) * 100
         alpha = alpha.shift()
         return alpha.stack()
+
     # def alpha_113(self):
     #     # (-1*((rank((sum(delay(close,5),20)/20))*corr(close,volume,2))*rank(corr(sum(close,5),sum(close,20),2))))
     #     #####################
@@ -2370,14 +2619,15 @@ class GTJA_191:
         data1 = self.close.shift(shift1)
         rank1 = data1.rolling(window1).mean().rank(axis=1, pct=True)
         corr1 = self.close.rolling(window2).corr(self.volume)
-   
+
         data2 = self.close.rolling(window1).sum()
         data3 = self.close.rolling(window3).sum()
         corr2 = data2.rolling(window2).corr(data3)
         rank2 = corr2.rank(axis=1, pct=True)
-        alpha = (-1 * rank1 * corr1 * rank2) 
+        alpha = -1 * rank1 * corr1 * rank2
         alpha = alpha.shift()
         return alpha.stack()
+
     # def alpha_114(self):
     #     # ((rank(delay(((high-low)/(sum(close,5)/5)),2))*rank(rank(volume)))/(((high-low)/(sum(close,5)/5))/(vwap-close)))
     #     #####################
@@ -2400,10 +2650,11 @@ class GTJA_191:
         data1 = (self.high - self.low) / (self.close.rolling(window).mean())
         delay1 = data1.shift(delay1)
         rank1 = delay1.rank(axis=1, pct=True)
-        rank2 = ((self.volume.rank(axis=1, pct=True)).rank(axis=1, pct=True)) 
- 
-        data2 = (((self.high - self.low) / (self.close.rolling(window).mean())) / (
-                    self.avg_price - self.close)) 
+        rank2 = (self.volume.rank(axis=1, pct=True)).rank(axis=1, pct=True)
+
+        data2 = ((self.high - self.low) / (self.close.rolling(window).mean())) / (
+            self.avg_price - self.close
+        )
 
         alpha = (rank1 * rank2) / data2
         alpha = alpha.shift()
@@ -2423,16 +2674,17 @@ class GTJA_191:
     #     return alpha
     def alpha_115(self, window1=30, window2=10, window3=4, window4=7):
         # RANK(CORR(((HIGH*0.9)+(CLOSE*0.1)),MEAN(VOLUME,30),10))^RANK(CORR(TSRANK(((HIGH+LOW)/2),4),TSRANK(VOLUME,10),7)) #
-        data1 = (self.high * 0.9 + self.close * 0.1)
+        data1 = self.high * 0.9 + self.close * 0.1
         data2 = self.volume.rolling(window1).mean()
         rank1 = data1.rolling(window2).corr(data2).rank(axis=1, pct=True)
-        data1 = ((self.high+self.low)/2)
-        tsrank1 = data1.rolling(window3).apply(lambda x : x.rank(axis=0, pct=True)[-1])
+        data1 = (self.high + self.low) / 2
+        tsrank1 = data1.rolling(window3).apply(lambda x: x.rank(axis=0, pct=True)[-1])
         tsrank2 = self.volume.rolling(window2).apply(self.func_rank)
         rank2 = tsrank1.rolling(window4).corr(tsrank2).rank(axis=1, pct=True)
-        alpha = rank1 ** rank2
+        alpha = rank1**rank2
         alpha = alpha.shift()
         return alpha.stack()
+
     #
     # def alpha_116(self):
     #     # REGBETA(CLOSE,SEQUENCE,20) #
@@ -2443,7 +2695,9 @@ class GTJA_191:
     #     return alpha
     def alpha_116(self, window=20):
         # REGBETA(CLOSE,SEQUENCE,20) #
-        sequence = pd.Series(range(1, window+1), index=self.close.iloc[-window:, ].index)  # 1~20
+        sequence = pd.Series(
+            range(1, window + 1), index=self.close.iloc[-window:,].index
+        )  # 1~20
         corr = self.close.rolling(window).corr(sequence)
         alpha = corr
         alpha = alpha.shift()
@@ -2463,14 +2717,15 @@ class GTJA_191:
     def alpha_117(self, window1=16):
         #######((tsrank(volume,32)*(1-tsrank(((close+high)-low),16)))*(1-tsrank(ret,32)))
         ####################
-        data1 = (self.close + self.high - self.low) 
+        data1 = self.close + self.high - self.low
         data2 = 1 - data1.rolling(window1).rank(pct=True)
-        data3 = self.volume.rolling(2*window1).rank(pct=True)
-        ret = (self.close / self.close.shift() - 1) 
-        data4 = 1 - ret.rolling(2*window1).rank(pct=True)
+        data3 = self.volume.rolling(2 * window1).rank(pct=True)
+        ret = self.close / self.close.shift() - 1
+        data4 = 1 - ret.rolling(2 * window1).rank(pct=True)
         alpha = (data2) * (data3) * (data4)
         alpha = alpha.shift()
         return alpha.stack()
+
     # def alpha_118(self):
     #     ######sum(high-open,20)/sum((open-low),20)*100
     #     ###################
@@ -2490,9 +2745,10 @@ class GTJA_191:
         data2 = self.open_price - self.low
         data3 = data1.rolling(window).sum()
         data4 = data2.rolling(window).sum()
-        alpha = ((data3 / data4) * 100) 
+        alpha = (data3 / data4) * 100
         alpha = alpha.shift()
         return alpha.stack()
+
     #
     # def alpha_119(self):
     #     # (RANK(DECAYLINEAR(CORR(VWAP,SUM(MEAN(VOLUME,5),26),5),7))-RANK(DECAYLINEAR(TSRANK(MIN(CORR(RANK(OPEN),RANK(MEAN(VOLUME,15)),21),9),7),8)))
@@ -2510,15 +2766,19 @@ class GTJA_191:
         # (RANK(DECAYLINEAR(CORR(VWAP,SUM(MEAN(VOLUME,5),26),5),7))-RANK(DECAYLINEAR(TSRANK(MIN(CORR(RANK(OPEN),RANK(MEAN(VOLUME,15)),21),9),7),8)))
         sum1 = (self.volume.rolling(window=5).mean()).rolling(window=26).sum()
         corr1 = self.avg_price.rolling(window=5).corr(sum1)
-        rank1 = corr1.rolling(window=7).apply(self.func_decaylinear).rank(axis=1,pct=True)
-         
+        rank1 = (
+            corr1.rolling(window=7).apply(self.func_decaylinear).rank(axis=1, pct=True)
+        )
+
         rank2 = self.open_price.rank(axis=1, pct=True)
         rank3 = (self.volume.rolling(window=15).mean()).rank(axis=1, pct=True)
         rank3_1 = rank2.rolling(window=21).corr(rank3).rolling(window=9).min()
         rank4 = rank3_1.rolling(window=7).apply(self.func_rank)
-        rank5 = rank4.rolling(window=8).apply(self.func_decaylinear).rank(axis=1,pct=True)
-         
-        alpha = (rank1 - rank5) 
+        rank5 = (
+            rank4.rolling(window=8).apply(self.func_decaylinear).rank(axis=1, pct=True)
+        )
+
+        alpha = rank1 - rank5
         alpha = alpha.shift()
         return alpha.stack()
 
@@ -2535,7 +2795,7 @@ class GTJA_191:
         ###################
         data1 = (self.avg_price - self.close).rank(axis=1, pct=True)
         data2 = (self.avg_price + self.close).rank(axis=1, pct=True)
-        alpha = (data1 / data2) 
+        alpha = data1 / data2
         alpha = alpha.shift()
         return alpha.stack()
 
@@ -2559,9 +2819,10 @@ class GTJA_191:
         data1 = log_close.ewm(span, adjust=False).mean()
         data2 = data1.ewm(span, adjust=False).mean()
         data = data2.ewm(span, adjust=False).mean()
-        alpha = data-data.shift()-1
+        alpha = data - data.shift() - 1
         alpha = alpha.shift()
         return alpha.stack()
+
     # def alpha_123(self):
     #     #####((RANK(CORR(SUM(((HIGH+LOW)/2), 20), SUM(MEAN(VOLUME, 60), 20), 9)) < RANK(CORR(LOW, VOLUME, 6))) * -1)
     #     ##
@@ -2578,7 +2839,7 @@ class GTJA_191:
         #####((RANK(CORR(SUM(((HIGH+LOW)/2), 20), SUM(MEAN(VOLUME, 60), 20), 9)) < RANK(CORR(LOW, VOLUME, 6))) * -1)
         ##
         data1 = ((self.high + self.low) / 2).rolling(window1).sum()
-        data2 = self.volume.rolling(window1*3).mean().rolling(window1).sum()
+        data2 = self.volume.rolling(window1 * 3).mean().rolling(window1).sum()
         corr1 = data1.rolling(window2).corr(data2)
         rank1 = corr1.rolling(window2).apply(lambda x: x.rank(axis=0, pct=True)[-1])
         corr2 = self.low.rolling(window3).corr(self.volume)
@@ -2602,8 +2863,9 @@ class GTJA_191:
         ##### (CLOSE - VWAP) / DECAYLINEAR(RANK(TSMAX(CLOSE, 30)),2)
         ##
         data1 = self.close.rolling(window).max().rank(axis=1, pct=True)
-        alpha = (self.close- self.avg_price) / (
-                    2. / 3 * data1.shift() + 1. / 3 * data1)
+        alpha = (self.close - self.avg_price) / (
+            2.0 / 3 * data1.shift() + 1.0 / 3 * data1
+        )
         alpha = alpha.shift()
         return alpha.stack()
 
@@ -2626,13 +2888,13 @@ class GTJA_191:
     def alpha_125(self, window1=80, window2=17, window3=20):
         ##### (RANK(DECAYLINEAR(CORR((VWAP), MEAN(VOLUME, 80), 17), 20)) / RANK(DECAYLINEAR(DELTA((CLOSE * 0.5 + VWAP * 0.5), 3), 16)))
         ##
-        vmean=self.volume.rolling(window1).mean()
-        data1=self.avg_price.rolling(window2).corr(vmean)
-        rank1=data1.rolling(window3).apply(self.func_decaylinear)
-        rank1=rank1.rolling(window3).apply(self.func_rank)
+        vmean = self.volume.rolling(window1).mean()
+        data1 = self.avg_price.rolling(window2).corr(vmean)
+        rank1 = data1.rolling(window3).apply(self.func_decaylinear)
+        rank1 = rank1.rolling(window3).apply(self.func_rank)
         data2 = (self.close * 0.5 + self.avg_price * 0.5).diff(3)
-        rank2=data2.rolling(window2-1).apply(self.func_decaylinear)
-        rank2=rank2.rolling(window2-1).apply(self.func_rank)
+        rank2 = data2.rolling(window2 - 1).apply(self.func_decaylinear)
+        rank2 = rank2.rolling(window2 - 1).apply(self.func_rank)
         alpha = rank1 / rank2
         alpha = alpha.shift()
         return alpha.stack()
@@ -2646,12 +2908,12 @@ class GTJA_191:
     def alpha_126(self):
         #### (CLOSE + HIGH + LOW) / 3
         ##
-        alpha = (self.close  + self.high  + self.low ) / 3
+        alpha = (self.close + self.high + self.low) / 3
         alpha = alpha.shift()
         return alpha.stack()
+
     def alpha_127(self):
         raise NotImplementedError
-     
 
     def alpha_128(self):
 
@@ -2706,12 +2968,12 @@ class GTJA_191:
         data2 = self.volume.rolling(window1).mean()
         data3 = data1.rolling(window2).corr(data2)
         data3 = data3.rolling(window2).apply(self.func_decaylinear)
-        rank1=data3.rolling(window2).apply(self.func_rank)
+        rank1 = data3.rolling(window2).apply(self.func_rank)
         data1 = self.avg_price.rank(axis=1, pct=True)
         data2 = self.volume.rank(axis=1, pct=True)
         data3 = data1.rolling(window3).corr(data2)
         data3 = data3.rolling(window2).apply(self.func_decaylinear)
-        rank2 =data3.rolling(window2).apply(self.func_rank)
+        rank2 = data3.rolling(window2).apply(self.func_rank)
         alpha = (rank1 / rank2).shift()
         return alpha.stack()
 
@@ -2739,13 +3001,14 @@ class GTJA_191:
     #     alpha = (20 - self.high.rolling(20).apply(self.func_highday)) / 20 * 100 \
     #             - (20 - self.low.rolling(20).apply(self.func_lowday)) / 20 * 100
     #     alpha = alpha.shift()
-    #     return alpha.stack()        
+    #     return alpha.stack()
     def alpha_133(self):
         #### alpha_133
         #### ((20 - HIGHDAY(HIGH, 20)) / 20)*100 - ((20 - LOWDAY(LOW, 20)) / 20)*100
         ##
-        alpha = (20 - self.high.rolling(20).apply(self.func_highday)) / 20 * 100 \
-                - (20 - self.low.rolling(20).apply(self.func_lowday)) / 20 * 100
+        alpha = (20 - self.high.rolling(20).apply(self.func_highday)) / 20 * 100 - (
+            20 - self.low.rolling(20).apply(self.func_lowday)
+        ) / 20 * 100
         alpha = alpha.shift()
         return alpha.stack()
 
@@ -2758,9 +3021,10 @@ class GTJA_191:
     def alpha_134(self, delay1=13):
         #### (CLOSE - DELAY(CLOSE, 12)) / DELAY(CLOSE, 12) * VOLUME
         ##
-        alpha = ((self.close  / self.close.shift(delay1) - 1) * self.volume)
+        alpha = (self.close / self.close.shift(delay1) - 1) * self.volume
         alpha = alpha.shift()
         return alpha.stack()
+
     # def alpha_135(self):
     #     #### SMA(DELAY(CLOSE / DELAY(CLOSE, 20), 1), 20, 1)
     #     ##
@@ -2769,15 +3033,15 @@ class GTJA_191:
 
     #     data1 = self.close.rolling(21).apply(rolling_div).shift(periods=1)
     #   #  alpha = pd.ewma(data1, com=19, adjust=False).iloc[-1, :]
-    #     alpha = data1.ewm(com=19,adjust=False).mean().iloc[-1, :]   
+    #     alpha = data1.ewm(com=19,adjust=False).mean().iloc[-1, :]
     #     alpha = alpha.dropna()
     #     return alpha
     def alpha_135(self, delay=20, com=19):
         #### SMA(DELAY(CLOSE / DELAY(CLOSE, 20), 1), 20, 1)
         ##
-        c20=self.close/self.close.shift(delay)
-        alpha=c20.ewm(com,adjust=False).mean()
-        alpha=alpha.shift()
+        c20 = self.close / self.close.shift(delay)
+        alpha = c20.ewm(com, adjust=False).mean()
+        alpha = alpha.shift()
         return alpha.stack()
 
     # def alpha_136(self):
@@ -2788,18 +3052,17 @@ class GTJA_191:
     #     alpha = (data1.iloc[-1, :] * data2).dropna()
 
     #     return alpha
-    def alpha_136(self,delay=3, window=10):
+    def alpha_136(self, delay=3, window=10):
         #### ((-1 * RANK(DELTA(RET, 3))) * CORR(OPEN, VOLUME, 10))
         ##
         data1 = -(self.close / self.prev_close - 1).diff(delay).rank(axis=1, pct=True)
-        data2=self.open_price.rolling(window).corr(self.volume)
-        alpha =data1*data2
-        alpha=alpha.shift()
+        data2 = self.open_price.rolling(window).corr(self.volume)
+        alpha = data1 * data2
+        alpha = alpha.shift()
         return alpha.stack()
 
     def alpha_137(self):
         raise NotImplementedError
-     
 
     # def alpha_138(self):
     #     #### ((RANK(DECAYLINEAR(DELTA((((LOW * 0.7) + (VWAP * 0.3))), 3), 20)) - TSRANK(DECAYLINEAR(TSRANK(CORR(TSRANK(LOW, 8), TSRANK(MEAN(VOLUME, 60), 17), 5), 19), 16), 7)) * -1)
@@ -2821,12 +3084,14 @@ class GTJA_191:
         #### ((RANK(DECAYLINEAR(DELTA((((LOW * 0.7) + (VWAP * 0.3))), 3), 20)) - TSRANK(DECAYLINEAR(TSRANK(CORR(TSRANK(LOW, 8), TSRANK(MEAN(VOLUME, 60), 17), 5), 19), 16), 7)) * -1)
         ##
         data1 = (self.low * 0.7 + self.avg_price * 0.3).diff(3)
-        rank1= data1.rolling(window1).apply(self.func_decaylinear)
-        rank1=rank1.rolling(window1).apply(self.func_rank)
+        rank1 = data1.rolling(window1).apply(self.func_decaylinear)
+        rank1 = rank1.rolling(window1).apply(self.func_rank)
         data1 = self.low.rolling(window2).apply(self.func_rank)
         data2 = self.volume.rolling(window3).mean().rolling(17).apply(self.func_rank)
-        data3 = data1.rolling(window=5).corr(data2).rolling(window=19).apply(self.func_rank)
-        data4 =data3.rolling(16).apply(self.func_decaylinear)
+        data3 = (
+            data1.rolling(window=5).corr(data2).rolling(window=19).apply(self.func_rank)
+        )
+        data4 = data3.rolling(16).apply(self.func_decaylinear)
         rank2 = data4.rolling(7).apply(self.func_rank)
         alpha = (rank2 - rank1).shift()
         return alpha.stack()
@@ -2839,9 +3104,10 @@ class GTJA_191:
     def alpha_139(self, windows=10):
         #### (-1 * CORR(OPEN, VOLUME, 10))
         ##
-        alpha = - self.open_price.rolling(windows).corr(self.volume)
-        alpha=alpha.shift()
+        alpha = -self.open_price.rolling(windows).corr(self.volume)
+        alpha = alpha.shift()
         return alpha.stack()
+
     # def alpha_140(self):
     #     #### MIN(RANK(DECAYLINEAR(((RANK(OPEN) + RANK(LOW)) - (RANK(HIGH) + RANK(CLOSE))), 8)), TSRANK(DECAYLINEAR(CORR(TSRANK(CLOSE, 8), TSRANK(MEAN(VOLUME, 60), 20), 8), 7), 3))
     #     ##
@@ -2862,8 +3128,13 @@ class GTJA_191:
     def alpha_140(self):
         #### MIN(RANK(DECAYLINEAR(((RANK(OPEN) + RANK(LOW)) - (RANK(HIGH) + RANK(CLOSE))), 8)), TSRANK(DECAYLINEAR(CORR(TSRANK(CLOSE, 8), TSRANK(MEAN(VOLUME, 60), 20), 8), 7), 3))
         ##
-        data1 = self.open_price.rank(axis=1, pct=True) + self.low.rank(axis=1, pct=True)  - self.high.rank(axis=1, pct=True) - self.close.rank(axis=1, pct=True)
-        rank1 = data1.rolling(8).apply(self.func_decaylinear).rank(axis=1,pct=True)
+        data1 = (
+            self.open_price.rank(axis=1, pct=True)
+            + self.low.rank(axis=1, pct=True)
+            - self.high.rank(axis=1, pct=True)
+            - self.close.rank(axis=1, pct=True)
+        )
+        rank1 = data1.rolling(8).apply(self.func_decaylinear).rank(axis=1, pct=True)
 
         data1 = self.close.rolling(8).apply(self.func_rank)
         data2 = self.volume.rolling(60).mean().rolling(20).apply(self.func_rank)
@@ -2872,10 +3143,11 @@ class GTJA_191:
         rank2 = data3.rolling(3).apply(self.func_rank)
 
         rank1 = rank1.reindex(rank2.index).reindex(columns=rank2.columns)
-        cond_max=rank1<rank2
-        rank2[cond_max]=rank1[cond_max]
-        alpha=rank2.shift()
+        cond_max = rank1 < rank2
+        rank2[cond_max] = rank1[cond_max]
+        alpha = rank2.shift()
         return alpha.stack()
+
     # def alpha_141(self):
     #     #### (RANK(CORR(RANK(HIGH), RANK(MEAN(VOLUME, 15)), 9))* -1)
     #     ##
@@ -2889,9 +3161,10 @@ class GTJA_191:
         ##
         df1 = self.high.rank(axis=1, pct=True)
         df2 = self.volume.rolling(window1).mean().rank(axis=1, pct=True)
-        alpha = df1.rolling(window2).corr(df2).rank(pct=True)*-1
+        alpha = df1.rolling(window2).corr(df2).rank(pct=True) * -1
         alpha = alpha.shift()
         return alpha.stack()
+
     # def alpha_142(self):
     #     #### (((-1 * RANK(TSRANK(CLOSE, 10))) * RANK(DELTA(DELTA(CLOSE, 1), 1))) * RANK(TSRANK((VOLUME/MEAN(VOLUME, 20)), 5)))
     #     ##
@@ -2908,13 +3181,19 @@ class GTJA_191:
         #### (((-1 * RANK(TSRANK(CLOSE, 10))) * RANK(DELTA(DELTA(CLOSE, 1), 1))) * RANK(TSRANK((VOLUME/MEAN(VOLUME, 20)), 5)))
         ##
 
-        rank1 = self.close.rolling(10).apply(self.func_rank).rank(axis=1,pct=True)
-        rank2 = self.close.diff(1).diff(1).rank(axis=1,pct=True)
-        rank3 = (self.volume / self.volume.rolling(20).mean()).rolling(5).apply(self.func_rank).rank(axis=1,pct=True) 
+        rank1 = self.close.rolling(10).apply(self.func_rank).rank(axis=1, pct=True)
+        rank2 = self.close.diff(1).diff(1).rank(axis=1, pct=True)
+        rank3 = (
+            (self.volume / self.volume.rolling(20).mean())
+            .rolling(5)
+            .apply(self.func_rank)
+            .rank(axis=1, pct=True)
+        )
 
         alpha = -(rank1 * rank2 * rank3)
         alpha = alpha.shift()
         return alpha.stack()
+
     def alpha_143(self):
         #### CLOSE > DELAY(CLOSE, 1)?(CLOSE - DELAY(CLOSE, 1)) / DELAY(CLOSE, 1) * SELF : SELF
         raise NotImplementedError
@@ -2933,12 +3212,17 @@ class GTJA_191:
         #### SUMIF(ABS(CLOSE/DELAY(CLOSE, 1) - 1)/AMOUNT, 20, CLOSE < DELAY(CLOSE, 1))/COUNT(CLOSE < DELAY(CLOSE, 1), 20)
         ##
         df1 = self.close < self.prev_close
-        sumif = ((abs(self.close / self.prev_close - 1) / self.amount) * df1).rolling(window).sum()
+        sumif = (
+            ((abs(self.close / self.prev_close - 1) / self.amount) * df1)
+            .rolling(window)
+            .sum()
+        )
         count = df1.rolling(window).sum()
 
         alpha = (sumif / count).dropna()
         alpha = alpha.shift()
         return alpha.stack()
+
     # def alpha_145(self):
     #     #### (MEAN(VOLUME, 9) - MEAN(VOLUME, 26)) / MEAN(VOLUME, 12) * 100
 
@@ -2949,9 +3233,14 @@ class GTJA_191:
     def alpha_145(self, window1=9, window2=26, window3=12):
         #### (MEAN(VOLUME, 9) - MEAN(VOLUME, 26)) / MEAN(VOLUME, 12) * 100
 
-        alpha = (self.volume.rolling(window1).mean() - self.volume.rolling(window2).mean()) / self.volume.rolling(window3).mean() * 100
+        alpha = (
+            (self.volume.rolling(window1).mean() - self.volume.rolling(window2).mean())
+            / self.volume.rolling(window3).mean()
+            * 100
+        )
         alpha = alpha.shift()
         return alpha.stack()
+
     def alpha_146(self):
         raise NotImplementedError
 
@@ -2972,12 +3261,15 @@ class GTJA_191:
         #### ((RANK(CORR((OPEN), SUM(MEAN(VOLUME, 60), 9), 6)) < RANK((OPEN - TSMIN(OPEN, 14)))) * -1)
         ##
         df1 = self.volume.rolling(60).mean().rolling(9).sum()
-        rank1 = self.open_price.rolling(6).corr(df1).rank(axis=0,pct=True)
-        rank2 = (self.open_price - self.open_price.rolling(14).min()).rank(axis=0,pct=True)
+        rank1 = self.open_price.rolling(6).corr(df1).rank(axis=0, pct=True)
+        rank2 = (self.open_price - self.open_price.rolling(14).min()).rank(
+            axis=0, pct=True
+        )
 
         alpha = -1 * (rank1 < rank2)
         alpha = alpha.shift()
         return alpha.stack()
+
     def alpha_149(self):
 
         raise NotImplementedError
@@ -2993,7 +3285,7 @@ class GTJA_191:
         #### (CLOSE + HIGH + LOW)/3 * VOLUME
         ##
 
-        alpha = ((self.close + self.high + self.low) / 3 * self.volume) 
+        alpha = (self.close + self.high + self.low) / 3 * self.volume
         alpha = alpha.shift()
         return alpha.stack()
 
@@ -3025,13 +3317,26 @@ class GTJA_191:
         # data2 = pd.rolling_mean((pd.ewma(((self.close / self.close.shift(9)).shift()), span=17, adjust=False)).shift(),
         #                         26)
 
-        data1 = (self.close / self.close.shift(window1)).shift().ewm(span1, adjust=False).mean().shift(12)
-        data2 = (self.close / self.close.shift(window1)).shift().ewm(span1, adjust=False).mean().shift(26)
+        data1 = (
+            (self.close / self.close.shift(window1))
+            .shift()
+            .ewm(span1, adjust=False)
+            .mean()
+            .shift(12)
+        )
+        data2 = (
+            (self.close / self.close.shift(window1))
+            .shift()
+            .ewm(span1, adjust=False)
+            .mean()
+            .shift(26)
+        )
 
-       # alpha = (pd.ewma(data1 - data2, span=17, adjust=False)).iloc[-1, :]
-        alpha = (data1-data2).ewm(span1,adjust=False).mean()
+        # alpha = (pd.ewma(data1 - data2, span=17, adjust=False)).iloc[-1, :]
+        alpha = (data1 - data2).ewm(span1, adjust=False).mean()
         alpha = alpha.shift()
-        return alpha.stack() 
+        return alpha.stack()
+
     ######################## alpha_153 #######################
     #
     # def alpha_153(self):
@@ -3049,11 +3354,16 @@ class GTJA_191:
         # alpha = ((pd.rolling_mean(self.close, 3) + pd.rolling_mean(self.close, 6) + pd.rolling_mean(self.close,
         #                                                                                             12) + pd.rolling_mean(
         #     self.close, 24)) / 4).iloc[-1, :]
-        alpha = ((self.close.rolling(window=3).mean() + self.close.rolling(window=6).mean() +
-          self.close.rolling(window=12).mean() + self.close.rolling(window=24).mean()) / 4) 
+        alpha = (
+            self.close.rolling(window=3).mean()
+            + self.close.rolling(window=6).mean()
+            + self.close.rolling(window=12).mean()
+            + self.close.rolling(window=24).mean()
+        ) / 4
 
         alpha = alpha.shift()
         return alpha.stack()
+
     ######################## alpha_154 #######################
     #
     # def alpha_154(self):
@@ -3067,6 +3377,7 @@ class GTJA_191:
     #     return alpha
     def alpha_154(self):
         raise NotImplementedError
+
     ######################## alpha_155 #######################
     #
     # def alpha_155(self):
@@ -3079,7 +3390,6 @@ class GTJA_191:
     #     sma2 = self.volume.ewm(span=26, adjust=False).mean()
     #     sma1 = (sma1-sma2).ewm(span=9, adjust=False).mean()
 
-
     #     alpha = sma.iloc[-1, :]
     #     alpha = alpha.dropna()
     #     return alpha
@@ -3091,12 +3401,12 @@ class GTJA_191:
 
         sma1 = self.volume.ewm(span1, adjust=False).mean()
         sma2 = self.volume.ewm(span2, adjust=False).mean()
-        sma1 = (sma1-sma2).ewm(span3, adjust=False).mean()
+        sma1 = (sma1 - sma2).ewm(span3, adjust=False).mean()
 
-
-        alpha = sma1 
+        alpha = sma1
         alpha = alpha.shift()
         return alpha.stack()
+
     ######################## alpha_156 #######################
     # def alpha_156(self):
     #     # (MAX(RANK(DECAYLINEAR(DELTA(VWAP,5),3)),RANK(DECAYLINEAR(((DELTA(((OPEN*0.15)+(LOW*0.85)),2)/((OPEN*0.15)+(LOW*0.85)))*-1),3)))*-1 #
@@ -3113,19 +3423,25 @@ class GTJA_191:
     #     return alpha
     def alpha_156(self, diff1=5, diff2=2, window1=3):
         # (MAX(RANK(DECAYLINEAR(DELTA(VWAP,5),3)),RANK(DECAYLINEAR(((DELTA(((OPEN*0.15)+(LOW*0.85)),2)/((OPEN*0.15)+(LOW*0.85)))*-1),3)))*-1 #
-        delta1=self.avg_price.diff(diff1)
-        rank1=delta1.rolling(window1).apply(self.func_decaylinear).rank(axis=1,pct=True)
-        delta2= (self.open_price*0.15+self.low*0.85).diff(diff2)/(self.open_price*0.15+self.low*0.85)
-        rank2=delta2.rolling(window1).apply(self.func_decaylinear).rank(axis=1,pct=True)
-        #让rank1 和rank2 的索引取交集
-        rank1=rank1.reindex(rank2.index).reindex(columns=rank2.columns)
-        max_cond=rank1>rank2
-        result=rank2
-        result[max_cond]=rank1[max_cond]
-        alpha=(-result)
-        alpha=alpha.shift()
+        delta1 = self.avg_price.diff(diff1)
+        rank1 = (
+            delta1.rolling(window1).apply(self.func_decaylinear).rank(axis=1, pct=True)
+        )
+        delta2 = (self.open_price * 0.15 + self.low * 0.85).diff(diff2) / (
+            self.open_price * 0.15 + self.low * 0.85
+        )
+        rank2 = (
+            delta2.rolling(window1).apply(self.func_decaylinear).rank(axis=1, pct=True)
+        )
+        # 让rank1 和rank2 的索引取交集
+        rank1 = rank1.reindex(rank2.index).reindex(columns=rank2.columns)
+        max_cond = rank1 > rank2
+        result = rank2
+        result[max_cond] = rank1[max_cond]
+        alpha = -result
+        alpha = alpha.shift()
         return alpha.stack()
-         
+
     ######################## alpha_157 #######################
     #
     # def alpha_157(self):
@@ -3143,13 +3459,14 @@ class GTJA_191:
     #     return alpha
     def alpha_157(self):
         raise NotImplementedError
+
     ######################## alpha_158 #######################
     #
     # def alpha_158(self):
     #     # ((HIGH-SMA(CLOSE,15,2))-(LOW-SMA(CLOSE,15,2)))/CLOSE #
     #     # alpha = (((self.high - pd.ewma(self.close, span=14, adjust=False)) - (
     #     #             self.low - pd.ewma(self.close, span=14, adjust=False))) / self.close).iloc[-1, :]
-        
+
     #     alpha = (((self.high-self.close.ewm(span=14,adjust=False))-(self.low-self.close.ewm(span=14,adjust=False)))/self.close).iloc[-1,:]
     #     alpha = alpha.dropna()
     #     return alpha
@@ -3157,10 +3474,14 @@ class GTJA_191:
         # ((HIGH-SMA(CLOSE,15,2))-(LOW-SMA(CLOSE,15,2)))/CLOSE #
         # alpha = (((self.high - pd.ewma(self.close, span=14, adjust=False)) - (
         #             self.low - pd.ewma(self.close, span=14, adjust=False))) / self.close).iloc[-1, :]
-        
-        alpha = (((self.high-self.close.ewm(span=14,adjust=False).mean())-(self.low-self.close.ewm(span=14,adjust=False).mean()))/self.close) 
+
+        alpha = (
+            (self.high - self.close.ewm(span=14, adjust=False).mean())
+            - (self.low - self.close.ewm(span=14, adjust=False).mean())
+        ) / self.close
         alpha = alpha.shift()
         return alpha.stack()
+
     # def alpha_159(self):
     #     #########((close-sum(min(low,delay(close,1)),6))/sum(max(high,delay(close,1))-min(low,delay(close,1)),6)*12*24+(close-sum(min(low,delay(close,1)),12))/sum(max(high,delay(close,1))-min(low,delay(close,1)),12)*6*24+(close-sum(min(low,delay(close,1)),24))/sum(max(high,delay(close,1))-min(low,delay(close,1)),24)*6*24)*100/(6*12+6*24+12*24)
     #     ###################
@@ -3197,18 +3518,46 @@ class GTJA_191:
         cond = data3 > data4
         data3[~cond] = data4
         # 计算出公式核心部分x
-        #x = ((self.close - pd.rolling_sum(data1, 6)) / pd.rolling_sum((data2 - data1), 6)) * 12 * 24
-        x = ((self.close - data1.rolling(window1).sum())/((data2-data1).rolling(window1).sum()))*window1*window1*8
+        # x = ((self.close - pd.rolling_sum(data1, 6)) / pd.rolling_sum((data2 - data1), 6)) * 12 * 24
+        x = (
+            (
+                (self.close - data1.rolling(window1).sum())
+                / ((data2 - data1).rolling(window1).sum())
+            )
+            * window1
+            * window1
+            * 8
+        )
         # 计算出公式核心部分y
-        #y = ((self.close - pd.rolling_sum(data1, 12)) / pd.rolling_sum((data2 - data1), 12)) * 6 * 24
-        y=((self.close-data1.rolling(window1*2).sum())/(data2-data1).rolling(window1*2).sum())*window1*window1*4
+        # y = ((self.close - pd.rolling_sum(data1, 12)) / pd.rolling_sum((data2 - data1), 12)) * 6 * 24
+        y = (
+            (
+                (self.close - data1.rolling(window1 * 2).sum())
+                / (data2 - data1).rolling(window1 * 2).sum()
+            )
+            * window1
+            * window1
+            * 4
+        )
         # 计算出公式核心部分z
-        #z = ((self.close - pd.rolling_sum(data1, 24)) / pd.rolling_sum((data2 - data1), 24)) * 6 * 24
-        z=((self.close-data1.rolling(window1*4))/((data2-data1).rolling(window1*4).sum()))*window1*window1*4
-        data5 = (x + y + z) * (100 / (window1*window1*2 + window1*window1*8+ window1*window1*4))
-        alpha = data5 
-        alpha = alpha.shift*()
+        # z = ((self.close - pd.rolling_sum(data1, 24)) / pd.rolling_sum((data2 - data1), 24)) * 6 * 24
+        z = (
+            (
+                (self.close - data1.rolling(window1 * 4))
+                / ((data2 - data1).rolling(window1 * 4).sum())
+            )
+            * window1
+            * window1
+            * 4
+        )
+        data5 = (x + y + z) * (
+            100
+            / (window1 * window1 * 2 + window1 * window1 * 8 + window1 * window1 * 4)
+        )
+        alpha = data5
+        alpha = alpha.shift * ()
         return alpha.stack()
+
     # def alpha_160(self):
     #     ################
     #     ############sma((close<=delay(close,1)?std(close,20):0),20,1)
@@ -3224,15 +3573,16 @@ class GTJA_191:
     def alpha_160(self, window=20, span=39):
         ################
         ############sma((close<=delay(close,1)?std(close,20):0),20,1)
-       # data1 = pd.rolling_std(self.close, 20)
+        # data1 = pd.rolling_std(self.close, 20)
         data1 = self.close.rolling(window).std()
         cond = self.close <= self.close.shift()
         data1[~cond] = 0
-     #   data2 = pd.ewma(data1, span=39)
-        data2= data1.ewm(span,adjust=False).mean()
-        alpha = data2 
+        #   data2 = pd.ewma(data1, span=39)
+        data2 = data1.ewm(span, adjust=False).mean()
+        alpha = data2
         alpha = alpha.shift()
         return alpha.stack()
+
     # def alpha_161(self):
     #     ###########mean((max(max(high-low),abs(delay(close,1)-high)),abs(delay(close,1)-low)),12)
     #     ################
@@ -3250,17 +3600,18 @@ class GTJA_191:
     def alpha_161(self):
         ###########mean((max(max(high-low),abs(delay(close,1)-high)),abs(delay(close,1)-low)),12)
         ################
-        data1 = (self.high - self.low)
+        data1 = self.high - self.low
         data2 = pd.Series.abs(self.close.shift() - self.high)
         cond = data1 > data2
         data1[~cond] = data2
         data3 = pd.Series.abs(self.close.shift() - self.low)
         cond = data1 > data3
         data1[~cond] = data3
-       # alpha = (pd.rolling_mean(data1, 12)).iloc[-1, :]
-        alpha = data1.rolling(window=12).mean() 
+        # alpha = (pd.rolling_mean(data1, 12)).iloc[-1, :]
+        alpha = data1.rolling(window=12).mean()
         alpha = alpha.shift()
         return alpha.stack()
+
     # def alpha_162(self):
     #     ###############(sma(max(close-delay(close,1),0),12,1)/sma(abs(close-delay(close,1)),12,1)*100-min(sma(max(close-delay(close,1),0),12,1)/sma(abs(close-delay(close,1)),12,1)*100,12))/(max(sma(max(close-delay(close,1),0),12,1)/sma(abs(close-delay(close,1)),12,1)*100),12)-min(sma(max(close-delay(close,1),0),12,1)/sma(abs(close-delay(close,1)),12,1)*100),12))
     #     #################
@@ -3290,11 +3641,11 @@ class GTJA_191:
         data1 = self.close - self.close.shift()
         cond = data1 > 0
         data1[~cond] = 0
-       # x = pd.ewma(data1, span=23)
-        x=data1.ewm(span,adjust=False).mean()
+        # x = pd.ewma(data1, span=23)
+        x = data1.ewm(span, adjust=False).mean()
         data2 = pd.Series.abs(self.close - self.close.shift())
-       # y = pd.ewma(data2, span=23)
-        y= data2.ewm(span,adjust=False).mean()
+        # y = pd.ewma(data2, span=23)
+        y = data2.ewm(span, adjust=False).mean()
         z = (x / y) * 100
         cond = z > 12
         z[cond] = 12
@@ -3302,9 +3653,10 @@ class GTJA_191:
         cond = c > c1
         c[~cond] = c1
         data3 = (x / y) * 100 - (z / c) - c
-        alpha = data3 
+        alpha = data3
         alpha = alpha.shift()
         return alpha.stack()
+
     # def alpha_163(self):
     #     ################
     #     #######rank(((((-1*ret)*,ean(volume,20))*vwap)*(high-close)))
@@ -3320,11 +3672,18 @@ class GTJA_191:
         #######rank(((((-1*ret)*,ean(volume,20))*vwap)*(high-close)))
         # data1 = (-1) * (self.close / self.close.shift() - 1) * pd.rolling_mean(self.volume, 20) * self.avg_price * (
         #             self.high - self.close)
-        data1=(-1)*(self.close/self.close.shift()-1)*self.volume.rolling(window=20).mean()*self.avg_price*(self.high-self.close)
-        data2 = (data1.rank(axis=1, pct=True)) 
+        data1 = (
+            (-1)
+            * (self.close / self.close.shift() - 1)
+            * self.volume.rolling(window=20).mean()
+            * self.avg_price
+            * (self.high - self.close)
+        )
+        data2 = data1.rank(axis=1, pct=True)
         alpha = data2.shift()
         alpha = alpha
         return alpha.stack()
+
     # def alpha_164(self):
     #     ################
     #     ############sma((((close>delay(close,1))?1/(close-delay(close,1)):1)-min(((close>delay(close,1))?1/(close/delay(close,1)):1),12))/(high-low)*100,13,2)
@@ -3349,10 +3708,11 @@ class GTJA_191:
         cond = data2 > 12
         data2[cond] = 12
         data3 = data1 - data2 / ((self.high - self.low) * 100)
-    
-        alpha = data3.ewm(span=12,adjust=False).mean() 
+
+        alpha = data3.ewm(span=12, adjust=False).mean()
         alpha = alpha.shift()
         return alpha.stack()
+
     def alpha_165(self):
         raise NotImplementedError
 
@@ -3374,13 +3734,14 @@ class GTJA_191:
         ##
         ####sum(((close-delay(close,1)>0)?(close-delay(close,1)):0),12)####
         data1 = self.close - self.close.shift()
-        cond = (data1 < 0)
+        cond = data1 < 0
         data1[cond] = 0
-        #data2 = (pd.rolling_sum(data1, 12)).iloc[-1, :]
+        # data2 = (pd.rolling_sum(data1, 12)).iloc[-1, :]
         data2 = data1.rolling(window).sum()
         alpha = data2
         alpha = alpha.shift()
         return alpha.stack()
+
     # def alpha_168(self):
     #     ##
     #     #####-1*volume/mean(volume,20)####
@@ -3392,11 +3753,12 @@ class GTJA_191:
     def alpha_168(self, window=20):
         ##
         #####-1*volume/mean(volume,20)####
-       # data1 = (-1 * self.volume) / pd.rolling_mean(self.volume, 20)
+        # data1 = (-1 * self.volume) / pd.rolling_mean(self.volume, 20)
         data1 = (-1 * self.volume) / self.volume.rolling(window).mean()
-        alpha = data1 
+        alpha = data1
         alpha = alpha.shift()
         return alpha.stack()
+
     # def alpha_169(self):
     #     ##
     #     ###sma(mean(delay(sma(close-delay(close,1),9,1),1),12)-mean(delay(sma(close-delay(close,1),1,1),1),26),10,1)#####
@@ -3413,14 +3775,15 @@ class GTJA_191:
         ##
         ###sma(mean(delay(sma(close-delay(close,1),9,1),1),12)-mean(delay(sma(close-delay(close,1),1,1),1),26),10,1)#####
         data1 = self.close - self.close.shift()
-       # data2 = (pd.ewma(data1, span=17)).shift()
-        data2 = data1.ewm(span1,adjust=False).mean().shift()
-       # data3 = pd.rolling_mean(data2, 12) - pd.rolling_mean(data2, 26)
-        data3 = data2.rolling(window1).mean()-data2.rolling(window2).mean()
-        #alpha = (pd.ewma(data3, span=19)).iloc[-1, :]
-        alpha = data3.ewm(span1,adjust=False).mean() 
+        # data2 = (pd.ewma(data1, span=17)).shift()
+        data2 = data1.ewm(span1, adjust=False).mean().shift()
+        # data3 = pd.rolling_mean(data2, 12) - pd.rolling_mean(data2, 26)
+        data3 = data2.rolling(window1).mean() - data2.rolling(window2).mean()
+        # alpha = (pd.ewma(data3, span=19)).iloc[-1, :]
+        alpha = data3.ewm(span1, adjust=False).mean()
         alpha = alpha.shift()
         return alpha.stack()
+
     # def alpha_170(self):
     #     ##
     #     #####((((rank((1/close))*volume)/mean(volume,20))*((high*rank((high-close)))/(sum(high,5)/5)))-rank((vwap-delay(vwap,5))))####
@@ -3440,17 +3803,18 @@ class GTJA_191:
         ##
         #####((((rank((1/close))*volume)/mean(volume,20))*((high*rank((high-close)))/(sum(high,5)/5)))-rank((vwap-delay(vwap,5))))####
         data1 = (1 / self.close).rank(axis=0, pct=True)
-        #data2 = pd.rolling_mean(self.volume, 20)
+        # data2 = pd.rolling_mean(self.volume, 20)
         dta2 = self.volume.rolling(window1).mean()
         x = (data1 * self.volume) / data2
         data3 = (self.high - self.close).rank(axis=0, pct=True)
-       # data4 = pd.rolling_mean(self.high, 5)
+        # data4 = pd.rolling_mean(self.high, 5)
         data4 = self.high.rolling(window2).mean()
         y = (data3 * self.high) / data4
         z = (self.avg_price - self.avg_price.shift(window2)).rank(axis=0, pct=True)
-        alpha = (x * y - z)
+        alpha = x * y - z
         alpha = alpha.shift()
         return alpha.stack()
+
     # def alpha_171(self):
     #     ####(((low-close)*open^5)*-1)/((close-high)*close^5)#####
     #     data1 = -1 * (self.low - self.close) * (self.open_price ** 5)
@@ -3460,11 +3824,12 @@ class GTJA_191:
     #     return alpha
     def alpha_171(self):
         ####(((low-close)*open^5)*-1)/((close-high)*close^5)#####
-        data1 = -1 * (self.low - self.close) * (self.open_price ** 5)
-        data2 = (self.close - self.high) * (self.close ** 5)
-        alpha = (data1 / data2) 
+        data1 = -1 * (self.low - self.close) * (self.open_price**5)
+        data2 = (self.close - self.high) * (self.close**5)
+        alpha = data1 / data2
         alpha = alpha.shift()
         return alpha.stack()
+
     # def alpha_172(self):
     #     # MEAN(ABS(SUM((LD>0&LD>HD)?LD:0,14)*100/SUM(TR,14)-SUM((HD>0&HD>LD)?HD:0,14)*100/(SUM((LD>0&LD>HD)?LD:0,14)*100/SUM(TR,14)+SUM(TR,14)+SUM((HD>0&HD>LD)?HD:0,14)*100/SUM(TR,14))*100,6) #
     #     hd = self.high - self.high.shift()
@@ -3509,27 +3874,30 @@ class GTJA_191:
         temp3 = (self.low - self.close.shift()).abs()
         cond2 = temp2 > temp3
         temp3[cond2] = temp2[cond2]
-        tr = temp3  # MAX(MAX(HIGH-LOW,ABS(HIGH-DELAY(CLOSE,1))),ABS(LOW-DELAY(CLOSE,1)))
-        #sum_tr14 = pd.rolling_sum(tr, 14)
+        tr = (
+            temp3  # MAX(MAX(HIGH-LOW,ABS(HIGH-DELAY(CLOSE,1))),ABS(LOW-DELAY(CLOSE,1)))
+        )
+        # sum_tr14 = pd.rolling_sum(tr, 14)
         sum_tr14 = tr.rolling(window1).sum()
         cond3 = ld > 0
         cond4 = ld > hd
         cond3[~cond4] = False
         data1 = ld
         data1[~cond3] = 0
-       # sum1 = pd.rolling_sum(data1, 14) * 100 / sum_tr14
-        sum1 = data1.rolling(window1).sum()*100/sum_tr14
+        # sum1 = pd.rolling_sum(data1, 14) * 100 / sum_tr14
+        sum1 = data1.rolling(window1).sum() * 100 / sum_tr14
         cond5 = hd > 0
         cond6 = hd > ld
         cond5[~cond6] = False
         data2 = hd
         data2[~cond5] = 0
-       # sum2 = pd.rolling_sum(data2, 14) * 100 / sum_tr14
-        sum2= data2.rolling(window1).sum()*100/sum_tr14
-        #alpha = pd.rolling_mean((sum1 - sum2).abs() / (sum1 + sum2) * 100, 6).iloc[-1, :]
-        alpha = ((sum1-sum2).abs()/(sum1+sum2)*100).rolling(window2).mean()
+        # sum2 = pd.rolling_sum(data2, 14) * 100 / sum_tr14
+        sum2 = data2.rolling(window1).sum() * 100 / sum_tr14
+        # alpha = pd.rolling_mean((sum1 - sum2).abs() / (sum1 + sum2) * 100, 6).iloc[-1, :]
+        alpha = ((sum1 - sum2).abs() / (sum1 + sum2) * 100).rolling(window2).mean()
         alpha = alpha.shift()
         return alpha.stack()
+
     # def alpha_173(self):
     #     ##
     #     ####3*sma(close,13,2)-2*sma(sma(close,13,2),13,2)+sma(sma(sma(log(close),13,2),13,2),13,2)#####
@@ -3550,20 +3918,21 @@ class GTJA_191:
     def alpha_173(self):
         ##
         ####3*sma(close,13,2)-2*sma(sma(close,13,2),13,2)+sma(sma(sma(log(close),13,2),13,2),13,2)#####
-       # data1 = pd.ewma(self.close, span=12)
-        data1 = self.close.ewm(span=12,adjust=False).mean()
-      #  data2 = pd.ewma(data1, span=12)
-        data2=data1.ewm(span=12,adjust=False).mean()
+        # data1 = pd.ewma(self.close, span=12)
+        data1 = self.close.ewm(span=12, adjust=False).mean()
+        #  data2 = pd.ewma(data1, span=12)
+        data2 = data1.ewm(span=12, adjust=False).mean()
         close_log = np.log(self.close)
         # data3 = pd.ewma(close_log, span=12)
         # data4 = pd.ewma(data3, span=12)
         # data5 = pd.ewma(data4, span=12)
-        data3=close_log.ewm(span=12,adjust=False).mean()
-        data4=data3.ewm(span=12,adjust=False).mean()
-        data5=data4.ewm(span=12,adjust=False).mean()
-        alpha = (3 * data1 - 2 * data2 + data5) 
+        data3 = close_log.ewm(span=12, adjust=False).mean()
+        data4 = data3.ewm(span=12, adjust=False).mean()
+        data5 = data4.ewm(span=12, adjust=False).mean()
+        alpha = 3 * data1 - 2 * data2 + data5
         alpha = alpha.shift()
         return alpha.stack()
+
     # def alpha_174(self):
     #     ####sma((close>delay(close,1)?std(close,20):0),20,1)#####
     #     cond = self.close > self.prev_close
@@ -3577,13 +3946,14 @@ class GTJA_191:
     def alpha_174(self, window1=20, span1=39):
         ####sma((close>delay(close,1)?std(close,20):0),20,1)#####
         cond = self.close > self.prev_close
-      #  data2 = pd.rolling_std(self.close, 20)
-        data2= self.close.rolling(window1).std()
+        #  data2 = pd.rolling_std(self.close, 20)
+        data2 = self.close.rolling(window1).std()
         data2[~cond] = 0
-       # alpha = (pd.ewma(data2, span=39, adjust=False)).iloc[-1, :]
-        alpha =data2.ewm(span1,adjust=False).mean() 
+        # alpha = (pd.ewma(data2, span=39, adjust=False)).iloc[-1, :]
+        alpha = data2.ewm(span1, adjust=False).mean()
         alpha = alpha.shift()
         return alpha.stack()
+
     # def alpha_175(self):
     #     ##
     #     #####mean(max(max(high-low),abs(delay(close,1)-high)),abs(delay(close,1)-low)),6)####
@@ -3604,22 +3974,23 @@ class GTJA_191:
         #####mean(max(max(high-low),abs(delay(close,1)-high)),abs(delay(close,1)-low)),6)####
         data1 = self.high - self.low
         data2 = pd.Series.abs(self.close.shift() - self.high)
-        cond = (data1 > data2)
+        cond = data1 > data2
         data2[cond] = data1[cond]
         data3 = pd.Series.abs(self.close.shift() - self.low)
-        cond = (data2 > data3)
+        cond = data2 > data3
         data3[cond] = data2[cond]
-       # data4 = (pd.rolling_mean(data3, window=6)).iloc[-1, :]
-        data4=data3.rolling(window=6).mean() 
+        # data4 = (pd.rolling_mean(data3, window=6)).iloc[-1, :]
+        data4 = data3.rolling(window=6).mean()
         alpha = data4
         alpha = alpha.shift()
         return alpha.stack()
+
     # def alpha_176(self):
     #     ##
     #     ######### #########corr(rank((close-tsmin(low,12))/(tsmax(high,12)-tsmin(low,12))),rank(volume),6)#############
     #     # data1 = (self.close - pd.rolling_min(self.low, window=12)) / (
     #     #             pd.rolling_max(self.high, window=12) - pd.rolling_min(self.low, window=12))
-       
+
     #     data1 = (self.close - self.low.rolling(window=12).min())/(self.high.rolling(window=12).max()-self.low.rolling(window=12).min())
     #     data2 = data1.rank(axis=0, pct=True)
     #     # 获取数据求出rank2
@@ -3633,16 +4004,19 @@ class GTJA_191:
         ######### #########corr(rank((close-tsmin(low,12))/(tsmax(high,12)-tsmin(low,12))),rank(volume),6)#############
         # data1 = (self.close - pd.rolling_min(self.low, window=12)) / (
         #             pd.rolling_max(self.high, window=12) - pd.rolling_min(self.low, window=12))
-       
-        data1 = (self.close - self.low.rolling(window=12).min())/(self.high.rolling(window=12).max()-self.low.rolling(window=12).min())
+
+        data1 = (self.close - self.low.rolling(window=12).min()) / (
+            self.high.rolling(window=12).max() - self.low.rolling(window=12).min()
+        )
         data2 = data1.rank(axis=0, pct=True)
         # 获取数据求出rank2
         data3 = self.volume.rank(axis=0, pct=True)
-        
-        corr=data2.rolling(6).corr(data3)
+
+        corr = data2.rolling(6).corr(data3)
         alpha = corr
         alpha = alpha.shift()
         return alpha.stack()
+
     # def alpha_177(self):
     #     ##### ((20-HIGHDAY(HIGH,20))/20)*100 #####
     #     alpha = (20 - self.high.iloc[-20:, :].apply(self.func_highday)) / 20 * 100
@@ -3653,6 +4027,7 @@ class GTJA_191:
         alpha = (20 - self.high.shift(20).apply(self.func_highday)) / 20 * 100
         alpha = alpha.shift()
         return alpha.stack()
+
     # def alpha_178(self):
     #     ##### (close-delay(close,1))/delay(close,1)*volume ####
     #     ##
@@ -3662,7 +4037,7 @@ class GTJA_191:
     def alpha_178(self):
         ##### (close-delay(close,1))/delay(close,1)*volume ####
         ##
-        alpha = ((self.close - self.close.shift()) / self.close.shift() * self.volume)
+        alpha = (self.close - self.close.shift()) / self.close.shift() * self.volume
         alpha = alpha.shift()
         return alpha.stack()
 
@@ -3680,17 +4055,18 @@ class GTJA_191:
     def alpha_179(self, window1=4, window2=50, window3=12):
         #####（rank(corr(vwap,volume,4))*rank(corr(rank(low),rank(mean(volume,50)),12))####
         ##
-        
-        rank1=self.avg_price.rolling(window1).corr(self.volume).rank(axis=0, pct=True)
+
+        rank1 = self.avg_price.rolling(window1).corr(self.volume).rank(axis=0, pct=True)
 
         data2 = self.low.rank(axis=0, pct=True)
-       
+
         data3 = self.volume.rolling(window2).mean().rank(axis=0, pct=True)
-       
-        rank2=data2.rolling(window3).corr(data3).rank(axis=0, pct=True)
+
+        rank2 = data2.rolling(window3).corr(data3).rank(axis=0, pct=True)
         alpha = rank1 * rank2
         alpha = alpha.shift()
         return alpha.stack()
+
     # def alpha_180(self):
     #     ##### ((MEAN(VOLUME,20)<VOLUME)?((-1*TSRANK(ABS(DELTA(CLOSE,7)),60))*SIGN(DELTA(CLOSE,7)):(-1*VOLUME))) #####
     #     #ma = pd.rolling_mean(self.volume, window=20)
@@ -3708,24 +4084,23 @@ class GTJA_191:
     #     alpha = right.iloc[-1, :]
     #     alpha = alpha.dropna()
     #     return alpha
-    def alpha_180(self,window1=20, shift1=7):
+    def alpha_180(self, window1=20, shift1=7):
         ##### ((MEAN(VOLUME,20)<VOLUME)?((-1*TSRANK(ABS(DELTA(CLOSE,7)),60))*SIGN(DELTA(CLOSE,7)):(-1*VOLUME))) #####
-        #ma = pd.rolling_mean(self.volume, window=20)
-        ma =self.volume.rolling(window1).mean()
-        cond = (ma < self.volume) 
+        # ma = pd.rolling_mean(self.volume, window=20)
+        ma = self.volume.rolling(window1).mean()
+        cond = ma < self.volume
         delta_close_7 = self.close.diff(shift1)
         sign = delta_close_7.copy()
-        sign=sign.applymap(lambda x: -1 if x<0 else 1 if x>0 else 0)
- 
+        sign = sign.applymap(lambda x: -1 if x < 0 else 1 if x > 0 else 0)
+
         abs_delta_close_7 = delta_close_7.abs()
-        left = (((abs_delta_close_7.rank(axis=1, pct=True) * (-1)) * sign))
+        left = (abs_delta_close_7.rank(axis=1, pct=True) * (-1)) * sign
         right = self.volume * (-1)
         right[cond] = left[cond]
         alpha = right
         alpha = alpha.shift()
         return alpha.stack()
 
- 
     def alpha_181(self):
         raise NotImplementedError
 
@@ -3747,8 +4122,9 @@ class GTJA_191:
     #     return alpha
     def alpha_182(self):
         ##### COUNT((CLOSE>OPEN & BANCHMARKINDEXCLOSE>BANCHMARKINDEXOPEN)OR(CLOSE<OPEN & BANCHMARKINDEXCLOSE<BANCHMARKINDEXOPEN),20)/20 #####
-        #和基准指数有关，暂时不计算
+        # 和基准指数有关，暂时不计算
         raise NotImplementedError
+
     def alpha_183(self):
         raise NotImplementedError
 
@@ -3765,12 +4141,13 @@ class GTJA_191:
         #####(rank(corr(delay((open-close),1),close,200))+rank((open-close))) ####
         ##
         data1 = self.open_price.shift() - self.close.shift()
-        data2 = self.open_price - self.close 
-     
+        data2 = self.open_price - self.close
+
         corr = data1.rolling(200).corr(self.close)
         alpha = data2.rank(axis=1, pct=True) + corr.rank(axis=1, pct=True)
         alpha = alpha.shift()
         return alpha.stack()
+
     # def alpha_185(self):
     #     ##### RANK((-1 * ((1 - (OPEN / CLOSE))^2))) ####
     #     alpha = (-(1 - self.open_price / self.close) ** 2).rank(axis=1, pct=True).iloc[-1, :]
@@ -3778,9 +4155,10 @@ class GTJA_191:
     #     return alpha
     def alpha_185(self):
         ##### RANK((-1 * ((1 - (OPEN / CLOSE))^2))) ####
-        alpha = (-(1 - self.open_price / self.close) ** 2).rank(axis=1, pct=True) 
+        alpha = (-((1 - self.open_price / self.close) ** 2)).rank(axis=1, pct=True)
         alpha = alpha.shift()
         return alpha.stack()
+
     #
     # def alpha_186(self):
     #     # (MEAN(ABS(SUM((LD>0 & LD>HD)?LD:0,14)*100/SUM(TR,14)-SUM((HD>0 & HD>LD)?HD:0,14)*100/SUM(TR,14))/(SUM((LD>0 & LD>HD)?LD:0,14)*100/SUM(TR,14)+SUM((HD>0 & HD>LD)?HD:0,14)*100/SUM(TR,14))*100,6)+DELAY(MEAN(ABS(SUM((LD>0 & LD>HD)?LD:0,14)*100/SUM(TR,14)-SUM((HD>0 & HD>LD)?HD:0,14)*100/SUM(TR,14))/(SUM((LD>0 & LD>HD)?LD:0,14)*100/SUM(TR,14)+SUM((HD>0 & HD>LD)?HD:0,14)*100/SUM(TR,14))*100,6),6))/2 #
@@ -3826,28 +4204,31 @@ class GTJA_191:
         temp3 = (self.low - self.close.shift()).abs()
         cond2 = temp2 > temp3
         temp3[cond2] = temp2[cond2]
-        tr = temp3  # MAX(MAX(HIGH-LOW,ABS(HIGH-DELAY(CLOSE,1))),ABS(LOW-DELAY(CLOSE,1)))
-       # sum_tr14 = pd.rolling_sum(tr, 14)
-        sum_tr14=tr.rollling(window1).sum()
+        tr = (
+            temp3  # MAX(MAX(HIGH-LOW,ABS(HIGH-DELAY(CLOSE,1))),ABS(LOW-DELAY(CLOSE,1)))
+        )
+        # sum_tr14 = pd.rolling_sum(tr, 14)
+        sum_tr14 = tr.rollling(window1).sum()
         cond3 = ld > 0
         cond4 = ld > hd
         cond3[~cond4] = False
         data1 = ld
         data1[~cond3] = 0
-      #  sum1 = pd.rolling_sum(data1, 14) * 100 / sum_tr14
-        sum1= data1.rolling(window1).sum()*100/sum_tr14
+        #  sum1 = pd.rolling_sum(data1, 14) * 100 / sum_tr14
+        sum1 = data1.rolling(window1).sum() * 100 / sum_tr14
         cond5 = hd > 0
         cond6 = hd > ld
         cond5[~cond6] = False
         data2 = hd
         data2[~cond5] = 0
-       # sum2 = pd.rolling_sum(data2, 14) * 100 / sum_tr14
-        sum2=data2.rolling(window1).sum()*100/sum_tr14
-       # mean1 = pd.rolling_mean((sum1 - sum2).abs() / (sum1 + sum2) * 100, 6)
-        mean1 =((sum1-sum2).abs()/(sum1+sum2)*100).rolling(window2).mean()
-        alpha = ((mean1 + mean1.shift(window2)) / 2)
+        # sum2 = pd.rolling_sum(data2, 14) * 100 / sum_tr14
+        sum2 = data2.rolling(window1).sum() * 100 / sum_tr14
+        # mean1 = pd.rolling_mean((sum1 - sum2).abs() / (sum1 + sum2) * 100, 6)
+        mean1 = ((sum1 - sum2).abs() / (sum1 + sum2) * 100).rolling(window2).mean()
+        alpha = (mean1 + mean1.shift(window2)) / 2
         alpha = alpha.shift()
         return alpha.stack()
+
     # def alpha_187(self):
     #     ##### SUM((OPEN<=DELAY(OPEN,1)?0:MAX((HIGH-OPEN),(OPEN-DELAY(OPEN,1)))),20) ####
     #     cond = (self.open_price <= self.open_price.shift())
@@ -3861,7 +4242,7 @@ class GTJA_191:
     #     return alpha
     def alpha_187(self, window1=20):
         ##### SUM((OPEN<=DELAY(OPEN,1)?0:MAX((HIGH-OPEN),(OPEN-DELAY(OPEN,1)))),20) ####
-        cond = (self.open_price <= self.open_price.shift())
+        cond = self.open_price <= self.open_price.shift()
         data1 = self.high - self.low  # HIGH-LOW
         data2 = self.open_price - self.open_price.shift()  # OPEN-DELAY(OPEN,1)
         cond_max = data2 > data1
@@ -3870,6 +4251,7 @@ class GTJA_191:
         alpha = data1.rolling(window1).sum()
         alpha = alpha.shift()
         return alpha.stack()
+
     # def alpha_188(self):
     #     ##### ((HIGH-LOW–SMA(HIGH-LOW,11,2))/SMA(HIGH-LOW,11,2))*100 #####
     #   #  sma = pd.ewma(self.high - self.low, span=10, adjust=False)
@@ -3879,11 +4261,12 @@ class GTJA_191:
     #     return alpha
     def alpha_188(self, span1=10):
         ##### ((HIGH-LOW–SMA(HIGH-LOW,11,2))/SMA(HIGH-LOW,11,2))*100 #####
-      #  sma = pd.ewma(self.high - self.low, span=10, adjust=False)
-        sma= (self.high - self.low).ewm(span1,adjust=False).mean()
-        alpha = ((self.high - self.low - sma) / sma * 100) 
+        #  sma = pd.ewma(self.high - self.low, span=10, adjust=False)
+        sma = (self.high - self.low).ewm(span1, adjust=False).mean()
+        alpha = (self.high - self.low - sma) / sma * 100
         alpha = alpha.shift()
         return alpha.stack()
+
     # def alpha_189(self):
     #     ##### mean(abs(close-mean(close,6),6)) ####
     # #    ma6 = pd.rolling_mean(self.close, window=6)
@@ -3894,12 +4277,13 @@ class GTJA_191:
     #     return alpha
     def alpha_189(self, window=6):
         ##### mean(abs(close-mean(close,6),6)) ####
-    #    ma6 = pd.rolling_mean(self.close, window=6)
-        ma6= self.close.rolling(window).mean()
-       # alpha = pd.rolling_mean((self.close - ma6).abs(), window=6).iloc[-1, :]
-        alpha = ((self.close-ma6).abs()).rolling(window).mean()
+        #    ma6 = pd.rolling_mean(self.close, window=6)
+        ma6 = self.close.rolling(window).mean()
+        # alpha = pd.rolling_mean((self.close - ma6).abs(), window=6).iloc[-1, :]
+        alpha = ((self.close - ma6).abs()).rolling(window).mean()
         alpha = alpha.shift()
         return alpha.stack()
+
     def alpha_190(self):
         ##### LOG((COUNT(CLOSE/DELAY(CLOSE)-1>((CLOSE/DELAY(CLOSE,19))^(1/20)-1),20)-1)*(SUMIF(((CLOSE/DELAY(CLOSE)
         ##### -1-(CLOSE/DELAY(CLOSE,19))^(1/20)-1))^2,20,CLOSE/DELAY(CLOSE)-1<(CLOSE/DELAY(CLOSE,19))^(1/20)-1))/((
@@ -3917,49 +4301,52 @@ class GTJA_191:
     #     return alpha
     def alpha_191(self, window1=20, window2=5):
         ##### (CORR(MEAN(VOLUME,20), LOW, 5) + ((HIGH + LOW) / 2)) - CLOSE ####
-      #  volume_avg = pd.rolling_mean(self.volume, window=20)
-        volume_avg=self.volume.rolling(window1).mean()
-     
-        corr=volume_avg.rolling(window2).corr(self.low)
-        alpha = corr + (self.high  + self.low) / 2 - self.close 
+        #  volume_avg = pd.rolling_mean(self.volume, window=20)
+        volume_avg = self.volume.rolling(window1).mean()
+
+        corr = volume_avg.rolling(window2).corr(self.low)
+        alpha = corr + (self.high + self.low) / 2 - self.close
         alpha = alpha.shift()
         return alpha.stack()
 
 
 def Main_Data_Renew() -> None:
-    datapath=r'E:\Documents\PythonProject\StockProject\StockData'
-    savedatapath=r'E:\Documents\PythonProject\StockProject\StockData\RawFactors_alpha191'
-    PriceDf=pd.read_pickle(datapath+'\\'+'Price.pkl')
-    begindate=PriceDf.index.get_level_values(0).min()
-    enddate=PriceDf.index.get_level_values(0).max()
-    FactorMaker=GTJA_191(begindate,enddate,PriceDf)
-    
-    test=sft.Single_Factor_Test(r'E:\Documents\PythonProject\StockProject\MultiFactors\[SingleFactorTest].ini')
-    test.filtered_stocks=sft.PickupStocksByAmount(PriceDf)#股票池过滤
- 
+    datapath = r"E:\Documents\PythonProject\StockProject\StockData"
+    savedatapath = (
+        r"E:\Documents\PythonProject\StockProject\StockData\RawFactors_alpha191"
+    )
+    PriceDf = pd.read_pickle(datapath + "\\" + "Price.pkl")
+    begindate = PriceDf.index.get_level_values(0).min()
+    enddate = PriceDf.index.get_level_values(0).max()
+    FactorMaker = GTJA_191(begindate, enddate, PriceDf)
+
+    test = sft.Single_Factor_Test(
+        r"E:\Documents\PythonProject\StockProject\MultiFactors\[SingleFactorTest].ini"
+    )
+    test.filtered_stocks = sft.PickupStocksByAmount(PriceDf)  # 股票池过滤
+
     test.data_loading_1st_time()
-    #miss1:27
-    for i in range(1,191):
-        if i<=1:
+    # miss1:27
+    for i in range(1, 191):
+        if i <= 1:
             continue
-        alpha = f'alpha_{i:03}'
+        alpha = f"alpha_{i:03}"
         print(alpha)
         method = getattr(FactorMaker, alpha)
 
         try:
-            alphadata =method()
-            pd.to_pickle(alphadata, savedatapath + '\\' + f'{alpha}.pkl')
+            alphadata = method()
+            pd.to_pickle(alphadata, savedatapath + "\\" + f"{alpha}.pkl")
             test.data_backtest_one_hot(alpha)
             test.data_plot()
             test.data_save()
         except:
             continue
-    return  
- 
- 
+    return
 
-if __name__ == '__main__':
-    print('Main')
+
+if __name__ == "__main__":
+    print("Main")
     Main_Data_Renew()
     # datapath=r'E:\Documents\PythonProject\StockProject\StockData'
     # savedatapath=r'E:\Documents\PythonProject\StockProject\StockData\RawFactors_alpha191'
@@ -3967,12 +4354,12 @@ if __name__ == '__main__':
     # begindate=PriceDf.index.get_level_values(0).min()
     # enddate=PriceDf.index.get_level_values(0).max()
     # FactorMaker=GTJA_191(begindate,enddate,PriceDf)
-    
+
     # test=sft.Single_Factor_Test(r'E:\Documents\PythonProject\StockProject\MultiFactors\[SingleFactorTest].ini')
     # test.filtered_stocks=sft.PickupStocksByAmount(PriceDf)#股票池过滤
- 
+
     # test.data_loading_1st_time()
-    
+
     # for i in range(1,191):
     #     if i<=0:
     #         continue
@@ -3989,6 +4376,3 @@ if __name__ == '__main__':
     #         test.data_save()
     #     except:
     #         continue
-
-
- 

@@ -1,4 +1,12 @@
 {
     "easycode.model": "gpt-4",
-    "python.REPL.enableREPLSmartSend": false
+    "python.REPL.enableREPLSmartSend": false,
+    "[python]": {
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "mikoz.black-py"
+    },
+    "black-formatter.args": [
+        "--line-length",
+        "88"
+    ]
 }
