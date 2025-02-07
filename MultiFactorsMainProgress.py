@@ -448,7 +448,7 @@ class LoopThroughSingleFactorTest:
         )
         self.single_test = single_test
 
-    def single_test_run(self, datasavepath):
+    def single_test_run(self, datasavepath) -> None:
         self.factorsfiles = find_pkl_files(self.single_test.rawfactorsavepath)
         for factorfile in self.factorsfiles:
             file_path = factorfile
@@ -480,7 +480,30 @@ class MultiFactorCombination:
         self.data_loading_path = data_loading_path
         self.analysisdata_path = os.path.join(data_loading_path, "analysisdata")
 
-    def loop_through_indicator(self, concerned_indicator_name):
+    def factors_choosing(self, threshold=0.8):
+        if isinstance(self.analysisdata_path, str):
+            files = find_pkl_files(self.analysisdata_path)
+            all_factors = []
+            for file in files:
+                data = pd.read_pickle(file)
+                all_factors.append(data)
+            all_factors = pd.concat(all_factors, axis=1)
+            to_drop = E_Multicollinearity(all_factors, threshold)
+            all_factors = all_factors.drop(columns=to_drop)
+        if isinstance(self.analysisdata_path, list):
+            all_factors = []
+            for path in self.analysisdata_path:
+                files = find_pkl_files(path)
+                for file in files:
+                    data = pd.read_pickle(file)
+                    all_factors.append(data)
+            all_factors = pd.concat(all_factors, axis=1)
+            to_drop = E_Multicollinearity(all_factors, threshold)
+            all_factors = all_factors.drop(columns=to_drop)
+
+        return concerned_indicator_name
+
+    def loop_through_indicator(self, c):
         self.concerned_indicator_name = concerned_indicator_name
         files = find_pkl_files(self.analysisdata_path)
         concerned_indicator = []
@@ -488,6 +511,7 @@ class MultiFactorCombination:
             data = pd.read_pickle(file)
             concerned_indicator.append(data[concerned_indicator_name])
         self.concerned_indicator = concerned_indicator
+
         return concerned_indicator
 
 

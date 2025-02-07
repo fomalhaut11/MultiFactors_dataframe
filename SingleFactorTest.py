@@ -831,9 +831,11 @@ class Single_Factor_Test:
     def data_swithcing_basefactor_inmergeddata(self, c_type) -> None:
         assert hasattr(self, "merged_data"), "merged_data not loaded"
 
-    def data_loading_1st_time(self, c_type) -> None:
+    def data_loading_1st_time(self, c_type=None) -> None:
         """第一次加载数据，不加载测试因子"""
         """ 读取下期收益数据 """
+        if c_type is None:
+            c_type = self.c_name
 
         if self.backtesttradingprice == "o2o":
             if self.backtesttype == "daily":
@@ -1725,9 +1727,50 @@ def run_singletest():
     pass
 
 
+def sing_factor_test_data(factordata, normedbasedata, logreturndata):
+
+    mergeddata = factordata.join(logreturndata, how="left").join(
+        normedbasedata, how="left"
+    )
+
+    def dailyregress(m1):
+        mask = m1["LogReturn"].notna()
+        m1 = m1.loc[mask]
+        y0 = Remove_Outlier(m1["factor"], method="IQR", para=5)
+        y1 = Normlization(y0, method="zscore").to_frame()
+        y3 = y1.fillna(0)
+        if y3.std().values[0] <= 0.000001:
+            y1 = m1["factor"].copy()
+            y3 = Normlization(y1, method="zscore").to_frame()
+        m2 = m1.drop(columns=["factor", "LogReturn"])
+        x = sm.add_constant(m2)
+        x = x.dropna(axis=0, how="any")
+        y = y3.loc[x.index]
+        model = sm.OLS(y, x)
+        result = model.fit()
+        newfactor = result.resid
+        m2["newfactor"] = Normlization(newfactor, method="zscore")
+        x1 = sm.add_constant(m2)
+        x1 = x1.dropna(axis=0, how="any")
+        y1 = m1["LogReturn"].loc[x1.index]
+        model1 = sm.OLS(y1, x1)
+        result1 = model1.fit()
+        return (
+            result1.params["newfactor"],
+            result1.tvalues["newfactor"],
+            result1.pvalues["newfactor"],
+            spearmanr(newfactor, y1)[0],
+        )
+
+    regress_result = mergeddata.groupby(level=0).apply(dailyregress)
+    regressreturn = regress_result.apply(lambda x: x[0])
+    regressreturn.cumsum().plot()
+    return regress_result
+
+
 if __name__ == "__main__":
     test = Single_Factor_Test(
-        r"E:\Documents\PythonProject\StockProject\StockData\SingleFactorTestData03\[SingleFactorTest].ini"
+        r"E:\Documents\PythonProject\StockProject\StockData\SingleFactorTestData\[SingleFactorTest].ini"
     )  # 读取配置文件
     PriceDf = pd.read_pickle(
         r"E:\Documents\PythonProject\StockProject\StockData\Price.pkl"

@@ -3,10 +3,13 @@ import pandas as pd
 import os
 import sys
 
-# import GTJA_Alpha191 as a191
 file_path = r"E:\Documents\PythonProject\StockProject"
 sys.path.append(file_path)
+file_path1 = r"E:\Documents\PythonProject\StockProject\MultiFactors"
+sys.path.append(file_path1)
+
 import StockDataPrepairing as SDP
+import TechnicFactors as TF
 import alpha191backtest_factor as alpha191
 import 股票数据接口_zx as FinData
 from datetime import date
@@ -449,47 +452,6 @@ def net_profit_FIN_EXP_CS_ratio(x1, len1=8):
     return factorDF, factorDF_zscores
 
 
-""" def financialdatadates(x1):
-    datadate0=x1.ReportData.lrb[x1.Report_idx_Stock3d,:,0]#公布日期
-    datadate1=x1.ReportData.lrb[x1.Report_idx_Stock3d,:,1]#报告期
-    qnum=x1.ReportData.lrb[x1.Report_idx_Stock3d,:,-3]#季报标签
-    ynum=x1.ReportData.lrb[x1.Report_idx_Stock3d,:,-2]#年份
-    StockCodes=x1.StockCodes.repeat(np.shape(datadate1)[1])
-    index1=pd.MultiIndex.from_arrays([StockCodes,pd.to_datetime(datadate1.reshape(-1),format='%Y%m%d')])
-    realesed_dates_df=pd.DataFrame(pd.to_datetime(datadate0.reshape(-1),format='%Y%m%d'),index=index1,columns=['ReleasedDates'])
-    qnum_df=pd.DataFrame(qnum.reshape(-1),index=index1,columns=['Quater'])
-    ynum_df=pd.DataFrame(ynum.reshape(-1),index=index1,columns=['Year'])
-    realesed_dates_df=pd.merge(realesed_dates_df,qnum_df,left_index=True, right_index=True)
-    realesed_dates_df=pd.merge(realesed_dates_df,ynum_df,left_index=True, right_index=True)
-    realesed_dates_df.index.names=['StockCodes','ReportDates']
-    return realesed_dates_df
-
-def ReleasedDatesCount(realesed_dates_df,TradingDates):
-    reportenddate=realesed_dates_df.index.get_level_values(1).unique()
-    realesed_dates_df.groupby('Quater')
-    def row_calc(row,TradingDates):
-        indices=np.searchsorted(row,TradingDates.values.flatten(),side='right')-1
-        time_diffs=(TradingDates.values.flatten()-row.iloc[indices].values)/np.timedelta64(1,'D')
-        time_diffs=pd.Series(time_diffs,index=TradingDates.iloc[:,0])
-        return time_diffs 
-
-    for i in range(4):
-        print(i)
-        quater1data=realesed_dates_df.loc[realesed_dates_df['Quater']==1+i]
-        rd=quater1data['ReleasedDates'].to_frame().unstack()
-        time_diffs=rd.apply(row_calc,axis=1,args=(TradingDates,))
-        df=time_diffs.reset_index()
-        df=df.melt(id_vars='StockCodes',var_name='TradingDates')
-        df.set_index(['TradingDates','StockCodes'],inplace=True)
-        columnnames='Quater'+str(i+1)
-        df.columns=[columnnames]
-        if i ==0:
-            DateCount_df=df
-        else:
-            DateCount_df=pd.merge(DateCount_df,df,left_index=True,right_index=True)
-    return DateCount_df """
-
-
 def half_decay_factor(DateCount_df, factorDF, para=20, show=False):
     logbase = np.exp(-np.log(2) / para)
     minvalues = DateCount_df.min(axis=1)
@@ -503,19 +465,29 @@ def none_linear_marketcap(MarketCap):  # 非线性市值因子
     logmc = np.log(MarketCap)
     logmc3 = logmc**3
     data = pd.DataFrame({"logmc": logmc, "logmc3": logmc3})
-
-    def regress1(data1):
-        y = data1["logmc3"]
-        x = sm.add_constant(data1["logmc"])
-        try:
-            results = sm.OLS(y, x).fit()
-            return results.resid
-        except:
-            return pd.Series(np.nan, index=data1.index)
-
-    df = data.groupby(level=0).apply(regress1).reset_index(level=1, drop=True)
-    df = df.groupby(level=0).shift(1)
-    return df
+    logmcustack = data["logmc"].unstack()
+    logmc3ustack = data["logmc3"].unstack()
+    TradingDates = logmcustack.index
+    StockCodes = logmcustack.columns
+    none_linear_np = np.ones((len(TradingDates), len(StockCodes))) * np.nan
+    np1 = logmcustack.values
+    np2 = logmc3ustack.values
+    for i in range(len(TradingDates)):
+        temp1 = np1[i, :]
+        temp2 = np2[i, :]
+        nanmask = np.isnan(temp1)
+        x = temp1[~nanmask]
+        y = temp2[~nanmask]
+        if len(x) == 0:
+            continue
+        model = sm.OLS(y, sm.add_constant(x), missing="drop")
+        results = model.fit()
+        none_linear_np[i, ~nanmask] = results.resid
+    none_linear_marketcap_pd = pd.DataFrame(
+        none_linear_np, index=TradingDates, columns=StockCodes
+    )
+    none_linear_marketcap_pd = none_linear_marketcap_pd.shift(1).stack()
+    return none_linear_marketcap_pd
 
 
 def log3marketcap(MarketCap):
@@ -568,9 +540,17 @@ def BetaFactorbyIndex(PriceDf, indexname, window=[20, 60, 120, 240]):
     betas2 = np.zeros((len(data.index), len(columns_without_benchmarkreturn)))
     betas3 = np.zeros((len(data.index), len(columns_without_benchmarkreturn)))
 
+    resid0 = np.zeros((len(data.index), len(columns_without_benchmarkreturn)))
+    resid1 = np.zeros((len(data.index), len(columns_without_benchmarkreturn)))
+    resid2 = np.zeros((len(data.index), len(columns_without_benchmarkreturn)))
+    resid3 = np.zeros((len(data.index), len(columns_without_benchmarkreturn)))
+
     datanp = data.to_numpy()
 
     for i in range(len(data.index)):
+        print(data.index[i])
+        if data.index[i] <= pd.Timestamp("2018-01-01"):
+            continue
         if i >= window[0]:
             Y0 = datanp[i - window[0] : i, -1]  # 左开右闭不用移动
             for j, col in enumerate(columns_without_benchmarkreturn):
@@ -579,6 +559,7 @@ def BetaFactorbyIndex(PriceDf, indexname, window=[20, 60, 120, 240]):
                 model = sm.OLS(Y0, X, missing="drop")
                 results = model.fit()
                 betas0[i, j] = results.params[1]
+                resid0[i, j] = results.resid[-1]
         if i >= window[1]:
             Y1 = datanp[i - window[1] : i, -1]
             for j, col in enumerate(columns_without_benchmarkreturn):
@@ -587,6 +568,7 @@ def BetaFactorbyIndex(PriceDf, indexname, window=[20, 60, 120, 240]):
                 model = sm.OLS(Y1, X, missing="drop")
                 results = model.fit()
                 betas1[i, j] = results.params[1]
+                resid1[i, j] = results.resid[-1]
         if i >= window[2]:
             Y2 = datanp[i - window[2] : i, -1]
             for j, col in enumerate(columns_without_benchmarkreturn):
@@ -595,6 +577,7 @@ def BetaFactorbyIndex(PriceDf, indexname, window=[20, 60, 120, 240]):
                 model = sm.OLS(Y2, X, missing="drop")
                 results = model.fit()
                 betas2[i, j] = results.params[1]
+                resid2[i, j] = results.resid[-1]
         if i >= window[3]:
             Y3 = datanp[i - window[3] : i, -1]
             for j, col in enumerate(columns_without_benchmarkreturn):
@@ -603,78 +586,126 @@ def BetaFactorbyIndex(PriceDf, indexname, window=[20, 60, 120, 240]):
                 model = sm.OLS(Y3, X, missing="drop")
                 results = model.fit()
                 betas3[i, j] = results.params[1]
+                resid3[i, j] = results.resid[-1]
 
-    BetaFactor0 = pd.DataFrame(
-        betas0, index=data.index, columns=columns_without_benchmarkreturn
+    BetaFactor0 = (
+        pd.DataFrame(betas0, index=data.index, columns=columns_without_benchmarkreturn)
+        .stack()
+        .to_frame(name="Beta_" + str(window[0]) + "days")
     )
-    BetaFactor1 = pd.DataFrame(
-        betas1, index=data.index, columns=columns_without_benchmarkreturn
+    BetaFactor0.index.names = ["TradingDates", "StockCodes"]
+    BetaFactor1 = (
+        pd.DataFrame(betas1, index=data.index, columns=columns_without_benchmarkreturn)
+        .stack()
+        .to_frame(name="Beta_" + str(window[1]) + "days")
     )
-    BetaFactor2 = pd.DataFrame(
-        betas2, index=data.index, columns=columns_without_benchmarkreturn
+    BetaFactor1.index.names = ["TradingDates", "StockCodes"]
+    BetaFactor2 = (
+        pd.DataFrame(betas2, index=data.index, columns=columns_without_benchmarkreturn)
+        .stack()
+        .to_frame(name="Beta_" + str(window[2]) + "days")
     )
-    BetaFactor3 = pd.DataFrame(
-        betas3, index=data.index, columns=columns_without_benchmarkreturn
+    BetaFactor2.index.names = ["TradingDates", "StockCodes"]
+    BetaFactor3 = (
+        pd.DataFrame(betas3, index=data.index, columns=columns_without_benchmarkreturn)
+        .stack()
+        .to_frame(name="Beta_" + str(window[3]) + "days")
     )
+    BetaFactor3.index.names = ["TradingDates", "StockCodes"]
 
+    ResidFactor0 = (
+        pd.DataFrame(resid0, index=data.index, columns=columns_without_benchmarkreturn)
+        .stack()
+        .to_frame(name="Resid_" + str(window[0]) + "days")
+    )
+    ResidFactor0.index.names = ["TradingDates", "StockCodes"]
+    ResidFactor1 = (
+        pd.DataFrame(resid1, index=data.index, columns=columns_without_benchmarkreturn)
+        .stack()
+        .to_frame(name="Resid_" + str(window[1]) + "days")
+    )
+    ResidFactor1.index.names = ["TradingDates", "StockCodes"]
+    ResidFactor2 = (
+        pd.DataFrame(resid2, index=data.index, columns=columns_without_benchmarkreturn)
+        .stack()
+        .to_frame(name="Resid_" + str(window[2]) + "days")
+    )
+    ResidFactor2.index.names = ["TradingDates", "StockCodes"]
+    ResidFactor3 = (
+        pd.DataFrame(resid3, index=data.index, columns=columns_without_benchmarkreturn)
+        .stack()
+        .to_frame(name="Resid_" + str(window[3]) + "days")
+    )
+    ResidFactor3.index.names = ["TradingDates", "StockCodes"]
     return (
-        BetaFactor0.stack(),
-        BetaFactor1.stack(),
-        BetaFactor2.stack(),
-        BetaFactor3.stack(),
-    )
+        BetaFactor0,
+        BetaFactor1,
+        BetaFactor2,
+        BetaFactor3,
+        ResidFactor0,
+        ResidFactor1,
+        ResidFactor2,
+        ResidFactor3,
+    )  # 20,60,120,240
 
 
-if __name__ == "__main__":
-    print("制作因子 start")
-    SDP.Main_Data_Renew()  # StockDataPrepairing中的数据更新
-    datasavepath = (
-        r"E:\Documents\PythonProject\StockProject\StockData\RawFactors"  # 原始因子存放
-    )
-    datapath = r"E:\Documents\PythonProject\StockProject\StockData"
+def run_IndexBeta(PriceDf) -> None:
+    (
+        zz2000_20day_beta,
+        zz2000_60day_beta,
+        zz2000_120day_beta,
+        zz2000_240day_beta,
+        zz2000_20day_resid,
+        zz2000_60day_resid,
+        zz2000_120day_resid,
+        zz2000_240day_resid,
+    ) = BetaFactorbyIndex(PriceDf, "中证2000")
+    pd.to_pickle(zz2000_20day_beta, datasavepath + r"\zz2000_20day_beta.pkl")
+    pd.to_pickle(zz2000_60day_beta, datasavepath + r"\zz2000_60day_beta.pkl")
+    pd.to_pickle(zz2000_120day_beta, datasavepath + r"\zz2000_120day_beta.pkl")
+    pd.to_pickle(zz2000_240day_beta, datasavepath + r"\zz2000_240day_beta.pkl")
 
-    realead_dates_count_df = pd.read_pickle(
-        datapath + "\\" + "realesed_dates_count_df.pkl"
-    )
-    today = datetime.today()
-    int_today = int(today.strftime("%Y%m%d"))
+    pd.to_pickle(zz2000_20day_resid, datasavepath + r"\zz2000_20day_resid.pkl")
+    pd.to_pickle(zz2000_60day_resid, datasavepath + r"\zz2000_60day_resid.pkl")
+    pd.to_pickle(zz2000_120day_resid, datasavepath + r"\zz2000_120day_resid.pkl")
+    pd.to_pickle(zz2000_240day_resid, datasavepath + r"\zz2000_240day_resid.pkl")
 
-    PriceDf = pd.read_pickle(datapath + "\\" + "Price.pkl")
-    Price_reset = PriceDf.reset_index()
-    Price_reset = Price_reset.rename(
-        columns={"TradingDates": "tradingday", "StockCodes": "code"}
-    )
-    StockData3dMatrix = SDP.StockDataDF2Matrix(Price_reset)
-    cla = FinData.财报数据()
-    cla.复制三张表()
-    begindate = 20140101
-    cla.读取财报数据(begindate, int_today)
-    x1 = SDP.FactorMatrix_Report(StockData3dMatrix, cla)
-    TradingDates = PriceDf.index.get_level_values(0).to_frame()
+    (
+        zz500_20day_beta,
+        zz500_60day_beta,
+        zz500_120day_beta,
+        zz500_240day_beta,
+        zz500_20day_resid,
+        zz500_60day_resid,
+        zz500_120day_resid,
+        zz500_240day_resid,
+    ) = BetaFactorbyIndex(PriceDf, "中证500")
+    pd.to_pickle(zz500_20day_beta, datasavepath + r"\zz500_20day_beta.pkl")
+    pd.to_pickle(zz500_60day_beta, datasavepath + r"\zz500_60day_beta.pkl")
+    pd.to_pickle(zz500_120day_beta, datasavepath + r"\zz500_120day_beta.pkl")
+    pd.to_pickle(zz500_240day_beta, datasavepath + r"\zz500_240day_beta.pkl")
 
-    # zz2000_20day_beta,zz2000_60day_beta,zz2000_120day_beta,zz2000_240day_beta=BetaFactorbyIndex(PriceDf,'中证2000')
-    # pd.to_pickle(zz2000_20day_beta,datasavepath+r'\zz2000_20day_beta.pkl')
-    # pd.to_pickle(zz2000_60day_beta,datasavepath+r'\zz2000_60day_beta.pkl')
-    # pd.to_pickle(zz2000_120day_beta,datasavepath+r'\zz2000_120day_beta.pkl')
-    # pd.to_pickle(zz2000_240day_beta,datasavepath+r'\zz2000_240day_beta.pkl')
+    pd.to_pickle(zz500_20day_resid, datasavepath + r"\zz500_20day_resid.pkl")
+    pd.to_pickle(zz500_60day_resid, datasavepath + r"\zz500_60day_resid.pkl")
+    pd.to_pickle(zz500_120day_resid, datasavepath + r"\zz500_120day_resid.pkl")
+    pd.to_pickle(zz500_240day_resid, datasavepath + r"\zz500_240day_resid.pkl")
+    return
 
-    # zz500_20day_beta,zz500_60day_beta,zz500_120day_beta,zz500_240day_beta=BetaFactorbyIndex(PriceDf,'中证500')
-    # pd.to_pickle(zz500_20day_beta,datasavepath+r'\zz500_20day_beta.pkl')
-    # pd.to_pickle(zz500_60day_beta,datasavepath+r'\zz500_60day_beta.pkl')
-    # pd.to_pickle(zz500_120day_beta,datasavepath+r'\zz500_120day_beta.pkl')
-    # pd.to_pickle(zz500_240day_beta,datasavepath+r'\zz500_240day_beta.pkl')
 
-    PriceDf = None
-
+def run_finacialfactors(
+        x1,
+        datasavepath,
+        datapath=r"E:\Documents\PythonProject\StockProject\StockData"
+        ) -> None:
     MarketCap = pd.read_pickle(datasavepath + "\\" + "MarketCap.pkl")
-    FreeMarketCap = pd.read_pickle(datasavepath + "\\" + "FreeMarketCap.pkl")
-    alldates = MarketCap.index.get_level_values(0).unique()
-    none_linear_marketcap = none_linear_marketcap(MarketCap)
+    none_linear_marketcap_data = none_linear_marketcap(MarketCap)
     pd.to_pickle(
-        none_linear_marketcap, datasavepath + r"\none_linear_marketcap.pkl"
+        none_linear_marketcap_data, datasavepath + r"\none_linear_marketcap.pkl"
     )  # 非线性市值因子
-    log3marketcap = log3marketcap(MarketCap)
-    pd.to_pickle(log3marketcap, datasavepath + r"\log3marketcap.pkl")  # log3市值因子
+    log3marketcap_data = log3marketcap(MarketCap)
+    pd.to_pickle(
+        log3marketcap_data, datasavepath + r"\log3marketcap.pkl"
+    )  # log3市值因子
 
     factorDF = EP_ttm(x1, MarketCap)
     pd.to_pickle(factorDF, datasavepath + r"\EP_ttm.pkl")
@@ -686,28 +717,11 @@ if __name__ == "__main__":
     pd.to_pickle(factorDF, datasavepath + r"\SP_ttm.pkl")
     factorDF = SP_ss(x1, MarketCap)
     pd.to_pickle(factorDF, datasavepath + r"\SP_ss.pkl")
-
     factorDF, factorDF_zscores = DEDUCTEDPROFIT_yoy(x1)
     pd.to_pickle(factorDF, datasavepath + r"\DEDUCTEDPROFIT_yoy.pkl")
     pd.to_pickle(factorDF_zscores, datasavepath + r"\DEDUCTEDPROFIT_yoy_zscores_4.pkl")
-
-    zz500 = SDP.GetWideBaseByDateSerries(
-        alldates, 指数类型="沪深交易所核心指数", 指数code="000905"
-    )
-    zz500Weight = IndexComponentWeight(zz500, FreeMarketCap)
-    pd.to_pickle(zz500Weight, datasavepath + r"\zz500Weight.pkl")
-    hs300 = SDP.GetWideBaseByDateSerries(
-        alldates, 指数类型="沪深交易所核心指数", 指数code="000300"
-    )
-    hs300Weight = IndexComponentWeight(hs300, FreeMarketCap)
-    pd.to_pickle(hs300Weight, datasavepath + r"\hs300Weight.pkl")
-
-    hs300dayk = SDP.IndexPoint(indexname="沪深300")
-    zz500dayk = SDP.IndexPoint(indexname="中证500")
-
     factorDF = RoE(x1)
     pd.to_pickle(factorDF, datasavepath + r"\ROE.pkl")
-
     factorDF = RoE_zscores(x1, r_method="ttm", e_method="avg", len1=8)
     pd.to_pickle(factorDF, datasavepath + r"\ROEzscores_8.pkl")
     factorDF = RoE_zscores(x1, r_method="ttm", e_method="avg", len1=4)
@@ -715,7 +729,6 @@ if __name__ == "__main__":
     factorDF, factorDF_zscores = RoE_ratio(x1)
     pd.to_pickle(factorDF, datasavepath + r"\ROE_ratio.pkl")
     pd.to_pickle(factorDF_zscores, datasavepath + r"\ROE_ratio_zscores_4.pkl")
-
     factorDF, factorDF_zscores = NET_CASH_FLOWS_OPER_ACT_yoy(
         x1, 4
     )  # 经营活动产生的现金流量净额同比增长率
@@ -764,13 +777,14 @@ if __name__ == "__main__":
     factorDF, factorDF_zscores = wet_profit_ratio(x1, 8)
     pd.to_pickle(factorDF, datasavepath + r"\wet_profit_ratio.pkl")
     pd.to_pickle(factorDF_zscores, datasavepath + r"\wet_profit_ratio_zscores_8.pkl")
-
+    realead_dates_count_df = pd.read_pickle(
+        datapath + "\\" + "realesed_dates_count_df.pkl"
+    )
     SUE_ss_4 = pd.read_pickle(datasavepath + r"\SUE_ss_4.pkl")
     SUE_ss_4_hd20 = half_decay_factor(
         realead_dates_count_df, SUE_ss_4, para=5, show=False
     )
     pd.to_pickle(SUE_ss_4_hd20, datasavepath + r"\SUE_ss_4_hd5.pkl")
-
     testdata1 = pd.read_pickle(datasavepath + r"\ROE.pkl")
     testdata2 = pd.read_pickle(datasavepath + r"\CurrentRatio.pkl")
     ROE_d_Currentratio = testdata1 / testdata2
@@ -783,12 +797,11 @@ if __name__ == "__main__":
 
     ep = pd.read_pickle(datasavepath + r"\EP_ttm.pkl")
     sp = pd.read_pickle(datasavepath + r"\SP_ttm.pkl")
-    PE = 1 / ep
     g = pd.read_pickle(datasavepath + r"\DEDUCTEDPROFIT_yoy.pkl")
     PEG = ep * g
     pd.to_pickle(PEG, datasavepath + r"\PEG.pkl")
     spg = sp * (g + 1)
-    pd.to_pickle(PEG, datasavepath + r"\spg.pkl")
+    pd.to_pickle(spg, datasavepath + r"\spg.pkl")
     roe = pd.read_pickle(datasavepath + r"\ROEzscores_4.pkl")
     roe_d_g = roe * g
     pd.to_pickle(roe_d_g, datasavepath + r"\ROEzscores_4_t_profitgrowth.pkl")
@@ -796,11 +809,93 @@ if __name__ == "__main__":
     df = bp * (g + 1)
     pd.to_pickle(df, datasavepath + r"\BP_t_profitgrowth.pkl")
 
-    none_linear_marketcap = pd.read_pickle(datasavepath + r"\none_linear_marketcap.pkl")
-    df = roe_d_g * 100 / none_linear_marketcap
+    none_linear_marketcap_data = pd.read_pickle(
+        datasavepath + r"\none_linear_marketcap.pkl"
+    )
+    df = roe_d_g * 100 / none_linear_marketcap_data
     pd.to_pickle(
         df,
         datasavepath + r"\ROEzscores_4_t_profitgrowth_divide_none_linear_marketcap.pkl",
     )
 
+    return
+
+
+def Techfactors():
+    pass
+
+
+def run_main():
+    datasavepath = (
+        r"E:\Documents\PythonProject\StockProject\StockData\RawFactors"  # 原始因子存放
+    )
+    datapath = r"E:\Documents\PythonProject\StockProject\StockData"
+    today = datetime.today()
+    int_today = int(today.strftime("%Y%m%d"))
+    PriceDf = pd.read_pickle(datapath + "\\" + "Price.pkl")
+    StockTradaleDF = pd.read_pickle(datapath + "\\" + "TradableDF.pkl")
+    PriceDf = PriceDf[~(PriceDf["exchange_id"] == "BJ")]  # 踢出北交所
+    StockTradaleDF = StockTradaleDF[
+        ~(StockTradaleDF["exchange_id"] == "BJ")
+    ]  # 踢出北交所
+    PriceDf = PriceDf.join(
+        StockTradaleDF, how="left", lsuffix="_left", rsuffix="_right"
+    )
+    PriceDf = PriceDf[~(PriceDf["trade_status"] == "退市")]
+    StockDataDF = PriceDf.copy()
+    StockDataDF.index = PriceDf.index.set_names(["tradingday", "code"])
+    StockDataDF = StockDataDF.reset_index()
+    StockDataDF["tradingday"] = StockDataDF["tradingday"].dt.strftime("%Y%m%d")
+    columns = [
+        "tradingday",
+        "code",
+        "o",
+        "h",
+        "l",
+        "c",
+        "v",
+        "amt",
+        "adjfactor",
+        "total_shares",
+        "free_float_shares",
+        "MC",
+        "FMC",
+        "turnoverrate",
+        "vwap",
+        "freeturnoverrate",
+    ]
+    StockDataDF = StockDataDF[columns]
+    StockData3dMatrix = SDP.StockDataDF2Matrix(StockDataDF)
+    StockDataDF = None
+
+    cla = FinData.财报数据()
+    cla.复制三张表()
+    begindate = 20140101
+    cla.读取财报数据(begindate, int_today)
+    x1 = SDP.FactorMatrix_Report(StockData3dMatrix, cla)
+    run_IndexBeta(PriceDf)
+    PriceDf = None
+    run_finacialfactors(x1, datasavepath)
+
+    return
+
+
+if __name__ == "__main__":
+    print("制作因子 start")
+    # SDP.Main_Data_Renew()  # StockDataPrepairing中的数据更新
+    run_main()
     alpha191.Main_Data_Renew()
+
+    # zz500 = SDP.GetWideBaseByDateSerries(
+    #     alldates, 指数类型="沪深交易所核心指数", 指数code="000905"
+    # )
+    # zz500Weight = IndexComponentWeight(zz500, FreeMarketCap)
+    # pd.to_pickle(zz500Weight, datasavepath + r"\zz500Weight.pkl")
+    # hs300 = SDP.GetWideBaseByDateSerries(
+    #     alldates, 指数类型="沪深交易所核心指数", 指数code="000300"
+    # )
+    # hs300Weight = IndexComponentWeight(hs300, FreeMarketCap)
+    # pd.to_pickle(hs300Weight, datasavepath + r"\hs300Weight.pkl")
+
+    # hs300dayk = SDP.IndexPoint(indexname="沪深300")
+    # zz500dayk = SDP.IndexPoint(indexname="中证500")

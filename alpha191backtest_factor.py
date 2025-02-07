@@ -4316,19 +4316,27 @@ def Main_Data_Renew() -> None:
         r"E:\Documents\PythonProject\StockProject\StockData\RawFactors_alpha191"
     )
     PriceDf = pd.read_pickle(datapath + "\\" + "Price.pkl")
+    StockTradaleDF = pd.read_pickle(datapath + "\\" + "TradableDF.pkl")
+
+    PriceDf = PriceDf[~(PriceDf["exchange_id"] == "BJ")]
+    PriceDf = PriceDf.join(
+        StockTradaleDF, how="left", lsuffix="_left", rsuffix="_right"
+    )
+    PriceDf = PriceDf[~(PriceDf["trade_status"] == "退市")]
+
     begindate = PriceDf.index.get_level_values(0).min()
     enddate = PriceDf.index.get_level_values(0).max()
     FactorMaker = GTJA_191(begindate, enddate, PriceDf)
 
     test = sft.Single_Factor_Test(
-        r"E:\Documents\PythonProject\StockProject\MultiFactors\[SingleFactorTest].ini"
+        r"E:\Documents\PythonProject\StockProject\StockData\SingleFactorTestData\[SingleFactorTest].ini"
     )
     test.filtered_stocks = sft.PickupStocksByAmount(PriceDf)  # 股票池过滤
 
     test.data_loading_1st_time()
     # miss1:27
     for i in range(1, 191):
-        if i <= 1:
+        if i <1:
             continue
         alpha = f"alpha_{i:03}"
         print(alpha)
