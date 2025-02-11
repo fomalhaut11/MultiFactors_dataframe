@@ -4,7 +4,10 @@ from scipy.stats import norm
 from scipy.optimize import linprog
 import os
 import statsmodels.api as sm
+import sys
+sys.path.append(r"E:\Documents\PythonProject\StockProject\MultiFactors")
 import SingleFactorTest as sft
+
 
 def Remove_Outlier(input_x, method="mean", para=3):
 
@@ -124,7 +127,9 @@ def Normlization(x_input, method="zscore"):
 def test_dataloader():
     datapath1 = "E:\Documents\PythonProject\StockProject\StockData\RawFactors"
     factordata = pd.read_pickle(
-        os.path.join(datapath1, "zz2000_120day_beta.pkl")
+        os.path.join(
+            datapath1, "PEG.pkl"
+        )
     )
     if isinstance(factordata, pd.Series):
         factordata = factordata.to_frame(name="factor")
@@ -265,13 +270,13 @@ def sequential_orthog_np_daily(input: np.ndarray) -> np.ndarray:
 
 
 def stock_weights_np(
-            factor_np: np.ndarray,
-            risks_np: np.ndarray,
-            b_risk_lower: np.ndarray,
-            b_risk_upper: np.ndarray,
-            weightrange,
-            risk_orthog: bool = True,
-        ) -> np.ndarray:
+    factor_np: np.ndarray,
+    risks_np: np.ndarray,
+    b_risk_lower: np.ndarray,
+    b_risk_upper: np.ndarray,
+    weightrange,
+    risk_orthog: bool = True,
+) -> np.ndarray:
     # b_risk_lower = -0.3 * np.ones(3)  # 风险因子暴露的下界
     # b_risk_upper = 0.3 * np.ones(3)
     min_weight = weightrange[0]
@@ -323,12 +328,12 @@ def stock_weights_np(
 
 
 def stock_weights_np_daily(
-            today_factor: np.ndarray,
-            today_risks: np.ndarray,
-            b_risk_lower: np.ndarray,
-            b_risk_upper: np.ndarray,
-            max_weight: float,
-        ) -> np.ndarray:
+    today_factor: np.ndarray,
+    today_risks: np.ndarray,
+    b_risk_lower: np.ndarray,
+    b_risk_upper: np.ndarray,
+    max_weight: float,
+) -> np.ndarray:
     assert (
         today_factor.shape[0] == today_risks.shape[1]
     ), "factor_np and risks_np[0] have different length"
@@ -366,9 +371,9 @@ def stock_weights_np_daily(
 
 
 def risks_explosure_pd(
-            inputweight: pd.DataFrame,
-            riskfactors: pd.DataFrame,
-        ) -> pd.DataFrame:
+    inputweight: pd.DataFrame,
+    riskfactors: pd.DataFrame,
+) -> pd.DataFrame:
     factornames = riskfactors.columns.tolist()
     m1 = inputweight.join(riskfactors, how="left").sort_index(level=0)
 
@@ -382,9 +387,9 @@ def risks_explosure_pd(
 
 
 def risks_explosure(
-            inputweight: pd.DataFrame,
-            riskfactors: pd.DataFrame,
-        ) -> pd.DataFrame:
+    inputweight: pd.DataFrame,
+    riskfactors: pd.DataFrame,
+) -> pd.DataFrame:
     factornames = riskfactors.columns.tolist()
     m1 = inputweight.join(riskfactors, how="left").sort_index(level=0)
     m1unstack = m1.unstack()
@@ -407,9 +412,9 @@ def risks_explosure(
 
 
 def risks_explosure_np(
-            inputweight: np.ndarray,
-            riskfactors: np.ndarray,
-        ) -> np.ndarray:
+    inputweight: np.ndarray,
+    riskfactors: np.ndarray,
+) -> np.ndarray:
     assert (
         inputweight.shape[0] == riskfactors.shape[1]
     ), "inputweight and riskfactors have different length"
@@ -434,6 +439,11 @@ if __name__ == "__main__":
         risk_upper=[0.2, 0.2, 0.2, 0.2, 0.2, 0.2],
         weightrange=[0.0, 0.1],
     )
-    LogReturn=pd.read_pickle(r"E:\Documents\PythonProject\StockProject\StockData\LogReturn_daily_o2o.pkl")
-    sft.single_factor_test_data(factordata, riskdata, LogReturn)
+    LogReturn = pd.read_pickle(
+        r"E:\Documents\PythonProject\StockProject\StockData\LogReturn_daily_o2o.pkl"
+    )
     risk1 = risks_explosure(weights, riskdata)
+    testdata = sft.single_factor_test_data(factordata, riskdata, LogReturn)
+    realesed_dataes = pd.read_pickle(r'E:\Documents\PythonProject\StockProject\StockData\realesed_dates_count_df.pkl')
+    f1 = factordata.join(realesed_dataes, how='left').sort_index(level=0)
+   

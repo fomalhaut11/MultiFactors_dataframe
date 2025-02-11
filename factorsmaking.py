@@ -880,9 +880,21 @@ def run_main():
     return
 
 
+def factor_releaseddates_(factor, releaseddata):
+    if isinstance(factor, pd.DataFrame):
+        factor.columns = 'factor'
+    else:
+        factor = factor.to_frame(name="factor")
+    releasedmin = releaseddata.min(axis=1).to_frame(name="releasedmin")
+    factor1 = factor.join(releasedmin, how="left")
+    newfactor = (factor1['factor']/factor1['releasedmin']).to_frame(name='factor')
+    return newfactor
+
+
+
 if __name__ == "__main__":
     print("制作因子 start")
-    # SDP.Main_Data_Renew()  # StockDataPrepairing中的数据更新
+    SDP.Main_Data_Renew()  # StockDataPrepairing中的数据更新
     run_main()
     alpha191.Main_Data_Renew()
 

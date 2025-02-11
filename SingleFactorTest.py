@@ -17,7 +17,11 @@ sys.path.append(file_path)
 import StockDataPrepairing as SDP
 import statsmodels.api as sm
 
-import alpha191backtest_factor as alpha191
+file_path1 = r"E:\Documents\PythonProject\StockProject\MultiFactors"
+sys.path.append(file_path1)
+import factorsmaking as fm
+
+# import alpha191backtest_factor as alpha191
 
 
 def print_memory_usage():
@@ -1068,7 +1072,13 @@ class Single_Factor_Test:
             & ((m1.index.get_level_values(0) <= enddate))
         ]
 
-        analysis_data, New_Factor, Resid_Return, Grouped_StockCodes = (
+        (analysis_data,
+        New_Factor,
+        Resid_Return,
+        Grouped_StockCodes,
+        paramsdata_list,
+        pvalues_list,
+        tvalues_list) = (
             backtest_merged_data(m1, self.groupnums, IndusNetralBase=True, extradates=0)
         )
 
@@ -1727,7 +1737,7 @@ def run_singletest():
     pass
 
 
-def sing_factor_test_data(factordata, normedbasedata, logreturndata):
+def single_factor_test_data(factordata, normedbasedata, logreturndata):
 
     mergeddata = factordata.join(logreturndata, how="left").join(
         normedbasedata, how="left"
@@ -1769,6 +1779,19 @@ def sing_factor_test_data(factordata, normedbasedata, logreturndata):
 
 
 if __name__ == "__main__":
+    print("main")
+    factor = pd.read_pickle(
+        r"E:\Documents\PythonProject\StockProject\StockData\RawFactors\PEG.pkl"
+    )
+    releaseddata = pd.read_pickle(
+        r"E:\Documents\PythonProject\StockProject\StockData\realesed_dates_count_df.pkl"
+    )
+    newfactor = fm.factor_releaseddates_(factor, releaseddata)
+    pd.to_pickle(
+        newfactor,
+        r"E:\Documents\PythonProject\StockProject\StockData\RawFactors\PEG_new_released.pkl",
+    )
+
     test = Single_Factor_Test(
         r"E:\Documents\PythonProject\StockProject\StockData\SingleFactorTestData\[SingleFactorTest].ini"
     )  # 读取配置文件
@@ -1781,9 +1804,13 @@ if __name__ == "__main__":
     # test.filtered_stocks = PickupStocksByMarketCap(PriceDf, 3, 2)
     test.data_loading_1st_time(test.c_name)  # 第一次加载数据
     test.data_loading_factor(
-        "PEG", r"E:\Documents\PythonProject\StockProject\StockData\RawFactors"
+        "PEG_new_released",
+        r"E:\Documents\PythonProject\StockProject\StockData\RawFactors",
     )
+    test.backtest_pandas("PEG_new_released")
+
     test.data_preprocessing_numpy()
+    test.backtest_one_hot_cat_pandas("PEG_new_released")
     (
         analysis_data,
         New_Factor,
@@ -1804,25 +1831,3 @@ if __name__ == "__main__":
         r"E:\Documents\PythonProject\StockProject\StockData\SingleFactorTestData\analysisdata",
         r"E:\Documents\PythonProject\StockProject\StockData\SingleFactorTestData\residreturn",
     )
-
-    # for i in range(1,190):
-    #     if i <=55:
-    #         continue
-    #     alpha = f'alpha_{i:03}'
-    #     print(alpha)
-    #     if os.path.exists(os.path.join(test.tempdatapath,alpha+'data.pkl')):
-    #         try:
-    #             test.data_backtest_one_hot(alpha)
-    #             test.data_plot()
-    #             test.data_save()
-    #         except:
-    #             print(f"Error occurred while executing {alpha} ")
-    #             break
-    #     else:
-    #         print(f"{alpha} data not found")
-    #         continue
-    # # test.data_reloading_base('MarketCap')
-    # # test.data_preprocessing()
-    # # test.data_backtest_one_hot()
-    # # test.data_plot()
-    # # test.data_save()
