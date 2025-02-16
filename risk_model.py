@@ -5,8 +5,10 @@ from scipy.optimize import linprog
 import os
 import statsmodels.api as sm
 import sys
+
 sys.path.append(r"E:\Documents\PythonProject\StockProject\MultiFactors")
 import SingleFactorTest as sft
+import factorsmaking as fm
 
 
 def Remove_Outlier(input_x, method="mean", para=3):
@@ -127,9 +129,7 @@ def Normlization(x_input, method="zscore"):
 def test_dataloader():
     datapath1 = "E:\Documents\PythonProject\StockProject\StockData\RawFactors"
     factordata = pd.read_pickle(
-        os.path.join(
-            datapath1, "PEG.pkl"
-        )
+        os.path.join(datapath1, "DEDUCTEDPROFIT_yoy_zscores_4.pkl")
     )
     if isinstance(factordata, pd.Series):
         factordata = factordata.to_frame(name="factor")
@@ -153,6 +153,12 @@ def test_dataloader():
     riskdata6 = pd.read_pickle(os.path.join(datapath1, "Vol_20.pkl")).to_frame(
         name="Vol_20"
     )
+    riskdata7 = pd.read_pickle(
+        os.path.join(datapath1, "freeturnoverrate_ma20.pkl")
+    ).to_frame(name="freeturnoverrate_ma20")
+    riskdata8 = pd.read_pickle(os.path.join(datapath1, "EP_ttm.pkl")).to_frame(
+        name="EP_ttm"
+    )
     # riskdata7 = pd.read_pickle(
     #     os.path.join(datapath1, "zz2000_20day_beta.pkl")
     # ).to_frame(name="zz2000_20day_beta")
@@ -160,7 +166,16 @@ def test_dataloader():
     #     riskdata7.index.set_names(["TradingDates", "StockCodes"], inplace=True)
 
     merged_data = pd.concat(
-        [riskdata1, riskdata2, riskdata3, riskdata4, riskdata5, riskdata6],
+        [
+            riskdata1,
+            riskdata2,
+            riskdata3,
+            riskdata4,
+            riskdata5,
+            riskdata6,
+            riskdata7,
+            riskdata8,
+        ],
         axis=1,
     )
     merged_data.sort_index(level=0, inplace=True)
@@ -426,24 +441,65 @@ def risks_explosure_np(
     return weighted_risk
 
 
+def dataloader(
+    list, path=r"E:\Documents\PythonProject\StockProject\StockData\RawFactors"
+):
+    merged_data = pd.DataFrame()
+    for i in list:
+        data = pd.read_pickle(path + r"\\" + i + ".pkl")
+        if isinstance(data, pd.Series):
+            data = data.to_frame(name=i)
+        if merged_data.empty:
+            merged_data = data
+        else:
+            merged_data = merged_data.join(data, how="inner")
+    return merged_data
+
+
 if __name__ == "__main__":
 
-    factordata, merged_data = test_dataloader()
+    # factordata, merged_data = test_dataloader()
+    factordata = pd.read_pickle(
+        r"E:\Documents\PythonProject\StockProject\StockData\RawFactors\zz2000_60day_beta.pkl"
+    )
+    factordata.columns = ["factor"]
+    merged_data = dataloader(["LogMarketCap", "none_linear_marketcap"])
     merged_data = merged_data.groupby("TradingDates").fillna(method="ffill")
     merged_data = merged_data.dropna(axis=0)
     riskdata = sequential_orthog_df(merged_data)
-    weights = stocks_weights_pd(
-        factordata,
-        riskdata,
-        risk_lower=[-0.2, -0.2, -0.2, -0.2, -0.2, -0.2],
-        risk_upper=[0.2, 0.2, 0.2, 0.2, 0.2, 0.2],
-        weightrange=[0.0, 0.1],
-    )
+
+    testfactor = dataloader(["DEDUCTEDPROFIT_yoy_zscores_4", "PEG"])
+
     LogReturn = pd.read_pickle(
         r"E:\Documents\PythonProject\StockProject\StockData\LogReturn_daily_o2o.pkl"
     )
-    risk1 = risks_explosure(weights, riskdata)
+    LogReturn = LogReturn[LogReturn.index.get_level_values(0) > "2018-01-01"]
     testdata = sft.single_factor_test_data(factordata, riskdata, LogReturn)
-    realesed_dataes = pd.read_pickle(r'E:\Documents\PythonProject\StockProject\StockData\realesed_dates_count_df.pkl')
-    f1 = factordata.join(realesed_dataes, how='left').sort_index(level=0)
-   
+    # ic = testdata.apply(lambda x: x[3])
+    realesed_dataes = pd.read_pickle(
+        r"E:\Documents\PythonProject\StockProject\StockData\realesed_dates_count_df.pkl"
+    )
+    factordecay = fm.half_decay_factor(factordata, realesed_dataes, para=20)
+    # testdata1 = sft.single_factor_test_data(factordecay, riskdata, LogReturn)
+    # ic1 = testdata1.apply(lambda x: x[3])
+
+    weights = stocks_weights_pd(
+        factordecay * -1,
+        riskdata,
+        risk_lower=[-0.1 for i in range(2)],
+        risk_upper=[0.1 for i in range(2)],
+        weightrange=[0.0, 0.05],
+    )
+    w1 = weights.join(LogReturn)
+    w1x = w1["weight"] * w1["LogReturn"]
+    # w1x.groupby('TradingDates').sum().cumsum().plot()
+    t = w1x.groupby("TradingDates").sum().to_frame(name="sum")
+    b = LogReturn.groupby("TradingDates").mean()
+    (t["sum"] - b["LogReturn"]).cumsum().plot()
+
+    risk1 = risks_explosure(weights, riskdata)
+
+    realesed_dataes = pd.read_pickle(
+        r"E:\Documents\PythonProject\StockProject\StockData\realesed_dates_count_df.pkl"
+    )
+    f1 = factordata.join(realesed_dataes, how="left").sort_index(level=0)

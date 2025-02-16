@@ -1744,6 +1744,13 @@ def single_factor_test_data(factordata, normedbasedata, logreturndata):
     )
 
     def dailyregress(m1):
+        if m1.empty:
+            return (
+                0,
+                0,
+                0,
+                0
+                )        
         mask = m1["LogReturn"].notna()
         m1 = m1.loc[mask]
         y0 = Remove_Outlier(m1["factor"], method="IQR", para=5)
