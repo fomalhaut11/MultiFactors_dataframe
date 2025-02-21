@@ -442,8 +442,11 @@ def risks_explosure_np(
 
 
 def dataloader(
-    list, path=r"E:\Documents\PythonProject\StockProject\StockData\RawFactors"
-):
+        list,
+        begindate="2018-01-01",
+        enddate="2024-12-31",
+        path=r"E:\Documents\PythonProject\StockProject\StockData\RawFactors"
+        ):
     merged_data = pd.DataFrame()
     for i in list:
         data = pd.read_pickle(path + r"\\" + i + ".pkl")
@@ -452,7 +455,13 @@ def dataloader(
         if merged_data.empty:
             merged_data = data
         else:
-            merged_data = merged_data.join(data, how="inner")
+            merged_data = merged_data.join(data, how="left")
+    merged_data.sort_index(level=0, inplace=True)
+    merged_data = merged_data[
+        (merged_data.index.get_level_values("TradingDates") > begindate)
+        & (merged_data.index.get_level_values("TradingDates") < enddate)
+        ]
+     
     return merged_data
 
 

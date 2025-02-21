@@ -17,6 +17,7 @@ from datetime import datetime
 import matplotlib.pyplot as plt
 import statsmodels.api as sm
 from time import time
+
 """ def factor_ROE(x1,cla):
     # x1=SDP.FactorMatrix_Report(StockData3dMatrix,cla)
     # x2=SDP.FactorMatrix_Report(StockData3dMatrix,cla)
@@ -641,7 +642,7 @@ def BetaFactorbyIndex(PriceDf, indexname, window=[20, 60, 120, 240]):
 
 
 def BetafactorbyIndexWLS(PriceDf, indexname, halfdecay=60, window=252):
-    assert halfdecay <= 0.8*window, "halfdecay should be larger than 0.5*window"
+    assert halfdecay <= 0.8 * window, "halfdecay should be larger than 0.5*window"
     t = np.arange(window)[::-1]
     # 生成权重序列
     weights = (0.5) ** (t / halfdecay)
@@ -664,11 +665,11 @@ def BetafactorbyIndexWLS(PriceDf, indexname, halfdecay=60, window=252):
         .sort_index(level=0)
     ).to_frame(name="stockreturn")
 
-    stockreturn = stockreturn.join(PriceDf['v']).unstack()
+    stockreturn = stockreturn.join(PriceDf["v"]).unstack()
     stockreturn = stockreturn.loc[begindate:]
     benchmarkreturn = benchmarkreturn.loc[begindate:]
-    r = stockreturn['stockreturn']
-    v = stockreturn['v']
+    r = stockreturn["stockreturn"]
+    v = stockreturn["v"]
     dateindex = r.index
     bench_np = benchmarkreturn.loc[dateindex].values.flatten()
     stockcodes = r.columns
@@ -678,23 +679,25 @@ def BetafactorbyIndexWLS(PriceDf, indexname, halfdecay=60, window=252):
     temps = np.nan * np.ones((window, len(stockcodes)))
     idx0 = np.zeros(len(stockcodes)).astype(int)
     tempinputlag = np.zeros(len(stockcodes)).astype(int)
-    tempinputlagmatrix = -1*np.ones((window, len(stockcodes))).astype(int)
-    linspace1 = np.linspace(0, window-1, window).astype(int)[::-1]
+    tempinputlagmatrix = -1 * np.ones((window, len(stockcodes))).astype(int)
+    linspace1 = np.linspace(0, window - 1, window).astype(int)[::-1]
 
-    alfa_matrix = np.ones((len(dateindex), len(stockcodes)))*np.nan  # 存储alpha
-    beta_matrix = np.ones((len(dateindex), len(stockcodes)))*np.nan  # 存储beta  
-    resid_matrix = np.ones((len(dateindex), len(stockcodes)))*np.nan  # 存储残差
-    resid_std_matrix = np.ones((len(dateindex), len(stockcodes)))*np.nan  # 存储残差标准差
+    alfa_matrix = np.ones((len(dateindex), len(stockcodes))) * np.nan  # 存储alpha
+    beta_matrix = np.ones((len(dateindex), len(stockcodes))) * np.nan  # 存储beta
+    resid_matrix = np.ones((len(dateindex), len(stockcodes))) * np.nan  # 存储残差
+    resid_std_matrix = (
+        np.ones((len(dateindex), len(stockcodes))) * np.nan
+    )  # 存储残差标准差
     for i in range(len(dateindex)):
         linspace2 = i - linspace1
         print(dateindex[i])
         for j in range(len(stockcodes)):
- 
+
             if v_np[i, j] > 0:
                 tempinputlag[j] = 0  # 如果本日有交易量 ，则将tempinputlag置为0
                 if idx0[j] < window:  # 填充位置小于窗口长度，说明动态窗口数据未填充满
                     temps[idx0[j], j] = r_np[i, j]
-                    tempinputlagmatrix[idx0[j], j] = tempinputlag[j] 
+                    tempinputlagmatrix[idx0[j], j] = tempinputlag[j]
                     idx0[j] += 1
                 else:  # 动态窗口数据已经填充满，将数据往前移动一位，最后一位填充新数据
                     temps[:-1, j] = temps[1:, j]
@@ -702,14 +705,16 @@ def BetafactorbyIndexWLS(PriceDf, indexname, halfdecay=60, window=252):
                     tempinputlagmatrix[:-1, j] = tempinputlagmatrix[1:, j]
                     tempinputlagmatrix[-1, j] = tempinputlag[j]
             else:  # 如果本日无交易量
-                tempinputlag[j] = tempinputlag[j]+1  # 当前lag记录+1， 说明当前股票已经连续多少天没有交易
+                tempinputlag[j] = (
+                    tempinputlag[j] + 1
+                )  # 当前lag记录+1， 说明当前股票已经连续多少天没有交易
                 if idx0[j] < window:
                     tempinputlagmatrix[idx0[j], j] = tempinputlag[j]
                 else:
                     tempinputlagmatrix[:-1, j] = tempinputlagmatrix[1:, j]
                     tempinputlagmatrix[-1, j] = tempinputlag[j]
             if ~np.any(np.isnan(temps[:, j])):  # 如果动态窗口数据已经填充满
-                benchmarkidx = linspace2-tempinputlagmatrix[:, j][::-1].cumsum()[::-1]
+                benchmarkidx = linspace2 - tempinputlagmatrix[:, j][::-1].cumsum()[::-1]
                 if benchmarkidx[0] >= 0:
                     tempbench = bench_np[benchmarkidx]
                     X = sm.add_constant(temps[:, j])
@@ -720,26 +725,43 @@ def BetafactorbyIndexWLS(PriceDf, indexname, halfdecay=60, window=252):
                     resid_matrix[i, j] = results.resid[-1]
                     resid_std_matrix[i, j] = results.resid.std()
 
-    Alfa_Df = pd.DataFrame(alfa_matrix, index=dateindex, columns=stockcodes).stack().to_frame(name='Alfa')
-    Alfa_Df.index.names = ['TradingDates', 'StockCodes']
-    Beta_Df = pd.DataFrame(beta_matrix, index=dateindex, columns=stockcodes).stack().to_frame(name='Beta')
-    Beta_Df.index.names = ['TradingDates', 'StockCodes']
-    Resid_Df = pd.DataFrame(resid_matrix, index=dateindex, columns=stockcodes).stack().to_frame(name='Resid')
-    Resid_Df.index.names = ['TradingDates', 'StockCodes']
-    ResidStd_Df = pd.DataFrame(resid_std_matrix, index=dateindex, columns=stockcodes).stack().to_frame(name='ResidStd')
-    ResidStd_Df.index.names = ['TradingDates', 'StockCodes']
+    Alfa_Df = (
+        pd.DataFrame(alfa_matrix, index=dateindex, columns=stockcodes)
+        .stack()
+        .to_frame(name="Alfa")
+    )
+    Alfa_Df.index.names = ["TradingDates", "StockCodes"]
+    Beta_Df = (
+        pd.DataFrame(beta_matrix, index=dateindex, columns=stockcodes)
+        .stack()
+        .to_frame(name="Beta")
+    )
+    Beta_Df.index.names = ["TradingDates", "StockCodes"]
+    Resid_Df = (
+        pd.DataFrame(resid_matrix, index=dateindex, columns=stockcodes)
+        .stack()
+        .to_frame(name="Resid")
+    )
+    Resid_Df.index.names = ["TradingDates", "StockCodes"]
+    ResidStd_Df = (
+        pd.DataFrame(resid_std_matrix, index=dateindex, columns=stockcodes)
+        .stack()
+        .to_frame(name="ResidStd")
+    )
+    ResidStd_Df.index.names = ["TradingDates", "StockCodes"]
     return Alfa_Df, Beta_Df, Resid_Df, ResidStd_Df
 
 
 def run_Index_regression(
-        PriceDf,
-        datasavepath=r'E:\Documents\PythonProject\StockProject\StockData\RawFactors') -> None:
+    PriceDf,
+    datasavepath=r"E:\Documents\PythonProject\StockProject\StockData\RawFactors",
+) -> None:
     (
         zz2000_252_60_alfa,
         zz2000_252_60_beta,
         zz2000_252_60_resid,
-        zz2000_252_60_residstd
-     ) = BetafactorbyIndexWLS(PriceDf, "中证2000", halfdecay=60, window=252)
+        zz2000_252_60_residstd,
+    ) = BetafactorbyIndexWLS(PriceDf, "中证2000", halfdecay=60, window=252)
     pd.to_pickle(zz2000_252_60_alfa, datasavepath + r"\zz2000_252_60_alfa.pkl")
     pd.to_pickle(zz2000_252_60_beta, datasavepath + r"\zz2000_252_60_beta.pkl")
     pd.to_pickle(zz2000_252_60_resid, datasavepath + r"\zz2000_252_60_resid.pkl")
@@ -748,8 +770,8 @@ def run_Index_regression(
         zz2000_126_30_alfa,
         zz2000_126_30_beta,
         zz2000_126_30_resid,
-        zz2000_126_30_residstd
-     ) = BetafactorbyIndexWLS(PriceDf, "中证2000", halfdecay=30, window=126)
+        zz2000_126_30_residstd,
+    ) = BetafactorbyIndexWLS(PriceDf, "中证2000", halfdecay=30, window=126)
     pd.to_pickle(zz2000_252_60_alfa, datasavepath + r"\zz2000_126_30_alfa.pkl")
     pd.to_pickle(zz2000_252_60_beta, datasavepath + r"\zz2000_126_30_beta.pkl")
     pd.to_pickle(zz2000_252_60_resid, datasavepath + r"\zz2000_126_30_resid.pkl")
@@ -758,8 +780,9 @@ def run_Index_regression(
 
 
 def run_IndexBeta(
-        PriceDf,
-        datasavepath=r'E:\Documents\PythonProject\StockProject\StockData\RawFactors') -> None:
+    PriceDf,
+    datasavepath=r"E:\Documents\PythonProject\StockProject\StockData\RawFactors",
+) -> None:
     (
         zz2000_20day_beta,
         zz2000_60day_beta,
@@ -890,7 +913,7 @@ def run_finacialfactors(
     )
     SUE_ss_4 = pd.read_pickle(datasavepath + r"\SUE_ss_4.pkl")
     SUE_ss_4_hd5 = half_decay_factor(
-        SUE_ss_4,realead_dates_count_df,  para=5, show=False
+        SUE_ss_4, realead_dates_count_df, para=5, show=False
     )
     pd.to_pickle(SUE_ss_4_hd5, datasavepath + r"\SUE_ss_4_hd5.pkl")
     testdata1 = pd.read_pickle(datasavepath + r"\ROE.pkl")
@@ -986,7 +1009,7 @@ def run_main():
     run_Index_regression(PriceDf)
     b = time()
     print(b - a)
-    #run_IndexBeta(PriceDf)
+    # run_IndexBeta(PriceDf)
     PriceDf = None
     run_finacialfactors(x1, datasavepath)
 
@@ -1013,16 +1036,16 @@ def half_decay_factor(factor, releaseddata, para=20, show=False):
     minvalues = releaseddata.min(axis=1).to_frame(name="releasedmin")
     minvalues[minvalues < 0] = np.nan
     factor1 = factor.join(minvalues, how="left")
-    factor1['indice'] = logbase**factor1['releasedmin']
-    df = factor1['factor'] * factor1['indice']
+    factor1["indice"] = logbase ** factor1["releasedmin"]
+    df = factor1["factor"] * factor1["indice"]
     return df.to_frame(name="factor")
 
 
 if __name__ == "__main__":
     print("制作因子 start")
-    #SDP.Main_Data_Renew()  # StockDataPrepairing中的数据更新
+    SDP.Main_Data_Renew()  # StockDataPrepairing中的数据更新
     run_main()
-    # alpha191.Main_Data_Renew()
+    alpha191.Main_Data_Renew()
     # datasavepath = (
     #     r"E:\Documents\PythonProject\StockProject\StockData\RawFactors"  # 原始因子存放
     # )
