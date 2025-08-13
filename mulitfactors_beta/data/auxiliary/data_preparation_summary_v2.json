@@ -1,0 +1,14 @@
+{
+  "prepared_date": "2025-07-31 21:38:32",
+  "release_dates_shape": [
+    429515,
+    1
+  ],
+  "trading_dates_count": 2793,
+  "stock_info_count": 5684,
+  "financial_data_shape": [
+    429515,
+    287
+  ],
+  "note": "使用财报期间作为索引，reportday作为发布日期"
+}

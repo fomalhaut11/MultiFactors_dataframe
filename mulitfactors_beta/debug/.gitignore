@@ -1,0 +1,23 @@
+# 忽略临时文件
+temp/*
+!temp/.gitkeep
+
+# 忽略结果文件，但保留目录
+results/*
+!results/.gitkeep
+
+# 忽略日志文件
+*.log
+
+# 忽略Python缓存
+__pycache__/
+*.pyc
+*.pyo
+
+# 忽略数据文件
+*.pkl
+*.csv
+*.xlsx
+
+# 但保留示例文件
+!example_*.*

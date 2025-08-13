@@ -727,24 +727,28 @@ def BetafactorbyIndexWLS(PriceDf, indexname, halfdecay=60, window=252):
 
     Alfa_Df = (
         pd.DataFrame(alfa_matrix, index=dateindex, columns=stockcodes)
+        .shift(1)
         .stack()
         .to_frame(name="Alfa")
     )
     Alfa_Df.index.names = ["TradingDates", "StockCodes"]
     Beta_Df = (
         pd.DataFrame(beta_matrix, index=dateindex, columns=stockcodes)
+        .shift(1)
         .stack()
         .to_frame(name="Beta")
     )
     Beta_Df.index.names = ["TradingDates", "StockCodes"]
     Resid_Df = (
         pd.DataFrame(resid_matrix, index=dateindex, columns=stockcodes)
+        .shift(1)
         .stack()
         .to_frame(name="Resid")
     )
     Resid_Df.index.names = ["TradingDates", "StockCodes"]
     ResidStd_Df = (
         pd.DataFrame(resid_std_matrix, index=dateindex, columns=stockcodes)
+        .shift(1)
         .stack()
         .to_frame(name="ResidStd")
     )
@@ -826,8 +830,10 @@ def run_IndexBeta(
 
 
 def run_finacialfactors(
-    x1, datasavepath, datapath=r"E:\Documents\PythonProject\StockProject\StockData"
-) -> None:
+            x1,
+            datasavepath,
+            datapath=r"E:\Documents\PythonProject\StockProject\StockData"
+        ) -> None:
     MarketCap = pd.read_pickle(datasavepath + "\\" + "MarketCap.pkl")
     none_linear_marketcap_data = none_linear_marketcap(MarketCap)
     pd.to_pickle(
@@ -1043,9 +1049,11 @@ def half_decay_factor(factor, releaseddata, para=20, show=False):
 
 if __name__ == "__main__":
     print("制作因子 start")
+    print(os.getcwd())
     SDP.Main_Data_Renew()  # StockDataPrepairing中的数据更新
     run_main()
     alpha191.Main_Data_Renew()
+
     # datasavepath = (
     #     r"E:\Documents\PythonProject\StockProject\StockData\RawFactors"  # 原始因子存放
     # )

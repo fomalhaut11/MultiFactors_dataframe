@@ -1,0 +1,57 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 数据文件
+*.pkl
+*.csv
+*.xlsx
+*.h5
+*.hdf5
+
+# 日志文件
+*.log
+logs/
+
+# 临时文件
+*.tmp
+*.bak
+~*
+
+# 调试目录（保留结构但忽略内容）
+debug/temp/*
+!debug/temp/.gitkeep
+debug/results/*
+!debug/results/.gitkeep
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# 项目特定
+factor_results/
+factors_output/
+calculated_factors/
+nul
+
+# 备份文件
+backups/
+*.backup
+
+# 敏感信息
+config_local.yaml
+secrets.yaml
+*.key
+*.pem

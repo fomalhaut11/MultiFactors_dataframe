@@ -163,8 +163,8 @@ def cal_IC_P_GroupReturn_inday(newfactor, next_log_return, groupnum=10):
 
 
 def PickupStocksByAmount(
-    PriceDF: pd.DataFrame, windows=20, para=0, mc_limit_min=None, mc_limit_max=None
-) -> pd.DataFrame:
+        PriceDF: pd.DataFrame, windows=20, para=0, mc_limit_min=None, mc_limit_max=None
+    ) -> pd.DataFrame:
     """过去5天平均成交额大于para,市值>mclimit,amt>0,l<h,的股票"""
     average_amount = (
         PriceDF.groupby("StockCodes")["amt"]
@@ -200,8 +200,8 @@ def PickupStocksByAmount(
 
 
 def PickupStocksByMarketCap(
-    PriceDF: pd.DataFrame, groupnums=10, targetgroup=0
-) -> pd.DataFrame:
+        PriceDF: pd.DataFrame, groupnums=10, targetgroup=0
+    ) -> pd.DataFrame:
     """按市值分组，选取市值最小的股票"""
     filtered_stocks = PriceDF
     # 找出所有股票代码的第一个数字小于7的所有数据, 剔除北交所
@@ -836,11 +836,10 @@ class Single_Factor_Test:
         assert hasattr(self, "merged_data"), "merged_data not loaded"
 
     def data_loading_1st_time(self, c_type=None) -> None:
+        if c_type is None:
+            c_type = self.c_name        
         """第一次加载数据，不加载测试因子"""
         """ 读取下期收益数据 """
-        if c_type is None:
-            c_type = self.c_name
-
         if self.backtesttradingprice == "o2o":
             if self.backtesttype == "daily":
                 self.next_log_return = pd.read_pickle(
@@ -1783,6 +1782,46 @@ def single_factor_test_data(factordata, normedbasedata, logreturndata):
     regressreturn = regress_result.apply(lambda x: x[0])
     regressreturn.cumsum().plot()
     return regress_result
+
+
+def single_factor_test_data_grouped(
+            factor,
+            normedbasedata,
+            logreturndata,
+            groupnum=10,
+            quick_calc=True):
+    mergeddata = factor.join(logreturndata, how="left").join(
+        normedbasedata, how="left"
+    )
+
+    def dailygrouped(m1):
+        if m1.empty:
+            return
+        mask = m1["LogReturn"].notna()
+        m1 = m1.loc[mask]
+        if quick_calc is True:
+            #factor 数据已经和base数据处理过了，直接使用
+            group = pd.qcut(m1["factor"], groupnum, labels=False, duplicates="drop")
+            m1["Group"] = group
+            grouped = m1.groupby("Group")
+            groupedmean = grouped["LogReturn"].mean()
+        return groupedmean
+
+    grouped_result = mergeddata.groupby(level=0).apply(dailygrouped)
+    average_return = logreturndata.groupby(level=0).mean()
+    groupmax = grouped_result[groupnum-1].to_frame(name = 'GroupMax')
+    Group = groupmax.join(average_return, how='left')
+    groupmin = grouped_result[0].to_frame(name = 'GroupMin')
+    Group = Group.join(groupmin, how='left')
+
+    fig, ax = plt.subplots(2,1,figsize=(10, 10))
+    (Group['GroupMax'] - Group['LogReturn']).cumsum().plot(label='GroupMax', ax=ax[0])
+    (Group['GroupMin'] - Group['LogReturn']).cumsum().plot(label='GroupMin', ax=ax[0])
+    ax[0].legend()
+    (Group['GroupMax']-Group['GroupMin']).cumsum().plot(label='Long_Short_Profit', ax=ax[1])
+    ax[1].legend()
+
+    return grouped_result
 
 
 if __name__ == "__main__":

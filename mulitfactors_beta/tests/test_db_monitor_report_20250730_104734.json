@@ -1,0 +1,71 @@
+{
+  "timestamp": "2025-07-30T10:47:34.291326",
+  "pool_status": {
+    "database": {
+      "total_connections": 1,
+      "used_connections": 0,
+      "available_connections": 1,
+      "max_connections": 10,
+      "healthy_connections": 1,
+      "expired_connections": 0,
+      "old_connections": 0,
+      "max_idle_time": 3600,
+      "max_lifetime": 28800,
+      "last_cleanup": "2025-07-30T10:47:28.349826"
+    },
+    "stock_min1": {
+      "total_connections": 1,
+      "used_connections": 0,
+      "available_connections": 1,
+      "max_connections": 10,
+      "healthy_connections": 1,
+      "expired_connections": 0,
+      "old_connections": 0,
+      "max_idle_time": 3600,
+      "max_lifetime": 28800,
+      "last_cleanup": "2025-07-30T10:47:28.461825"
+    },
+    "jqdata": {
+      "total_connections": 1,
+      "used_connections": 0,
+      "available_connections": 1,
+      "max_connections": 10,
+      "healthy_connections": 1,
+      "expired_connections": 0,
+      "old_connections": 0,
+      "max_idle_time": 3600,
+      "max_lifetime": 28800,
+      "last_cleanup": "2025-07-30T10:47:28.505830"
+    },
+    "Wind": {
+      "total_connections": 1,
+      "used_connections": 0,
+      "available_connections": 1,
+      "max_connections": 10,
+      "healthy_connections": 1,
+      "expired_connections": 0,
+      "old_connections": 0,
+      "max_idle_time": 3600,
+      "max_lifetime": 28800,
+      "last_cleanup": "2025-07-30T10:47:28.599827"
+    }
+  },
+  "health_check": {
+    "database": true,
+    "stock_min1": true,
+    "jqdata": true,
+    "Wind": true
+  },
+  "query_stats": {
+    "total_queries": 2,
+    "success_queries": 2,
+    "failed_queries": 0,
+    "retried_queries": 0,
+    "connection_errors": 0,
+    "timeout_errors": 0,
+    "success_rate": 100.0,
+    "total_time": 0.28263306617736816,
+    "average_time": 0.14131653308868408,
+    "retry_rate": 0.0
+  }
+}
