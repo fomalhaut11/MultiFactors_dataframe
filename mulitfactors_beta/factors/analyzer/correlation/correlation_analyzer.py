@@ -49,7 +49,7 @@ class CorrelationAnalyzer(AnalyzerBase, ComparativeAnalyzerMixin):
         self.high_corr_pairs = None
         
     def analyze(self, 
-               data: Union[Dict[str, pd.Series], pd.DataFrame],
+               data: Union[Dict[str, pd.Series], Dict[str, TestResult], pd.DataFrame],
                methods: Optional[List[str]] = None,
                **kwargs) -> Dict[str, Any]:
         """
@@ -57,9 +57,10 @@ class CorrelationAnalyzer(AnalyzerBase, ComparativeAnalyzerMixin):
         
         Parameters
         ----------
-        data : Union[Dict[str, pd.Series], pd.DataFrame]
+        data : Union[Dict[str, pd.Series], Dict[str, TestResult], pd.DataFrame]
             因子数据，可以是：
-            - Dict[factor_name, factor_series]: 因子字典
+            - Dict[factor_name, factor_series]: 因子Series字典
+            - Dict[factor_name, TestResult]: 测试结果字典
             - DataFrame: 列为因子的DataFrame
         methods : List[str], optional
             相关性计算方法列表，默认使用配置的方法
@@ -157,14 +158,17 @@ class CorrelationAnalyzer(AnalyzerBase, ComparativeAnalyzerMixin):
         return False
     
     def _prepare_factor_data(self, 
-                           data: Union[Dict[str, pd.Series], pd.DataFrame]) -> pd.DataFrame:
+                           data: Union[Dict[str, pd.Series], Dict[str, TestResult], pd.DataFrame]) -> pd.DataFrame:
         """
         准备因子数据
         
         Parameters
         ----------
-        data : Union[Dict[str, pd.Series], pd.DataFrame]
-            原始数据
+        data : Union[Dict[str, pd.Series], Dict[str, TestResult], pd.DataFrame]
+            原始数据，可以是：
+            - DataFrame: 直接返回
+            - Dict[str, pd.Series]: 因子Series字典
+            - Dict[str, TestResult]: 从TestResult中提取处理后的因子
             
         Returns
         -------
