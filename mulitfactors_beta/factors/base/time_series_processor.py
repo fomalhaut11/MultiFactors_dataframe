@@ -201,7 +201,7 @@ class TimeSeriesProcessor:
         Z-Score标准化数据
         """
         if min_periods is None:
-            min_periods = max(5, window // 2)
+            min_periods = max(4, window // 2)
         
         def _calc_zscore(stock_data):
             """计算单个股票的Z-Score"""
