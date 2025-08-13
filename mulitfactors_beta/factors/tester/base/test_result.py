@@ -124,6 +124,7 @@ class TestResult:
     regression_result: Optional[RegressionResult] = None
     group_result: Optional[GroupResult] = None
     ic_result: Optional[ICResult] = None
+    turnover_result: Optional[Dict[str, Any]] = None  # 换手率分析结果
     
     # 处理后的因子值
     processed_factor: Optional[pd.Series] = None
@@ -165,6 +166,14 @@ class TestResult:
             metrics['icir'] = self.ic_result.icir
             metrics['rank_ic_mean'] = self.ic_result.rank_ic_mean
             metrics['rank_icir'] = self.ic_result.rank_icir
+            
+        # 换手率指标
+        if self.turnover_result:
+            metrics['avg_turnover'] = self.turnover_result.get('avg_turnover', 0)
+            metrics['max_turnover'] = self.turnover_result.get('max_turnover', 0)
+            metrics['turnover_std'] = self.turnover_result.get('turnover_std', 0)
+            metrics['total_turnover_cost'] = self.turnover_result.get('total_cost', 0)
+            metrics['avg_turnover_cost'] = self.turnover_result.get('avg_cost', 0)
             
         self.performance_metrics = metrics
         return metrics

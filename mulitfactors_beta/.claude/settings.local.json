@@ -26,7 +26,8 @@
       "Bash(timeout:*)",
       "Bash(echo:*)",
       "Bash(powershell:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ],
     "deny": []
   }

@@ -89,6 +89,11 @@ class FactorTester:
             if 'newfactor' in merged_data.columns:
                 result.processed_factor = merged_data['newfactor']
             
+            # 换手率分析
+            logger.info("开始换手率分析")
+            turnover_result = self._turnover_test(merged_data)
+            result.turnover_result = turnover_result
+            
             # 计算性能指标
             result.calculate_performance_metrics()
             
@@ -438,7 +443,7 @@ class FactorTester:
             ic_df = pd.DataFrame(ic_list).set_index('date')
             
             # 计算IC衰减（未来N期的IC）
-            ic_decay = self._calculate_ic_decay(merged_data, periods=10)
+            ic_decay = self._calculate_ic_decay(merged_data, periods=20)
             
             return ICResult(
                 ic_series=ic_df['ic'],
@@ -479,10 +484,158 @@ class FactorTester:
         pd.Series
             IC衰减序列
         """
-        # 这里简化处理，只返回一个示例
-        # 实际应该计算因子与未来N期收益的相关性
-        decay = pd.Series(index=range(periods), dtype=float)
-        for i in range(periods):
-            decay[i] = 0.5 ** (i / 5)  # 示例衰减
+        ic_decay = pd.Series(index=range(1, periods + 1), dtype=float)
         
-        return decay
+        # 获取所有交易日期
+        dates = sorted(merged_data.index.get_level_values(0).unique())
+        
+        for lag in range(1, periods + 1):
+            ic_values = []
+            
+            for i, date in enumerate(dates[:-lag]):
+                # 当期因子值
+                current_data = merged_data.loc[date]
+                if len(current_data) < 10:
+                    continue
+                    
+                # 未来第lag期的收益
+                future_date = dates[i + lag]
+                if future_date in merged_data.index.get_level_values(0):
+                    future_data = merged_data.loc[future_date]
+                    
+                    # 匹配相同股票
+                    common_stocks = current_data.index.intersection(future_data.index)
+                    if len(common_stocks) >= 10:
+                        current_factor = current_data.loc[common_stocks, 'newfactor']
+                        future_return = future_data.loc[common_stocks, 'LogReturn']
+                        
+                        # 计算IC
+                        ic = current_factor.corr(future_return)
+                        if not np.isnan(ic):
+                            ic_values.append(ic)
+            
+            # 计算该滞后期的平均IC
+            if ic_values:
+                ic_decay[lag] = np.mean(ic_values)
+            else:
+                ic_decay[lag] = 0
+        
+        return ic_decay
+    
+    def _turnover_test(self, merged_data: pd.DataFrame) -> Dict[str, Any]:
+        """
+        执行换手率分析
+        
+        Parameters
+        ----------
+        merged_data : pd.DataFrame
+            合并后的数据
+            
+        Returns
+        -------
+        Dict
+            换手率分析结果
+        """
+        # 初始化结果
+        turnover_results = {
+            'daily_turnover': [],  # 每日换手率
+            'group_turnover': {},   # 各组换手率
+            'avg_turnover': 0,      # 平均换手率
+            'turnover_cost': [],    # 换手成本估算
+        }
+        
+        # 按日期排序
+        dates = sorted(merged_data.index.get_level_values(0).unique())
+        
+        # 记录前一期的分组
+        prev_groups = {}
+        
+        for i, date in enumerate(dates):
+            daily_data = merged_data.loc[date]
+            
+            if len(daily_data) < self.group_nums:
+                continue
+            
+            try:
+                # 按因子值分组
+                daily_data_copy = daily_data.copy()
+                daily_data_copy['group'] = pd.qcut(
+                    daily_data_copy['newfactor'], 
+                    self.group_nums, 
+                    labels=False, 
+                    duplicates='drop'
+                )
+                
+                # 获取每组的股票列表
+                current_groups = {}
+                for g in range(self.group_nums):
+                    group_stocks = daily_data_copy[daily_data_copy['group'] == g].index.tolist()
+                    current_groups[g] = set(group_stocks)
+                
+                # 计算换手率（如果有前一期数据）
+                if prev_groups:
+                    daily_turnover = []
+                    
+                    for g in range(self.group_nums):
+                        if g in prev_groups and g in current_groups:
+                            prev_stocks = prev_groups[g]
+                            curr_stocks = current_groups[g]
+                            
+                            # 计算该组的换手率
+                            # 换手率 = (卖出股票数 + 买入股票数) / (2 * 平均持仓数)
+                            stocks_sold = len(prev_stocks - curr_stocks)
+                            stocks_bought = len(curr_stocks - prev_stocks)
+                            avg_holdings = (len(prev_stocks) + len(curr_stocks)) / 2
+                            
+                            if avg_holdings > 0:
+                                group_turnover = (stocks_sold + stocks_bought) / (2 * avg_holdings)
+                                daily_turnover.append(group_turnover)
+                                
+                                # 记录各组换手率
+                                if g not in turnover_results['group_turnover']:
+                                    turnover_results['group_turnover'][g] = []
+                                turnover_results['group_turnover'][g].append({
+                                    'date': date,
+                                    'turnover': group_turnover,
+                                    'stocks_sold': stocks_sold,
+                                    'stocks_bought': stocks_bought
+                                })
+                    
+                    # 计算当日平均换手率
+                    if daily_turnover:
+                        avg_daily_turnover = np.mean(daily_turnover)
+                        turnover_results['daily_turnover'].append({
+                            'date': date,
+                            'turnover': avg_daily_turnover
+                        })
+                        
+                        # 估算换手成本（假设单边成本0.15%）
+                        cost_rate = 0.0015
+                        turnover_cost = avg_daily_turnover * cost_rate * 2  # 双边成本
+                        turnover_results['turnover_cost'].append({
+                            'date': date,
+                            'cost': turnover_cost
+                        })
+                
+                # 更新前一期分组
+                prev_groups = current_groups
+                
+            except Exception as e:
+                logger.warning(f"日期{date}换手率计算失败: {e}")
+                continue
+        
+        # 计算汇总统计
+        if turnover_results['daily_turnover']:
+            turnovers = [x['turnover'] for x in turnover_results['daily_turnover']]
+            turnover_results['avg_turnover'] = np.mean(turnovers)
+            turnover_results['max_turnover'] = np.max(turnovers)
+            turnover_results['min_turnover'] = np.min(turnovers)
+            turnover_results['turnover_std'] = np.std(turnovers)
+            
+            # 计算总换手成本
+            if turnover_results['turnover_cost']:
+                costs = [x['cost'] for x in turnover_results['turnover_cost']]
+                turnover_results['total_cost'] = np.sum(costs)
+                turnover_results['avg_cost'] = np.mean(costs)
+        
+        return turnover_results
