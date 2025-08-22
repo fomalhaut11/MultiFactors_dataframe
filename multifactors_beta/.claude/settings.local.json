@@ -1,0 +1,36 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(rmdir:*)",
+      "Bash(rm:*)",
+      "Bash(ls:*)",
+      "Bash(mkdir:*)",
+      "Bash(find:*)",
+      "Bash(python test_db_connection.py:*)",
+      "Bash(python test_data_fetcher.py:*)",
+      "Bash(python:*)",
+      "Bash(md tests)",
+      "Bash(md docs)",
+      "Bash(md tools)",
+      "Bash(md legacy)",
+      "Bash(md archive)",
+      "Bash(md archivelegacy:*)",
+      "Bash(md:*)",
+      "Bash(dir:*)",
+      "Bash(cmd /c:*)",
+      "Bash(mv:*)",
+      "Bash(od:*)",
+      "Bash(move:*)",
+      "Bash(pytest:*)",
+      "Bash(grep:*)",
+      "Bash(timeout:*)",
+      "Bash(echo:*)",
+      "Bash(powershell:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(del PROJECT_STATUS.md)",
+      "Bash(git rm:*)"
+    ],
+    "deny": []
+  }
+}
