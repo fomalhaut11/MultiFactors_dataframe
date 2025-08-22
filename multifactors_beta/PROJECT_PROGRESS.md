@@ -4,8 +4,8 @@
 
 **项目名称**: MultiFactors量化投资系统  
 **当前版本**: v2.1.0-beta  
-**最后更新**: 2025-08-18  
-**开发进度**: 80%
+**最后更新**: 2025-08-22  
+**开发进度**: 87%
 
 ## 🎯 项目目标
 
@@ -14,7 +14,7 @@
 2. ✅ 单因子测试和验证
 3. ✅ 因子筛选和组合
 4. ✅ 风险模型构建
-5. ⏳ 组合优化和回测
+5. ✅ 组合优化和回测（基础框架）
 
 ## ✅ 已完成模块
 
@@ -81,16 +81,43 @@
   - 预设筛选条件（loose/normal/strict）
   - 自定义筛选条件
   - 因子排名
-- **因子评估模块**: 多维度因子评估
-  - 盈利能力、稳定性、及时性、可交易性、独特性
+- **CorrelationAnalyzer**: 相关性分析器
+  - 因子间相关性计算
+  - 相关性可视化
+- **StabilityAnalyzer**: 稳定性分析器
+  - 时间序列稳定性检验
+  - 滚动窗口分析
+- **FactorEvaluator**: 综合评估器
+  - 多维度因子评估（盈利能力、稳定性、及时性、可交易性、独特性）
   - 综合评分和智能诊断
-- **因子组合模块**: 因子组合优化
-  - 多种权重计算方法（等权重、IC加权、风险平价）
-  - 线性组合和正交化处理
-- **因子选择模块**: 智能因子选择
-  - 性能、相关性、稳定性筛选器
-  - TopN、聚类、阈值选择策略
-- **配置管理**: 灵活的筛选条件配置
+  - 评估维度详细实现
+
+##### 2.4 因子组合器 (combiner) - ✅ 新增完整实现
+- **FactorCombiner**: 主组合器
+  - 多种组合方法支持
+- **权重计算方法**:
+  - EqualWeight: 等权重组合
+  - ICWeight: IC加权组合
+  - IRWeight: 信息比率加权
+  - RiskParityWeight: 风险平价加权
+  - OptimalWeight: 最优权重（最大化IC）
+- **组合方法**:
+  - LinearCombiner: 线性组合
+  - OrthogonalCombiner: 正交化组合
+  - PCANeutralization: PCA中性化
+
+##### 2.5 因子选择器 (selector) - ✅ 新增完整实现
+- **FactorSelector**: 主选择器
+- **筛选器**:
+  - PerformanceFilter: 性能筛选
+  - CorrelationFilter: 相关性筛选
+  - StabilityFilter: 稳定性筛选
+  - CompositeFilter: 复合筛选器
+- **选择策略**:
+  - TopNSelector: TopN选择
+  - ThresholdSelector: 阈值选择
+  - ClusteringSelector: 聚类选择
+- **FactorPool**: 因子池管理
 
 ### 4. 风险模型模块 (85%) - ✅ 新增
 #### 4.1 基础框架
@@ -118,13 +145,70 @@
 - Ledoit-Wolf方法性能最佳
 - 异常值检测率：27%
 
-### 5. 数据获取模块 (80%)
+### 5. 回测系统模块 (75%) - ✅ 新增完整框架
 
-#### data/fetcher
+#### 5.1 回测引擎 (backtest/engine)
+- **BacktestEngine**: 主回测引擎
+  - 事件驱动回测框架
+  - 支持多策略并行
+  - 完整的时间管理
+
+#### 5.2 组合管理 (backtest/portfolio)  
+- **PortfolioManager**: 组合管理器
+  - 权重管理和再平衡
+  - 资金分配优化
+  - 持仓跟踪
+
+#### 5.3 交易成本模型 (backtest/cost)
+- **CommissionModel**: 佣金模型
+  - 多种佣金计算方式
+  - 支持阶梯费率
+- **MarketImpactModel**: 市场冲击模型
+  - 线性/非线性冲击模型
+  - 流动性考虑
+- **SlippageModel**: 滑点模型
+  - 固定/比例滑点
+  - 市场状况调整
+
+#### 5.4 绩效分析 (backtest/performance)
+- **PerformanceMetrics**: 绩效指标
+  - 收益率、波动率、夏普比率
+  - 最大回撤、Calmar比率
+  - 信息比率、Alpha/Beta
+- **ResultManager**: 结果管理
+  - 详细绩效报告
+  - 可视化图表
+  - 风险归因分析
+
+#### 5.5 交易约束 (backtest/utils)
+- **TradingConstraints**: 交易约束
+  - 持仓限制、换手率控制
+  - 行业/个股权重限制
+- **ValidationUtils**: 验证工具
+  - 数据完整性检查
+  - 策略参数验证
+
+### 6. 数据获取模块 (85%) - ✅ 增强
+
+#### 6.1 data/fetcher
 - **BasicDataLocalization**: 基础数据本地化
 - **DataFetcher**: 通用数据获取器
 - **ChunkedPriceFetcher**: 分块价格获取
-- **IncrementalPriceUpdater**: 增量更新
+- **IncrementalPriceUpdater**: 增量价格更新
+- **IncrementalFinancialUpdater**: 增量财务数据更新 ✅ 新增
+- **IncrementalStopPriceUpdater**: 增量停牌价格更新 ✅ 新增
+
+#### 6.2 data/processor
+- **DataProcessingPipeline**: 主处理流水线
+- **EnhancedPipeline**: 增强处理流水线
+- **FinancialProcessor**: 财务数据处理器
+- **PriceProcessor**: 价格数据处理器
+- **ReturnCalculator**: 收益计算器
+
+#### 6.3 data/schemas & bridge
+- **DataSchemas**: 数据结构定义 ✅ 新增
+- **DataBridge**: 数据桥接器 ✅ 新增
+- **DataFormatExamples**: 格式示例 ✅ 新增
 
 ### 6. 基础类库 (100%)
 
@@ -177,12 +261,12 @@
 ## 📁 项目结构
 
 ```
-mulitfactors_beta/
+multifactors_beta/
 ├── core/                    # 核心基础设施 ✅
 │   ├── __init__.py         # 统一入口
 │   ├── config_manager.py   # 配置管理
-│   ├── database.py         # 数据库管理
-│   └── utils.py            # 工具函数
+│   ├── database/           # 数据库管理
+│   └── utils/              # 工具函数
 │
 ├── factors/                 # 因子框架 ✅
 │   ├── generator/          # 因子生成
@@ -191,27 +275,42 @@ mulitfactors_beta/
 │   │   └── risk/          # 风险因子 🚧
 │   ├── tester/            # 因子测试 ✅
 │   ├── analyzer/          # 因子分析 ✅
+│   ├── combiner/          # 因子组合 ✅ 新增
+│   ├── selector/          # 因子选择 ✅ 新增
+│   ├── risk_model/        # 风险模型 ✅ 新增
+│   ├── calculator/        # 因子计算器 ✅ 重组
 │   ├── base/              # 基础类 ✅
+│   ├── config/            # 配置管理 ✅ 增强
 │   └── utils/             # 工具类 ✅
 │
-├── data/                    # 数据模块
-│   ├── fetcher/           # 数据获取 ✅
-│   └── database/          # 数据库接口 ✅
+├── backtest/               # 回测系统 ✅ 新增
+│   ├── engine/            # 回测引擎
+│   ├── portfolio/         # 组合管理
+│   ├── cost/              # 交易成本
+│   ├── performance/       # 绩效分析
+│   └── utils/             # 回测工具
+│
+├── data/                    # 数据模块 ✅ 增强
+│   ├── fetcher/           # 数据获取
+│   ├── processor/         # 数据处理
+│   ├── examples/          # 格式示例 ✅ 新增
+│   ├── schemas.py         # 数据结构 ✅ 新增
+│   └── data_bridge.py     # 数据桥接 ✅ 新增
 │
 ├── scripts/                 # 脚本工具
-│   ├── generate_bp_factor.py      # BP因子生成 ✅
-│   ├── generate_roe_factor.py     # ROE因子生成 ✅
 │   └── generate_sue_factor.py     # SUE因子生成 ✅
 │
 ├── docs/                    # 文档
 │   ├── 模块接口设计规范.md  # 设计规范 ✅
-│   └── 因子计算模块迁移指南.md
+│   └── BP因子使用指南.md    # 因子指南 ✅
 │
 ├── examples/                # 示例代码
 │   └── module_interface_demo.py  # 接口示例 ✅
 │
 └── tests/                   # 测试文件
-    └── test_refactored_modules.py  # 模块测试 ✅
+    ├── unit/              # 单元测试 ✅
+    ├── integration/       # 集成测试 ✅
+    └── performance/       # 性能测试 ✅
 ```
 
 ## 🔧 技术栈
