@@ -1,6 +1,19 @@
 """
 因子模块 - 统一的因子生成、测试和分析框架
 
+⚠️  重要使用约束 ⚠️
+====================
+此模块必须在项目根目录下导入和使用，不能在factors子目录下运行！
+
+正确使用方式：
+    # 在 multifactors_beta/ 目录下
+    import factors
+    result = factors.generate('ROE_ttm', data)
+
+错误使用方式：
+    # 在 multifactors_beta/factors/ 目录下
+    import factors  # 会导致配置导入错误！
+
 提供完整的因子研究工作流：
 1. 因子生成（generator）- 生成各类因子
 2. 因子测试（tester）- 测试因子有效性
@@ -14,12 +27,16 @@
   - risk/      风险因子
 - tester/      因子测试模块
 - analyzer/    因子分析模块
+- operations/  因子操作工具箱（新增）
+  - cross_sectional.py  截面操作
+  - time_series.py       时序操作
+  - combination.py       因子组合
 - base/        基础类和工具
 - utils/       通用工具函数
 """
 
 # 导入子模块
-from . import generator, tester, analyzer, base, utils, calculator
+from . import generator, tester, analyzer, base, utils, operations
 
 # 从子模块导入主要接口
 from .generator import (
@@ -45,14 +62,9 @@ from .analyzer import (
 from .base import (
     FactorBase,
     MultiFactorBase,
-    TimeSeriesProcessor,
     DataProcessingMixin
 )
 
-from .calculator import (
-    FactorCalculator,
-    FactorDataLoader
-)
 
 __all__ = [
     # 子模块
@@ -61,7 +73,7 @@ __all__ = [
     'analyzer',
     'base',
     'utils',
-    'calculator',
+    'operations',
     
     # 生成接口
     'FactorGenerator',
@@ -83,12 +95,10 @@ __all__ = [
     # 基础类
     'FactorBase',
     'MultiFactorBase',
-    'TimeSeriesProcessor',
+    'FinancialReportProcessor',  # 财务报表数据处理器
+    'TimeSeriesProcessor',       # 向后兼容别名
     'DataProcessingMixin',
     
-    # 工具类
-    'FactorCalculator',
-    'FactorDataLoader',
 ]
 
 # 版本信息

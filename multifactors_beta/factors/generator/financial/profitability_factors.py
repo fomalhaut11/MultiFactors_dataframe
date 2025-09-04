@@ -30,7 +30,7 @@ class ROE_ttm_Factor(FactorBase, DataProcessingMixin, ColumnMapperMixin):
         try:
             # 使用实际的字段名
             earnings_col = 'DEDUCTEDPROFIT'  # 扣非净利润
-            equity_col = 'TOT_SHRHLDR_EQY_EXCL_MIN_INT'  # 股东权益
+            equity_col = 'EQY_BELONGTO_PARCOMSH'  # 归属母公司股东权益
             
             # 检查必要字段是否存在
             required_cols = [earnings_col, equity_col, 'd_year', 'd_quarter']

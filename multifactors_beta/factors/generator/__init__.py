@@ -1,14 +1,16 @@
 """
-因子生成模块
+因子生成器模块
 
-提供各类因子的生成和计算功能
-包括财务因子、技术因子、风险因子等
+包含各类因子的生成器和计算逻辑
 
-主要功能：
-- 财务因子生成（ROE、ROA、PE、PB等）
-- 技术因子生成（动量、波动率、技术指标等）
-- 风险因子生成（Beta、VaR、残差波动等）
-- 统一的因子生成接口
+主要模块：
+- financial: 纯财务因子（仅依赖财务报表数据）
+- mixed: 混合因子（需要多种数据源）
+  - valuation: 估值因子（财务+市值）
+  - 未来扩展: size, liquidity, quality 等
+- technical: 技术因子（基于价格、成交量）
+- risk: 风险因子（Beta、波动率等）
+- alpha191: Alpha191 因子集（191个技术因子）
 """
 
 from .factor_generator import (
@@ -21,10 +23,17 @@ from .factor_generator import (
 
 # 导入各类因子
 from .financial import (
-    PureFinancialFactorCalculator,
     SUE,
     EarningsRevision,
     EarningsMomentum
+)
+
+from .mixed import (
+    MixedFactorManager,
+    ValuationFactorCalculator,
+    get_mixed_factor_manager,
+    calculate_mixed_factor,
+    get_all_mixed_factors
 )
 
 __all__ = [
@@ -36,10 +45,16 @@ __all__ = [
     'create_generator',
     
     # 财务因子
-    'PureFinancialFactorCalculator',
     'SUE',
     'EarningsRevision',
     'EarningsMomentum',
+    
+    # 混合因子
+    'MixedFactorManager',
+    'ValuationFactorCalculator',
+    'get_mixed_factor_manager',
+    'calculate_mixed_factor',
+    'get_all_mixed_factors',
 ]
 
 # 版本信息

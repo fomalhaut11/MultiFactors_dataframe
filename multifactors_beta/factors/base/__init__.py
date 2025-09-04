@@ -5,7 +5,6 @@
 """
 
 from .factor_base import FactorBase, MultiFactorBase
-from .time_series_processor import TimeSeriesProcessor
 from .data_processing_mixin import DataProcessingMixin
 from .flexible_data_adapter import ColumnMapperMixin, FlexibleDataAdapter
 from .validation import DataValidator
@@ -15,7 +14,6 @@ __all__ = [
     # 基础类
     'FactorBase',              # 因子基类
     'MultiFactorBase',         # 多因子基类
-    'TimeSeriesProcessor',     # 时间序列处理器
     
     # Mixins
     'DataProcessingMixin',     # 数据处理混入

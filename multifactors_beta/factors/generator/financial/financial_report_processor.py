@@ -165,7 +165,7 @@ class FinancialReportProcessor:
 
             # 找到生效日期之后的所有交易日索引
             effective_idx = trading_dates_index.get(effective_date)
-            if effective_idx is None:3
+            if effective_idx is None:
                 continue
 
             # 使用布尔索引批量更新
@@ -334,7 +334,8 @@ class FinancialReportProcessor:
                        if data[col].dtype in [np.float64, np.int64]
                        and col not in ['d_year', 'd_quarter']]
 
-        result = pd.DataFrame(index=data.index)
+        # 使用字典收集所有TTM列，避免DataFrame碎片化
+        ttm_columns = {}
 
         for col in numeric_cols:
             grouped = data.groupby(level='StockCodes', group_keys=False)[col]
@@ -359,7 +360,10 @@ class FinancialReportProcessor:
                 data[col] + prev_year_q4 - shift_4  # 其他季度计算
             )
 
-            result[f'{col}_ttm'] = ttm
+            ttm_columns[f'{col}_ttm'] = ttm
+
+        # 一次性构建结果DataFrame，避免碎片化
+        result = pd.DataFrame(ttm_columns, index=data.index)
 
         return result
 
