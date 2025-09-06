@@ -9,7 +9,7 @@ import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from core.database import test_connection, get_pool_status
-from core.config_manager import get_database_config
+from config import get_config, config_managernfig
 
 def test_all_databases():
     """测试所有数据库连接"""

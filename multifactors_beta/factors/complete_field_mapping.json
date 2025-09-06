@@ -1,0 +1,1402 @@
+{
+  "MONETARY_CAP": {
+    "chinese_name": "货币资金",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "TRADABLE_FIN_ASSETS": {
+    "chinese_name": "以公允价值计量切变动计入当期损益的金融资产",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "NOTES_RCV": {
+    "chinese_name": "应收票据",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "ACCT_RCV": {
+    "chinese_name": "应收账款",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "OTH_RCV": {
+    "chinese_name": "其他应收款",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "PREPAY": {
+    "chinese_name": "预付款项",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "DVD_RCV": {
+    "chinese_name": "应收股利",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "INT_RCV": {
+    "chinese_name": "应收利息",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "INVENTORIES": {
+    "chinese_name": "存货",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "CONSUMPTIVE_BIO_ASSETS": {
+    "chinese_name": "消耗性生物资产",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "DEFERRED_EXP": {
+    "chinese_name": "待摊费用",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "HFS_ASSETS": {
+    "chinese_name": "划分为持有代售的资产",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "NON_CUR_ASSETS_DUE_WITHIN_1Y": {
+    "chinese_name": "一年内到期的非流动性资产",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "SETTLE_RSRV": {
+    "chinese_name": "结算准备金",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "LOANS_TO_OTH_BANKS": {
+    "chinese_name": "拆出资金",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "MARGIN_ACCT": {
+    "chinese_name": "融入资金",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "PREM_RCV": {
+    "chinese_name": "应收保费",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "RCV_FROM_REINSURER": {
+    "chinese_name": "应收分保账款",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "RCV_FROM_CEDED_INSUR_CONT_RSRV": {
+    "chinese_name": "应收分保合同准备金",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "RED_MONETARY_CAP_FOR_SALE": {
+    "chinese_name": "买入返售金融资产",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "TOT_ACCT_RCV": {
+    "chinese_name": "应收款项",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "OTH_CUR_ASSETS": {
+    "chinese_name": "其他流动资产",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "TOT_CUR_ASSETS": {
+    "chinese_name": "流动资产合计",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "FIN_ASSETS_AVAIL_FOR_SALE": {
+    "chinese_name": "可供出售金融资产",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "HELD_TO_MTY_INVEST": {
+    "chinese_name": "持有至到期投资",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "INVEST_REAL_ESTATE": {
+    "chinese_name": "投资性房地产",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "LONG_TERM_EQY_INVEST": {
+    "chinese_name": "长期股权投资",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "LONG_TERM_REC": {
+    "chinese_name": "长期应收款项",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "FIX_ASSETS": {
+    "chinese_name": "固定资产",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "PROJ_MATL": {
+    "chinese_name": "工程物资",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "CONST_IN_PROG": {
+    "chinese_name": "在建工程",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "FIX_ASSETS_DISP": {
+    "chinese_name": "固定资产清理",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "PRODUCTIVE_BIO_ASSETS": {
+    "chinese_name": "生产性生物资产",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "OIL_AND_NATURAL_GAS_ASSETS": {
+    "chinese_name": "油气资产",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "INTANG_ASSETS": {
+    "chinese_name": "无形资产",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "R_AND_D_COSTS": {
+    "chinese_name": "开发支出",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "GOODWILL": {
+    "chinese_name": "商誉",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "LONG_TERM_DEFERRED_EXP": {
+    "chinese_name": "长期待摊费用",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "DEFERRED_TAX_ASSETS": {
+    "chinese_name": "递延所得税资产",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "LOANS_AND_ADV_GRANTED": {
+    "chinese_name": "发放贷款及垫款",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "OTH_NON_CUR_ASSETS": {
+    "chinese_name": "其他非流动性资产",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "TOT_NON_CUR_ASSETS": {
+    "chinese_name": "非流动资产合计",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "CASH_DEPOSITS_CENTRAL_BANK": {
+    "chinese_name": "现金及存放中央银行款项",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "AGENCY_BUS_ASSETS": {
+    "chinese_name": "代理业务资产",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "RCV_INVEST": {
+    "chinese_name": "应收款项类投资",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "ASSET_DEP_OTH_BANKS_FIN_INST": {
+    "chinese_name": "存放同业和其他金融机构款项",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "PRECIOUS_METALS": {
+    "chinese_name": "贵金属",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "RCV_CEDED_UNEARNED_PREM_RSRV": {
+    "chinese_name": "应收分保未到期责任准备金",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "RCV_CEDED_CLAIM_RSRV": {
+    "chinese_name": "应收分保未决赔款准备金",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "RCV_CEDED_LIFE_INSUR_RSRV": {
+    "chinese_name": "应收分保寿险责任准备金",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "RCV_CEDED_LT_HEALTH_INSUR_RSRV": {
+    "chinese_name": "应收分保长期健康限责任准备金",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "INSURED_PLEDGE_LOAN": {
+    "chinese_name": "保护质押贷款",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "CAP_MRGN_PAID": {
+    "chinese_name": "存出资本保证金",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "INDEPENDENT_ACCT_ASSETS": {
+    "chinese_name": "独立账户资产",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "TIME_DEPOSITS": {
+    "chinese_name": "定期存款",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "SUBR_REC": {
+    "chinese_name": "应收代位追偿款",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "MRGN_PAID": {
+    "chinese_name": "存出保证金",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "SEAT_FEES_EXCHANGE": {
+    "chinese_name": "交易席位费",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "CLIENTS_CAP_DEPOSIT": {
+    "chinese_name": "客户资金存款",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "CLIENTS_RSRV_SETTLE": {
+    "chinese_name": "客户备付金",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "OTH_ASSETS": {
+    "chinese_name": "其他资产",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "DERIVATIVE_FIN_ASSETS": {
+    "chinese_name": "衍生金融资产",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "TOT_ASSETS": {
+    "chinese_name": "资产总计",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "ST_BORROW": {
+    "chinese_name": "短期借款",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "TRADABLE_FIN_LIAB": {
+    "chinese_name": "以公允价值计量且其变动计入当期损益的全部负债",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "NOTES_PAYABLE": {
+    "chinese_name": "应付票据",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "ACCT_PAYABLE": {
+    "chinese_name": "应付账款",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "ADV_FROM_CUST": {
+    "chinese_name": "预收账款",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "EMPL_BEN_PAYABLE": {
+    "chinese_name": "应付职工薪酬",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "TAXES_SURCHARGES_PAYABLE": {
+    "chinese_name": "应交税费",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "TOT_ACCT_PAYABLE": {
+    "chinese_name": "应付款项",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "INT_PAYABLE": {
+    "chinese_name": "应付利息",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "DVD_PAYABLE": {
+    "chinese_name": "应付股利",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "OTH_PAYABLE": {
+    "chinese_name": "其他应付款",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "ACC_EXP": {
+    "chinese_name": "预提费用",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "DEFERRED_INC_CUR_LIAB": {
+    "chinese_name": "递延收益-流动负债",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "HFS_LIAB": {
+    "chinese_name": "划分为持有待售的负债",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "NON_CUR_LIAB_DUE_WITHIN_1Y": {
+    "chinese_name": "一年内到期的非流动负债",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "ST_BONDS_PAYABLE": {
+    "chinese_name": "应付短期债券",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "BORROW_CENTRAL_BANK": {
+    "chinese_name": "向中央银行借款",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "DEPOSIT_RECEIVED_IB_DEPOSITS": {
+    "chinese_name": "吸收存款及同业存放",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "LOANS_OTH_BANKS": {
+    "chinese_name": "拆入资金",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "FUND_SALES_FIN_ASSETS_RP": {
+    "chinese_name": "卖出回购金融资产款",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "HANDLING_CHARGES_COMM_PAYABLE": {
+    "chinese_name": "应付手续费及佣金",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "PAYABLE_TO_REINSURER": {
+    "chinese_name": "应付分保账款",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "RSRV_INSUR_CONT": {
+    "chinese_name": "保险合同准备金",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "ACTING_TRADING_SEC": {
+    "chinese_name": "代理买卖证券款",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "ACTING_UW_SEC": {
+    "chinese_name": "代理承销证券款",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "OTH_CUR_LIAB": {
+    "chinese_name": "其他流动负债",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "TOT_CUR_LIAB": {
+    "chinese_name": "流动负债合计",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "LT_BORROW": {
+    "chinese_name": "长期借款",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "BONDS_PAYABLE": {
+    "chinese_name": "应付债务",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "LT_PAYABLE": {
+    "chinese_name": "长期应付款",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "LT_EMPL_BEN_PAYABLE": {
+    "chinese_name": "长期应付职工薪酬",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "SPECIFIC_ITEM_PAYABLE": {
+    "chinese_name": "专项应付款",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "PROVISIONS": {
+    "chinese_name": "预计负债",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "DEFERRED_TAX_LIAB": {
+    "chinese_name": "递延所得税负债",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "DEFERRED_INC_NON_CUR_LIAB": {
+    "chinese_name": "递延收益-非流动负债",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "OTH_NON_CUR_LIAB": {
+    "chinese_name": "其他非流动负债",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "TOT_NON_CUR_LIAB": {
+    "chinese_name": "非流动负债合计",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "LIAB_DEP_OTH_BANKS_FIN_INST": {
+    "chinese_name": "同业和其他金融机构存放款项",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "AGENCY_BUS_LIAB": {
+    "chinese_name": "代理业务负债",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "CUST_BANK_DEP": {
+    "chinese_name": "吸收存款",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "CLAIMS_PAYABLE": {
+    "chinese_name": "应付赔付款",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "DVD_PAYABLE_INSURED": {
+    "chinese_name": "应付保单红利",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "DEPOSIT_RECEIVED": {
+    "chinese_name": "存入保证金",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "INSURED_DEPOSIT_INVEST": {
+    "chinese_name": "保户储金及投资款",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "UNEARNED_PREM_RSRV": {
+    "chinese_name": "未到期责任准备金",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "OUT_LOSS_RSRV": {
+    "chinese_name": "未决赔款准备金",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "LIFE_INSUR_RSRV": {
+    "chinese_name": "寿险责任准备金",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "LT_HEALTH_INSUR_V": {
+    "chinese_name": "长期健康限责任准备金",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "INDEPENDENT_ACCT_LIAB": {
+    "chinese_name": "独立账户负债",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "PREM_RECEIVED_ADV": {
+    "chinese_name": "预收保费",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "PLEDGE_LOAN": {
+    "chinese_name": "质押借款",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "ST_FINL_INST_PAYABLE": {
+    "chinese_name": "应付短期融资款",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "OTH_LIAB": {
+    "chinese_name": "其他负债",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "DERIVATIVE_FIN_LIAB": {
+    "chinese_name": "衍生金融负债",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "TOT_LIAB": {
+    "chinese_name": "负债合计",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "CAP_STK": {
+    "chinese_name": "实收资本（或股本）",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "OTHER_EQUITY_INSTRUMENTS": {
+    "chinese_name": "其他权益工具",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "OTHER_EQUITY_INSTRUMENTS_PRE": {
+    "chinese_name": "其他权益工具：优先股",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "CAP_RSRV": {
+    "chinese_name": "资本公积金",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "SURPLUS_RSRV": {
+    "chinese_name": "盈余公积金",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "UNDISTRIBUTED_PROFIT": {
+    "chinese_name": "未分配利润",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "TSY_STK": {
+    "chinese_name": "减：库存股",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "OTHER_COMPREH_INC_BS": {
+    "chinese_name": "其他综合收益",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "SPECIAL_RSRV": {
+    "chinese_name": "专项储备",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "PROV_NOM_RISKS": {
+    "chinese_name": "一般风险准备",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "CNVD_DIFF_FOREIGN_CURR_STAT": {
+    "chinese_name": "外币报表折算差额",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "UNCONFIRMED_INVEST_LOSS_BS": {
+    "chinese_name": "未确认的投资损失",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "MINORITY_INT": {
+    "chinese_name": "少数股东权益",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "EQY_BELONGTO_PARCOMSH": {
+    "chinese_name": "归属母公司股东的权益",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "TOT_EQUITY": {
+    "chinese_name": "所有者权益合计",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "TOT_LIAB_SHRHLDR_EQY": {
+    "chinese_name": "负债及股东权益总计",
+    "table": "balance_sheet",
+    "table_cn": "资产负债表"
+  },
+  "TOT_OPER_REV": {
+    "chinese_name": "营业总收入",
+    "table": "income_statement",
+    "table_cn": "利润表"
+  },
+  "OPER_REV": {
+    "chinese_name": "营业收入",
+    "table": "income_statement",
+    "table_cn": "利润表"
+  },
+  "INT_INC": {
+    "chinese_name": "利息收入",
+    "table": "income_statement",
+    "table_cn": "利润表"
+  },
+  "INSUR_PREM_UNEARNED": {
+    "chinese_name": "已赚保费",
+    "table": "income_statement",
+    "table_cn": "利润表"
+  },
+  "HANDLING_CHRG_COMM_INC": {
+    "chinese_name": "手续费及佣金收入",
+    "table": "income_statement",
+    "table_cn": "利润表"
+  },
+  "TOT_PREM_INC": {
+    "chinese_name": "保费业务收入",
+    "table": "income_statement",
+    "table_cn": "利润表"
+  },
+  "REINSUR_INC": {
+    "chinese_name": "分保费收入",
+    "table": "income_statement",
+    "table_cn": "利润表"
+  },
+  "PREM_CEDED": {
+    "chinese_name": "分出保费",
+    "table": "income_statement",
+    "table_cn": "利润表"
+  },
+  "UNEARNED_PREM_RSRV_WITHDRAW": {
+    "chinese_name": "提取未到期责任准备金",
+    "table": "income_statement",
+    "table_cn": "利润表"
+  },
+  "NET_INC_AGENCYBUSINESS": {
+    "chinese_name": "代理买卖证券业务净收入",
+    "table": "income_statement",
+    "table_cn": "利润表"
+  },
+  "NET_INC_UNDERWRITING-BUSINESS": {
+    "chinese_name": "证券承销业务净收入",
+    "table": "income_statement",
+    "table_cn": "利润表"
+  },
+  "NET_INC_CUSTOMERASSET-MANAGEMENTBUSINESS": {
+    "chinese_name": "委托客户资产管理业务净收入",
+    "table": "income_statement",
+    "table_cn": "利润表"
+  },
+  "OTHER_OPER_INC": {
+    "chinese_name": "其他业务净收入",
+    "table": "income_statement",
+    "table_cn": "利润表"
+  },
+  "NET_INT_INC": {
+    "chinese_name": "利息净收入",
+    "table": "income_statement",
+    "table_cn": "利润表"
+  },
+  "NET_FEE_AND_COMMISSION_INC": {
+    "chinese_name": "手续费及佣金净收入",
+    "table": "income_statement",
+    "table_cn": "利润表"
+  },
+  "NET_OTHER_OPER_INC": {
+    "chinese_name": "其他业务净收益",
+    "table": "income_statement",
+    "table_cn": "利润表"
+  },
+  "TOT_OPER_COST": {
+    "chinese_name": "营业总成本",
+    "table": "income_statement",
+    "table_cn": "利润表"
+  },
+  "OPER_COST": {
+    "chinese_name": "营业成本",
+    "table": "income_statement",
+    "table_cn": "利润表"
+  },
+  "INT_EXP": {
+    "chinese_name": "利息支出",
+    "table": "income_statement",
+    "table_cn": "利润表"
+  },
+  "HANDLING_CHRG_COMM_EXP": {
+    "chinese_name": "手续费及佣金支出",
+    "table": "income_statement",
+    "table_cn": "利润表"
+  },
+  "OPER_EXP": {
+    "chinese_name": "营业支出",
+    "table": "income_statement",
+    "table_cn": "利润表"
+  },
+  "TAXES_SURCHARGES_OPS": {
+    "chinese_name": "税金及附加",
+    "table": "income_statement",
+    "table_cn": "利润表"
+  },
+  "SELLING_DIST_EXP": {
+    "chinese_name": "销售费用",
+    "table": "income_statement",
+    "table_cn": "利润表"
+  },
+  "GERL_ADMIN_EXP": {
+    "chinese_name": "管理费用",
+    "table": "income_statement",
+    "table_cn": "利润表"
+  },
+  "FIN_EXP_IS": {
+    "chinese_name": "财务费用",
+    "table": "income_statement",
+    "table_cn": "利润表"
+  },
+  "IMPAIR_LOSS_ASSETS": {
+    "chinese_name": "资产减值损失",
+    "table": "income_statement",
+    "table_cn": "利润表"
+  },
+  "PREPAY_SURR": {
+    "chinese_name": "退保金",
+    "table": "income_statement",
+    "table_cn": "利润表"
+  },
+  "NET_CLAIM_EXP": {
+    "chinese_name": "赔付支出",
+    "table": "income_statement",
+    "table_cn": "利润表"
+  },
+  "NET_INSUR_CONT_RSRV": {
+    "chinese_name": "提取保险责任准备金",
+    "table": "income_statement",
+    "table_cn": "利润表"
+  },
+  "DVD_EXP_INSURED": {
+    "chinese_name": "保单红利支出",
+    "table": "income_statement",
+    "table_cn": "利润表"
+  },
+  "REINSURANCE_EXP": {
+    "chinese_name": "分保费用",
+    "table": "income_statement",
+    "table_cn": "利润表"
+  },
+  "CLAIM_EXP_RECOVERABLE": {
+    "chinese_name": "摊回赔付支出",
+    "table": "income_statement",
+    "table_cn": "利润表"
+  },
+  "INSUR_RSRV_RECOVERABLE": {
+    "chinese_name": "摊回保险责任准备金",
+    "table": "income_statement",
+    "table_cn": "利润表"
+  },
+  "REINSUR_EXP_RECOVERABLE": {
+    "chinese_name": "摊回分保费用",
+    "table": "income_statement",
+    "table_cn": "利润表"
+  },
+  "OTHER_OPER_EXP": {
+    "chinese_name": "其他业务成本",
+    "table": "income_statement",
+    "table_cn": "利润表"
+  },
+  "NET_INC_OTHER_OPS": {
+    "chinese_name": "其他经营净收入",
+    "table": "income_statement",
+    "table_cn": "利润表"
+  },
+  "NET_GAIN_CHG_FV": {
+    "chinese_name": "公允价值变动的净收益",
+    "table": "income_statement",
+    "table_cn": "利润表"
+  },
+  "NET_INVEST_INC": {
+    "chinese_name": "投资净收益",
+    "table": "income_statement",
+    "table_cn": "利润表"
+  },
+  "INC_INVEST_ASSOC_JV_ENTP": {
+    "chinese_name": "对联营企业和合营企业的投资收益",
+    "table": "income_statement",
+    "table_cn": "利润表"
+  },
+  "NET_GAIN_FX_TRANS": {
+    "chinese_name": "汇兑净收益",
+    "table": "income_statement",
+    "table_cn": "利润表"
+  },
+  "OTHER_GRANTS_INC": {
+    "chinese_name": "其他收益",
+    "table": "income_statement",
+    "table_cn": "利润表"
+  },
+  "OPPROFIT": {
+    "chinese_name": "营业利润",
+    "table": "income_statement",
+    "table_cn": "利润表"
+  },
+  "NON_OPER_REV": {
+    "chinese_name": "营业外收入",
+    "table": "income_statement",
+    "table_cn": "利润表"
+  },
+  "NON_OPER_EXP": {
+    "chinese_name": "营业外支出",
+    "table": "income_statement",
+    "table_cn": "利润表"
+  },
+  "NET_LOSS_DISP_NONCUR_ASSET": {
+    "chinese_name": "非流动资产处置净损失",
+    "table": "income_statement",
+    "table_cn": "利润表"
+  },
+  "TOT_PROFIT": {
+    "chinese_name": "利润总额",
+    "table": "income_statement",
+    "table_cn": "利润表"
+  },
+  "TAX": {
+    "chinese_name": "所得税",
+    "table": "income_statement",
+    "table_cn": "利润表"
+  },
+  "UNCONFIRMED_INVEST_LOSS_IS": {
+    "chinese_name": "未确认的投资损失",
+    "table": "income_statement",
+    "table_cn": "利润表"
+  },
+  "NET_PROFIT_IS": {
+    "chinese_name": "净利润",
+    "table": "income_statement",
+    "table_cn": "利润表"
+  },
+  "MINORITY_INT_INC": {
+    "chinese_name": "少数股东损益",
+    "table": "income_statement",
+    "table_cn": "利润表"
+  },
+  "NP_BELONGTO_PARCOMSH": {
+    "chinese_name": "归属母公司股东的净利润",
+    "table": "income_statement",
+    "table_cn": "利润表"
+  },
+  "EPS_BASIC_IS": {
+    "chinese_name": "基本每股收益",
+    "table": "income_statement",
+    "table_cn": "利润表"
+  },
+  "EPS_DILUTED_IS": {
+    "chinese_name": "稀释每股收益",
+    "table": "income_statement",
+    "table_cn": "利润表"
+  },
+  "OTHER_COMPREH_INC": {
+    "chinese_name": "其他综合收益",
+    "table": "income_statement",
+    "table_cn": "利润表"
+  },
+  "TOT_COMPREH_INC": {
+    "chinese_name": "综合收益总额",
+    "table": "income_statement",
+    "table_cn": "利润表"
+  },
+  "TOT_COMPREH_INC_MIN_SHRHLDR": {
+    "chinese_name": "归属于少数股东的综合收益总额",
+    "table": "income_statement",
+    "table_cn": "利润表"
+  },
+  "TOT_COMPREH_INC_PARENT_COMP": {
+    "chinese_name": "归属于母公司普通股东综合收益总额",
+    "table": "income_statement",
+    "table_cn": "利润表"
+  },
+  "DEDUCTEDPROFIT": {
+    "chinese_name": "扣非净利润",
+    "table": "income_statement",
+    "table_cn": "利润表"
+  },
+  "STMNOTE_AUDIT_CATEGORY": {
+    "chinese_name": "审计意见",
+    "table": "income_statement",
+    "table_cn": "利润表"
+  },
+  "STMNOTE_INAUDIT_CATEGORY": {
+    "chinese_name": "审计意见2",
+    "table": "income_statement",
+    "table_cn": "利润表"
+  },
+  "CASH_RECP_SG_AND_RS": {
+    "chinese_name": "销售商品、提供劳务收到的现金",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "RECP_TAX_RENDS": {
+    "chinese_name": "收到的税费返还",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "OTHER_CASH_RECP_RAL_OPER_ACT": {
+    "chinese_name": "收到的其他与经营活动有关的现金",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "NET_INCR_INSURED_DEP": {
+    "chinese_name": "保户储金净增加额",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "NET_INCR_DEP_COB": {
+    "chinese_name": "客户存款和同业存放款项净增加额",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "NET_INCR_LOANS_CENTRAL_BANK": {
+    "chinese_name": "向中央银行借款净增加额",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "NET_INCR_FUND_BORR_OFI": {
+    "chinese_name": "向其他金融机构拆入资金净增加额",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "NET_INCR_INT_HANDLING_CHRG": {
+    "chinese_name": "收取利息和手续费净增加额",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "CASH_RECP_PREM_ORIG_INCO": {
+    "chinese_name": "收到的原保险合同保费取得的现金",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "NET_CASH_RECEIVED_REINSU_BUS": {
+    "chinese_name": "收到的再保险业务现金净额",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "NET_INCR_DISP_TFA": {
+    "chinese_name": "处置交易性金融资产净增加额",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "NET_INCR_DISP_FIN_ASSETS_AVAIL": {
+    "chinese_name": "处置可供出售金融资产增加额",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "NET_INCR_LOANS_OTHER_BANK": {
+    "chinese_name": "拆入资金净增加额",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "NET_INCR_REPURCH_BUS_FUND": {
+    "chinese_name": "回购业务资金净增加额",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "NET_CASH_FROM_SEURITIES": {
+    "chinese_name": "代理买卖证券收到的现金净额",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "STOT_CASH_INFLOWS_OPER_ACT": {
+    "chinese_name": "经营活动现金流入小计",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "NET_INCR_LENDING_FUND": {
+    "chinese_name": "融出资金净增加额",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "NET_FINA_INSTRUMENTS_MEASURED_AT_FMV": {
+    "chinese_name": "以公允价值计量且其变动计入当期损益的金融工具净额",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "CASH_PAY_GOODS_PURCH_SERV_REC": {
+    "chinese_name": "购买商品、接受劳务支付的现金",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "CASH_PAY_BEH_EMPL": {
+    "chinese_name": "支付给职工的以及为职工支付的现金",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "PAY_ALL_TYP_TAX": {
+    "chinese_name": "支付的各项税费",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "OTHER_CASH_PAY_RAL_OPER_ACT": {
+    "chinese_name": "支付的其他与经营活动有关的现金",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "NET_INCR_CLIENTS_LOAN_ADV": {
+    "chinese_name": "客户贷款及垫款净增加额",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "NET_INCR_DEP_CBOB": {
+    "chinese_name": "存放央行和同业款项净增加额",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "CASH_PAY_CLAIMS_ORIG_INCO": {
+    "chinese_name": "支付原保险合同赔付款项的现金",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "HANDLING_CHRG_PAID": {
+    "chinese_name": "支付手续费的现金",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "COMM_INSUR_PLCY_PAID": {
+    "chinese_name": "支付保单红利的现金",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "STOT_CASH_OUTFLOWS_OPER_ACT": {
+    "chinese_name": "经营活动现金流出小计",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "NET_CASH_FLOWS_OPER_ACT": {
+    "chinese_name": "经营活动产生的现金流量净额",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "CASH_RECP_DISP_WITHDRWL_INVEST": {
+    "chinese_name": "收回投资收到的现金",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "CASH_RECP_RETURN_INVEST": {
+    "chinese_name": "取得投资收益收到的现金",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "NET_CASH_RECP_DISP_FIOLTA": {
+    "chinese_name": "处置固定资产、无形资产和其他长期资产收回的现金净额",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "NET_CASH_RECP_DISP_SOBU": {
+    "chinese_name": "处置子公司及其他营业单位收到的现金净额",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "OTHER_CASH_RECP_RAL_INV_ACT": {
+    "chinese_name": "收到的其他与投资活动有关的现金",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "STOT_CASH_INFLOWS_INV_ACT": {
+    "chinese_name": "投资活动现金流入小计",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "CASH_PAY_ACQ_CONST_FIOLTA": {
+    "chinese_name": "构建固定资产、无形资产和其他长期资产支付的现金",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "CASH_PAID_INVEST": {
+    "chinese_name": "投资支付的现金",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "NET_INCR_PLEDGE_LOAN": {
+    "chinese_name": "质押贷款净增加额",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "NET_CASH_PAY_AQUIS_SOBU": {
+    "chinese_name": "取得子公司及其他营业单位支付的现金净额",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "OTHER_CASH_PAY_RAL_INV_ACT": {
+    "chinese_name": "支付的其他与投资活动有关的现金",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "STOT_CASH_OUTFLOWS_INV_ACT": {
+    "chinese_name": "投资活动现金流出小计",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "NET_CASH_FLOWS_INV_ACT": {
+    "chinese_name": "投资活动产生的现金流量净额",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "CASH_RECP_CAP_CONTRIB": {
+    "chinese_name": "吸收投资所受到的现金",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "CASH_REC_SAIMS": {
+    "chinese_name": "子公司吸收少数股东投资收到的现金",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "CASH_RECP_BORROW": {
+    "chinese_name": "取得借款收到的现金",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "OTHER_CASH_RECP_RAL_FNC_ACT": {
+    "chinese_name": "收到的其他与筹资活动有关的现金",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "PROC_ISSUE_BONDS": {
+    "chinese_name": "发行债券收到的现金",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "STOT_CASH_INFLOWS_FNC_ACT": {
+    "chinese_name": "筹资活动现金流入小计 ",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "CASH_PREPAY_AMT_BORR": {
+    "chinese_name": "偿还债务所支付的现金",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "CASH_PAY_DIST_DPCP_INT_EXP": {
+    "chinese_name": "分配股利、利润和偿付利息所支出的现金",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "DVD_PROFIT_PAID_SC_MS": {
+    "chinese_name": "子公司支付给少数股东的股利、利润",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "OTHER_CASH_PAY_RAL_FNC_ACT": {
+    "chinese_name": "支付的其他与筹资活动有关的现金",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "STOT_CASH_OUTFLOWS_FNC_ACT": {
+    "chinese_name": "筹资活动现金流出小计",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "NET_CASH_FLOWS_FNC_ACT": {
+    "chinese_name": "筹资活动产生的现金流量净额",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "EFF_FX_FLU_CASH": {
+    "chinese_name": "汇率变动对现金的影响",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "NET_INCR_CASH_CASH_EQU_DM": {
+    "chinese_name": "现金及现金等价物净增加额",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "CASH_CASH_EQU_BEG_PERIOD": {
+    "chinese_name": "期初现金及现金等价物余额",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "CASH_CASH_EQU_END_PERIOD": {
+    "chinese_name": "期末现金及现金等价物余额",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "NET_PROFIT_CS": {
+    "chinese_name": "净利润",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "PROV_DEPR_ASSETS": {
+    "chinese_name": "资产减值准备",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "DEPR_FA_COGA_DPBA": {
+    "chinese_name": "固定资产折旧、油气资产折耗、生产性生物资产折旧",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "AMORT_INTANG_ASSETS": {
+    "chinese_name": "无形资产摊销",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "AMORT_LT_DEFERRED_EXP": {
+    "chinese_name": "长期待摊费用摊销",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "DECR_DEFERRED_EXP": {
+    "chinese_name": "待摊费用减少",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "INCR_ACC_EXP": {
+    "chinese_name": "预计费用增加",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "LOSS_DISP_FIOLTA": {
+    "chinese_name": "处置固定资产、 无形资产和其他长期资产的损失",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "LOSS_SCR_FA": {
+    "chinese_name": "固定资产报废损失",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "LOSS_FV_CHG": {
+    "chinese_name": "公允价值变动损失",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "FIN_EXP_CS": {
+    "chinese_name": "财务费用",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "INVEST_LOSS": {
+    "chinese_name": "投资损失",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "DECR_DEFERRED_INC_TAX_ASSETS": {
+    "chinese_name": "递延所得税资产减少",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "INCR_DEFERRED_INC_TAX_LIAB": {
+    "chinese_name": "递延所得税负债增加",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "DECR_INVENTORIES": {
+    "chinese_name": "存货减少",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "DECR_OPER_PAYABLE": {
+    "chinese_name": "经营性应收项目的减少",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "INCR_OPER_PAYABLE": {
+    "chinese_name": "经营性应付项目的增加",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "UNCONFIRMED_INVEST_LOSS_CS": {
+    "chinese_name": "未确定的投资损失",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "OTHERS": {
+    "chinese_name": "其他",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "IM_NET_CASH_FLOWS_OPER_ACT": {
+    "chinese_name": "间接法-经营活动产生的现金流量净额",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "CONV_DEBT_INTO_CAP": {
+    "chinese_name": "债务转为资本",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "CONV_CORP_BONDS_DUE_WITHIN_1Y": {
+    "chinese_name": "一年内到期的可转换公司债券",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "FA_FNC_LEASES": {
+    "chinese_name": "融资租入固定资产",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "END_BAL_CASH": {
+    "chinese_name": "现金的期末余额",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "BEG_BAL_CASH": {
+    "chinese_name": "现金的期初余额",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "END_BAL_CASH_EQU": {
+    "chinese_name": "现金等价物的期末余额",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "BEG_BAL_CASH_EQU": {
+    "chinese_name": "现金等价物的期初余额",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  },
+  "NET_INCR_CASH_CASH_EQU_IM": {
+    "chinese_name": "间接法-现金及现金等价物净增加额",
+    "table": "cash_flow",
+    "table_cn": "现金流量表"
+  }
+}

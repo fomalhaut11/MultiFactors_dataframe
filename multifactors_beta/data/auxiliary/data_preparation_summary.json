@@ -1,14 +1,15 @@
 {
-  "prepared_date": "2025-08-21 17:35:22",
+  "prepared_date": "2025-08-28 20:28:00",
   "release_dates_shape": [
-    429515,
+    433677,
     1
   ],
-  "trading_dates_count": 2810,
-  "stock_info_count": 5692,
+  "trading_dates_count": 2815,
+  "stock_info_count": 5694,
   "financial_data_shape": [
-    429515,
+    433677,
     287
   ],
-  "note": "使用财报期间作为索引，reportday作为发布日期"
+  "market_cap_count": 11326825,
+  "note": "使用财报期间作为索引，reportday作为发布日期，新增模拟市值数据"
 }

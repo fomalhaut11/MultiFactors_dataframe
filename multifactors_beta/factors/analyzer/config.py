@@ -5,7 +5,7 @@
 
 from dataclasses import dataclass
 from typing import Dict, Any, Optional
-from core.config_manager import get_config
+from config import get_config
 import logging
 
 logger = logging.getLogger(__name__)

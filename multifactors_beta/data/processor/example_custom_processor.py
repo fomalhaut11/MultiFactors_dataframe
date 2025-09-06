@@ -9,7 +9,7 @@ from typing import Optional, Dict, Any
 from pathlib import Path
 
 from .base_processor import BaseDataProcessor
-from core.config_manager import get_path
+from config import get_config
 
 
 class TechnicalIndicatorProcessor(BaseDataProcessor):
@@ -253,7 +253,7 @@ if __name__ == "__main__":
     processor = TechnicalIndicatorProcessor()
     
     # 加载价格数据
-    price_file = Path(get_path('data_root')) / "Price.pkl"
+    price_file = Path(get_config('main.paths.data_root')) / "Price.pkl"
     price_df = pd.read_pickle(price_file)
     
     # 计算指标

@@ -5,7 +5,7 @@
 
 import pandas as pd
 import numpy as np
-from typing import Dict, Optional, Tuple, Any
+from typing import Dict, Optional, Tuple, Any, List, Union
 import logging
 import statsmodels.api as sm
 from scipy.stats import spearmanr
@@ -31,11 +31,17 @@ class FactorTester:
         """
         self.config = config or {}
         self.group_nums = self.config.get('group_nums', 10)
-        self.outlier_method = self.config.get('outlier_method', 'IQR')
-        self.outlier_param = self.config.get('outlier_param', 5)
-        self.normalization_method = self.config.get('normalization_method', 'zscore')
+        # 使用因子测试阶段的配置参数
+        self.outlier_method = self.config.get('outlier_method') or self._get_testing_config('outlier_method')
+        self.outlier_param = self.config.get('outlier_param') or self._get_testing_config('outlier_param')
+        self.normalization_method = self.config.get('normalization_method') or self._get_testing_config('normalization_method')
         
-    def test(self, test_data: Dict[str, Any]) -> TestResult:
+        # 新增：股票池支持
+        self.stock_universe = None
+        
+        logger.info(f"FactorTester初始化完成 - outlier_param: {self.outlier_param} (测试阶段配置)")
+        
+    def test(self, test_data: Dict[str, Any], stock_universe: Optional[pd.Series] = None) -> TestResult:
         """
         执行完整的单因子测试
         
@@ -43,12 +49,16 @@ class FactorTester:
         ----------
         test_data : Dict
             测试数据（由DataManager准备）
+        stock_universe : pd.Series, optional
+            股票池，MultiIndex[TradingDates, StockCodes] Series格式，值为1
             
         Returns
         -------
         TestResult
             测试结果
         """
+        # 设置股票池（保持向后兼容性）
+        self.stock_universe = stock_universe
         # 创建结果对象
         result = TestResult(
             factor_name=test_data.get('data_info', {}).get('factor_name', 'unknown'),
@@ -147,6 +157,10 @@ class FactorTester:
         # 删除缺失值
         merged = merged.dropna(subset=['LogReturn'])
         
+        # 新增：应用股票池过滤
+        if self.stock_universe is not None:
+            merged = self._apply_stock_universe_filter(merged, self.stock_universe)
+        
         # 按日期分组处理
         processed_list = []
         for date, daily_data in merged.groupby(level=0):
@@ -210,19 +224,50 @@ class FactorTester:
             if control_cols:
                 # 准备回归数据
                 X = data[control_cols].fillna(0)
-                # 删除全0列
-                X = X.loc[:, (X != 0).any(axis=0)]
-                X = sm.add_constant(X)
                 
-                y = data['processed_factor'].loc[X.index]
+                # 安全删除全0列
+                valid_cols_mask = (X != 0).any(axis=0)
+                X_valid = X.loc[:, valid_cols_mask]
                 
-                # OLS回归获取残差
-                model = sm.OLS(y, X)
-                result = model.fit()
+                # 检查是否有有效列
+                if X_valid.empty or len(X_valid.columns) == 0:
+                    logger.warning(f"日期{data.index[0][0] if len(data) > 0 else 'unknown'}:所有控制变量为零，跳过正交化")
+                    data['newfactor'] = data['processed_factor']
+                    return data
                 
-                # 标准化残差作为新因子
-                newfactor = Normalizer.normalize(result.resid, method='zscore')
-                data['newfactor'] = newfactor
+                y = data['processed_factor']
+                
+                # 检查矩阵秩
+                X_with_const = sm.add_constant(X_valid)
+                try:
+                    rank = np.linalg.matrix_rank(X_with_const)
+                    
+                    if rank < X_with_const.shape[1]:
+                        # 矩阵不满秩，使用岭回归
+                        try:
+                            from sklearn.linear_model import Ridge
+                            ridge = Ridge(alpha=1e-4)
+                            ridge.fit(X_valid, y)
+                            residuals = y - ridge.predict(X_valid)
+                            logger.info(f"使用岭回归处理不满秩矩阵")
+                        except (ImportError, Exception) as e:
+                            # sklearn不可用或版本问题，使用原始因子
+                            logger.warning(f"sklearn回归失败({e})，跳过正交化")
+                            residuals = y
+                    else:
+                        # 矩阵满秩，使用OLS
+                        model = sm.OLS(y, X_with_const)
+                        result = model.fit()
+                        residuals = result.resid
+                    
+                    # 标准化残差作为新因子
+                    newfactor = Normalizer.normalize(residuals, method='zscore')
+                    data['newfactor'] = newfactor
+                    
+                except np.linalg.LinAlgError as e:
+                    logger.warning(f"矩阵计算错误: {e}，使用原始因子")
+                    data['newfactor'] = data['processed_factor']
+                    
             else:
                 # 没有控制变量，直接使用处理后的因子
                 data['newfactor'] = data['processed_factor']
@@ -443,7 +488,7 @@ class FactorTester:
             ic_df = pd.DataFrame(ic_list).set_index('date')
             
             # 计算IC衰减（未来N期的IC）
-            ic_decay = self._calculate_ic_decay(merged_data, periods=20)
+            ic_decay = self._calculate_ic_decay(merged_data, periods=5)
             
             return ICResult(
                 ic_series=ic_df['ic'],
@@ -468,7 +513,7 @@ class FactorTester:
                 ic_decay=pd.Series()
             )
     
-    def _calculate_ic_decay(self, merged_data: pd.DataFrame, periods: int = 10) -> pd.Series:
+    def _calculate_ic_decay(self, merged_data: pd.DataFrame, periods: int = 5) -> pd.Series:
         """
         计算IC衰减
         
@@ -639,3 +684,118 @@ class FactorTester:
                 turnover_results['avg_cost'] = np.mean(costs)
         
         return turnover_results
+    
+    def _apply_stock_universe_filter(self, data: pd.DataFrame, stock_universe: pd.Series) -> pd.DataFrame:
+        """
+        应用股票池过滤
+        
+        Parameters
+        ----------
+        data : pd.DataFrame
+            待过滤的数据，MultiIndex格式 (date, stock_code)
+        stock_universe : pd.Series
+            股票池，MultiIndex[TradingDates, StockCodes] Series格式，值为1
+            支持时变股票池（不同交易日可以有不同的股票组合）
+            
+        Returns
+        -------
+        pd.DataFrame
+            过滤后的数据
+        """
+        if data.empty:
+            return data
+        
+        if stock_universe is None:
+            return data
+            
+        try:
+            # 统一使用MultiIndex Series格式处理
+            return self._apply_multiindex_universe_filter(data, stock_universe)
+                
+        except Exception as e:
+            logger.warning(f"股票池过滤失败，将使用原始数据: {e}")
+            return data
+    
+    def _apply_multiindex_universe_filter(self, data: pd.DataFrame, stock_universe: pd.Series) -> pd.DataFrame:
+        """
+        应用MultiIndex Series格式股票池过滤（时变股票池）
+        
+        Parameters
+        ----------
+        data : pd.DataFrame
+            待过滤的数据，MultiIndex[TradingDates, StockCodes]
+        stock_universe : pd.Series
+            股票池，MultiIndex[TradingDates, StockCodes] Series，值为1
+        
+        Returns
+        -------
+        pd.DataFrame
+            过滤后的数据，只保留股票池中存在的日期-股票对
+        """
+        if not isinstance(data.index, pd.MultiIndex):
+            logger.warning("数据不是MultiIndex格式，无法使用时变股票池过滤")
+            return data
+            
+        if not isinstance(stock_universe.index, pd.MultiIndex):
+            logger.warning("股票池不是MultiIndex格式，无法进行时变过滤")
+            return data
+        
+        # 获取股票池的索引
+        universe_index = stock_universe.index
+        
+        # 计算交集：只保留同时在data和stock_universe中存在的(日期, 股票)对
+        common_index = data.index.intersection(universe_index)
+        
+        if len(common_index) == 0:
+            logger.warning("数据与股票池没有交集，返回空DataFrame")
+            return pd.DataFrame(columns=data.columns)
+        
+        # 过滤数据
+        filtered_data = data.loc[common_index]
+        
+        # 记录过滤效果
+        original_records = len(data)
+        filtered_records = len(filtered_data)
+        original_dates = len(data.index.get_level_values(0).unique())
+        filtered_dates = len(filtered_data.index.get_level_values(0).unique()) if not filtered_data.empty else 0
+        original_stocks = len(data.index.get_level_values(1).unique())
+        filtered_stocks = len(filtered_data.index.get_level_values(1).unique()) if not filtered_data.empty else 0
+        
+        logger.info(f"时变股票池过滤完成：")
+        logger.info(f"  日期范围：{original_dates} → {filtered_dates} 个交易日")
+        logger.info(f"  股票范围：{original_stocks} → {filtered_stocks} 只股票")
+        logger.info(f"  数据量：{original_records} → {filtered_records} 条记录")
+        logger.info(f"  过滤率：{(1 - filtered_records/original_records)*100:.1f}%")
+        
+        return filtered_data
+    
+    def _get_testing_config(self, param: str):
+        """
+        获取因子测试阶段的配置参数
+        
+        Parameters:
+        -----------
+        param : str
+            参数名称
+            
+        Returns:
+        --------
+        配置参数值
+        """
+        from config import get_config
+        
+        try:
+            # 优先使用测试阶段配置
+            return get_config(f'main.data_processing.factor_testing.{param}')
+        except Exception:
+            try:
+                # 降级到默认配置
+                return get_config(f'main.data_processing.{param}')
+            except Exception:
+                # 硬编码默认值
+                defaults = {
+                    'outlier_method': 'IQR',
+                    'outlier_param': 3,  # 测试阶段使用更严格的参数
+                    'normalization_method': 'zscore'
+                }
+                return defaults.get(param)

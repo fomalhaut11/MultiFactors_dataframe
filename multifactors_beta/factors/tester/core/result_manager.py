@@ -14,7 +14,7 @@ import logging
 from datetime import datetime
 
 from ..base.test_result import TestResult, BatchTestResult
-from core.config_manager import get_path
+from config import get_config
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +31,7 @@ class ResultManager:
         base_path : str, optional
             结果保存的基础路径
         """
-        self.base_path = base_path or get_path('single_factor_test')
+        self.base_path = base_path or get_config('main.paths.single_factor_test')
         Path(self.base_path).mkdir(parents=True, exist_ok=True)
         
     def save(self, result: TestResult, subfolder: Optional[str] = None) -> str:

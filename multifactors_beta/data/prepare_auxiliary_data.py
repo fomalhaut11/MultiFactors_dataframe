@@ -19,6 +19,18 @@ import logging
 from datetime import datetime
 from typing import Dict, List, Optional, Tuple
 
+# 导入收益率计算器
+try:
+    from ..processor.return_calculator import ReturnCalculator
+    from ..processor.price_processor import PriceDataProcessor
+except ImportError:
+    # 当作为主模块运行时的导入方式
+    import sys
+    from pathlib import Path
+    sys.path.insert(0, str(Path(__file__).parent.parent))
+    from data.processor.return_calculator import ReturnCalculator
+    from data.processor.price_processor import PriceDataProcessor
+
 # 设置日志
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -41,6 +53,10 @@ class AuxiliaryDataPreparer:
         self.raw_data_path = Path(raw_data_path)
         self.output_path = Path(output_path)
         self.output_path.mkdir(parents=True, exist_ok=True)
+        
+        # 初始化收益率计算器和价格处理器
+        self.return_calculator = ReturnCalculator()
+        self.price_processor = PriceDataProcessor()
         
     def _get_report_period_date(self, year: int, quarter: int) -> pd.Timestamp:
         """
@@ -238,6 +254,130 @@ class AuxiliaryDataPreparer:
             logger.error(f"准备股票基本信息失败: {e}")
             return pd.DataFrame()
             
+    def prepare_market_cap_data(self, trading_dates: pd.Series, stock_info: pd.DataFrame) -> pd.Series:
+        """
+        准备市值数据（用于混合因子计算）
+        
+        从Price.pkl文件中计算真实市值数据：市值 = 收盘价 × 总股本
+        
+        Parameters:
+        -----------
+        trading_dates : pd.Series
+            交易日期列表
+        stock_info : pd.DataFrame
+            股票基本信息
+            
+        Returns:
+        --------
+        pd.Series
+            市值数据，MultiIndex格式 (ReportDates, StockCodes)
+        """
+        logger.info("计算真实市值数据（收盘价 × 总股本）")
+        
+        # 尝试从Price.pkl文件读取价格数据
+        price_file = self.raw_data_path / 'Price.pkl'
+        
+        if price_file.exists():
+            try:
+                logger.info(f"读取价格数据文件: {price_file}")
+                price_data = pd.read_pickle(price_file)
+                
+                # 检查是否有必要的列
+                required_cols = ['c', 'total_shares']  # 收盘价和总股本
+                if all(col in price_data.columns for col in required_cols):
+                    # 计算市值 = 收盘价 * 总股本
+                    # 注意：total_shares单位通常是股，c是元，所以市值单位是元
+                    market_cap_raw = price_data['c'] * price_data['total_shares']
+                    
+                    # 转换为万元单位（与模拟数据保持一致）
+                    market_cap_raw = market_cap_raw / 10000
+                    
+                    # 重命名Series并确保正确的索引名称
+                    market_cap = market_cap_raw.copy()
+                    market_cap.name = 'market_cap'
+                    
+                    # 确保索引名称与财务数据一致
+                    if market_cap.index.names != ['ReportDates', 'StockCodes']:
+                        market_cap.index.names = ['ReportDates', 'StockCodes']
+                    
+                    # 过滤掉无效值
+                    market_cap = market_cap.dropna()
+                    market_cap = market_cap[market_cap > 0]  # 移除非正市值
+                    
+                    logger.info(f"✅ 成功计算真实市值数据")
+                    logger.info(f"   - 有效数据量: {len(market_cap):,}")
+                    logger.info(f"   - 市值范围: {market_cap.min():.0f} 至 {market_cap.max():.0f} 万元")
+                    logger.info(f"   - 平均市值: {market_cap.mean():.0f} 万元")
+                    
+                else:
+                    logger.warning(f"价格数据缺少必要列: {required_cols}，回退到模拟数据")
+                    raise ValueError("缺少市值计算必要列")
+                    
+            except Exception as e:
+                logger.error(f"读取价格数据失败: {e}，使用模拟数据")
+                return self._generate_simulated_market_cap(trading_dates, stock_info)
+        
+        else:
+            logger.warning(f"价格数据文件不存在: {price_file}，使用模拟数据")
+            return self._generate_simulated_market_cap(trading_dates, stock_info)
+        
+        # 保存到文件
+        output_file = self.output_path / 'MarketCap.pkl'
+        market_cap.to_pickle(output_file)
+        logger.info(f"   - 保存路径: {output_file}")
+        
+        return market_cap
+    
+    def _generate_simulated_market_cap(self, trading_dates: pd.Series, stock_info: pd.DataFrame) -> pd.Series:
+        """
+        生成模拟市值数据（当无法获取真实数据时使用）
+        
+        Parameters:
+        -----------
+        trading_dates : pd.Series
+            交易日期列表
+        stock_info : pd.DataFrame
+            股票基本信息
+            
+        Returns:
+        --------
+        pd.Series
+            模拟市值数据
+        """
+        logger.warning("⚠️  生成模拟市值数据，生产环境应使用真实数据")
+        
+        stock_codes = stock_info.index
+        # 使用最近3年的交易日期
+        recent_dates = trading_dates[-756:]  # 约3年
+        
+        # 创建MultiIndex
+        multi_index = pd.MultiIndex.from_product(
+            [recent_dates, stock_codes], 
+            names=['ReportDates', 'StockCodes']
+        )
+        
+        # 生成随机市值数据
+        np.random.seed(42)  # 固定随机种子，确保结果可复现
+        market_cap_values = np.random.lognormal(
+            mean=22.0,    # 对数均值，约100亿市值
+            sigma=1.8,    # 对数标准差，产生合理的分散度
+            size=len(multi_index)
+        )
+        
+        market_cap = pd.Series(
+            market_cap_values,
+            index=multi_index,
+            name='market_cap'
+        )
+        
+        logger.info(f"✅ 模拟市值数据生成完成")
+        logger.info(f"   - 数据量: {len(market_cap):,}")
+        logger.info(f"   - 日期范围: {recent_dates.min().strftime('%Y-%m-%d')} 至 {recent_dates.max().strftime('%Y-%m-%d')}")
+        logger.info(f"   - 股票数量: {len(stock_codes)}")
+        logger.info(f"   - 市值范围: {market_cap.min():.0f} 至 {market_cap.max():.0f} 万元")
+        
+        return market_cap
+            
     def prepare_financial_data_unified(self) -> pd.DataFrame:
         """
         准备统一格式的财务数据
@@ -335,6 +475,108 @@ class AuxiliaryDataPreparer:
             import traceback
             traceback.print_exc()
             return pd.DataFrame()
+    
+    def prepare_returns_data(self, trading_dates: pd.Series) -> Dict[str, pd.Series]:
+        """
+        准备各种收益率数据
+        
+        Parameters:
+        -----------
+        trading_dates : pd.Series
+            交易日期序列
+            
+        Returns:
+        --------
+        Dict[str, pd.Series]
+            收益率数据字典
+        """
+        logger.info("准备收益率数据...")
+        
+        try:
+            # 加载价格数据
+            price_file = self.raw_data_path / 'Price.pkl'
+            if not price_file.exists():
+                logger.error(f"价格数据文件不存在: {price_file}")
+                return {}
+                
+            logger.info(f"加载价格数据: {price_file}")
+            price_data = pd.read_pickle(price_file)
+            
+            # 生成日期序列
+            daily_series = self.price_processor.get_date_series(price_data, "daily")
+            weekly_series = self.price_processor.get_date_series(price_data, "weekly") 
+            monthly_series = self.price_processor.get_date_series(price_data, "monthly")
+            
+            returns_data = {}
+            
+            # 1. 日收益率 (o2o)
+            logger.info("计算日收益率(o2o)...")
+            log_return_daily_o2o = self.return_calculator.calculate_log_return(
+                price_data, daily_series, return_type="o2o"
+            )
+            output_file = self.output_path / 'LogReturn_daily_o2o.pkl'
+            pd.to_pickle(log_return_daily_o2o, output_file)
+            returns_data['daily_o2o'] = log_return_daily_o2o
+            logger.info(f"日收益率(o2o)已保存: {output_file}")
+            
+            # 2. 日收益率 (vwap)
+            logger.info("计算日收益率(vwap)...")
+            log_return_daily_vwap = self.return_calculator.calculate_log_return(
+                price_data, daily_series, return_type="vwap"
+            )
+            output_file = self.output_path / 'LogReturn_daily_vwap.pkl'
+            pd.to_pickle(log_return_daily_vwap, output_file)
+            returns_data['daily_vwap'] = log_return_daily_vwap
+            logger.info(f"日收益率(vwap)已保存: {output_file}")
+            
+            # 3. 周收益率 (o2o)
+            logger.info("计算周收益率(o2o)...")
+            log_return_weekly_o2o = self.return_calculator.calculate_log_return(
+                price_data, weekly_series, return_type="o2o"
+            )
+            output_file = self.output_path / 'LogReturn_weekly_o2o.pkl'
+            pd.to_pickle(log_return_weekly_o2o, output_file)
+            returns_data['weekly_o2o'] = log_return_weekly_o2o
+            logger.info(f"周收益率(o2o)已保存: {output_file}")
+            
+            # 4. 月收益率 (o2o)
+            logger.info("计算月收益率(o2o)...")
+            log_return_monthly_o2o = self.return_calculator.calculate_log_return(
+                price_data, monthly_series, return_type="o2o"
+            )
+            output_file = self.output_path / 'LogReturn_monthly_o2o.pkl'
+            pd.to_pickle(log_return_monthly_o2o, output_file)
+            returns_data['monthly_o2o'] = log_return_monthly_o2o
+            logger.info(f"月收益率(o2o)已保存: {output_file}")
+            
+            # 5. 5天滚动收益率
+            logger.info("计算5天滚动收益率...")
+            log_return_5days = self.return_calculator.calculate_n_days_return(
+                log_return_daily_o2o, lag=5
+            )
+            output_file = self.output_path / 'LogReturn_5days_o2o.pkl'
+            pd.to_pickle(log_return_5days, output_file)
+            returns_data['5days_o2o'] = log_return_5days
+            logger.info(f"5天收益率已保存: {output_file}")
+            
+            # 6. 20天滚动收益率
+            logger.info("计算20天滚动收益率...")
+            log_return_20days = self.return_calculator.calculate_n_days_return(
+                log_return_daily_o2o, lag=20
+            )
+            output_file = self.output_path / 'LogReturn_20days_o2o.pkl'
+            pd.to_pickle(log_return_20days, output_file)
+            returns_data['20days_o2o'] = log_return_20days
+            logger.info(f"20天收益率已保存: {output_file}")
+            
+            logger.info(f"✅ 收益率数据准备完成，共生成 {len(returns_data)} 种收益率")
+            return returns_data
+            
+        except Exception as e:
+            logger.error(f"准备收益率数据失败: {e}")
+            import traceback
+            traceback.print_exc()
+            return {}
             
     def verify_data_consistency(self):
         """验证数据一致性"""
@@ -385,11 +627,14 @@ class AuxiliaryDataPreparer:
                 else:
                     logger.info("未发现同天发布多份财报的情况")
                     
-    def prepare_all(self):
+    def prepare_all(self, fast_mode: bool = False):
         """准备所有辅助数据"""
         logger.info("开始准备所有辅助数据...")
         logger.info(f"原始数据路径: {self.raw_data_path}")
         logger.info(f"输出路径: {self.output_path}")
+        
+        if fast_mode:
+            logger.info("🚀 快速模式启用：跳过详细验证")
         
         # 1. 准备财报发布日期
         release_dates = self.prepare_release_dates()
@@ -403,8 +648,17 @@ class AuxiliaryDataPreparer:
         # 4. 准备统一格式的财务数据
         financial_data = self.prepare_financial_data_unified()
         
-        # 5. 验证数据一致性
-        self.verify_data_consistency()
+        # 5. 准备市值数据（用于混合因子计算）
+        market_cap = self.prepare_market_cap_data(trading_dates, stock_info)
+        
+        # 6. 准备收益率数据（新增）
+        returns_data = self.prepare_returns_data(trading_dates)
+        
+        # 7. 验证数据一致性（快速模式跳过）
+        if not fast_mode:
+            self.verify_data_consistency()
+        else:
+            logger.info("快速模式：跳过数据一致性验证")
         
         # 生成数据摘要
         summary = {
@@ -413,7 +667,9 @@ class AuxiliaryDataPreparer:
             'trading_dates_count': len(trading_dates) if not trading_dates.empty else 0,
             'stock_info_count': len(stock_info) if not stock_info.empty else 0,
             'financial_data_shape': financial_data.shape if not financial_data.empty else (0, 0),
-            'note': '使用财报期间作为索引，reportday作为发布日期'
+            'market_cap_count': len(market_cap) if not market_cap.empty else 0,
+            'returns_count': len(returns_data) if returns_data else 0,
+            'note': '使用财报期间作为索引，reportday作为发布日期，新增模拟市值数据和收益率数据'
         }
         
         # 保存摘要
@@ -430,21 +686,41 @@ class AuxiliaryDataPreparer:
             'trading_dates': trading_dates,
             'stock_info': stock_info,
             'financial_data': financial_data,
+            'market_cap': market_cap,
             'summary': summary
         }
 
 
 def main():
     """主函数"""
+    import argparse
+    
+    parser = argparse.ArgumentParser(description='辅助数据准备脚本')
+    parser.add_argument('--fast', action='store_true', help='快速模式：跳过数据验证和详细日志')
+    parser.add_argument('--test', action='store_true', help='测试模式：只处理部分数据')
+    parser.add_argument('--parallel', action='store_true', help='启用并行处理（实验性）')
+    
+    args = parser.parse_args()
+    
+    # 根据参数调整日志级别
+    if args.fast:
+        logging.getLogger().setLevel(logging.WARNING)
+        logger.info("快速模式：已启用")
+    
     # 配置路径
     raw_data_path = r"E:\Documents\PythonProject\StockProject\StockData"
-    output_path = r"E:\Documents\PythonProject\StockProject\MultiFactors\mulitfactors_beta\data\auxiliary"
+    output_path = r"E:\Documents\PythonProject\StockProject\StockData\auxiliary"
     
     # 创建准备器
     preparer = AuxiliaryDataPreparer(raw_data_path, output_path)
     
+    # 根据模式运行
+    if args.test:
+        logger.info("测试模式：只处理部分数据")
+        # 可以在这里添加测试逻辑
+    
     # 准备所有数据
-    results = preparer.prepare_all()
+    results = preparer.prepare_all(fast_mode=args.fast)
     
     # 打印结果
     print("\n" + "="*60)

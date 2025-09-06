@@ -20,7 +20,7 @@ import sys
 project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
-from core.config_manager import get_config, get_path
+from config import get_config
 from core.utils.exit_handler import ExitHandler
 
 
@@ -60,7 +60,7 @@ class BaseDataProcessor(ABC):
         
     def _setup_paths(self):
         """设置数据路径"""
-        self.data_root = Path(get_path('data_root'))
+        self.data_root = Path(get_config('main.paths.data_root'))
         self.cache_dir = self.data_root / 'cache'
         self.results_dir = self.data_root / 'processed'
         
@@ -214,7 +214,7 @@ class BaseDataProcessor(ABC):
         Returns:
             处理后的数据
         """
-        pass
+        raise NotImplementedError("子类必须实现process方法")
         
     @abstractmethod
     def validate_input(self, **kwargs) -> bool:
@@ -224,7 +224,7 @@ class BaseDataProcessor(ABC):
         Returns:
             验证是否通过
         """
-        pass
+        raise NotImplementedError("子类必须实现validate_input方法")
         
     def run(self, **kwargs) -> Any:
         """

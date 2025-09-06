@@ -12,11 +12,12 @@ from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 import os
 from pathlib import Path
 
-from core.config_manager import get_config, get_path
+from config import get_config
 from .data_manager import DataManager
 from .factor_tester import FactorTester
 from .result_manager import ResultManager
 from ..base.test_result import TestResult, BatchTestResult
+from ..stock_universe_manager import get_stock_universe, get_stock_universe_series
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +35,7 @@ class SingleFactorTestPipeline:
             配置字典，如果为None则从全局配置读取
         """
         # 加载配置
-        self.config = config or get_config('factor_test')
+        self.config = config or get_config('main.factor_test')
         
         # 初始化组件
         self.data_manager = DataManager(self.config)
@@ -47,6 +48,7 @@ class SingleFactorTestPipeline:
         self, 
         factor_name: str,
         save_result: bool = True,
+        stock_universe: Optional[Union[List[str], str, pd.Series]] = None,
         **override_config
     ) -> TestResult:
         """
@@ -58,6 +60,13 @@ class SingleFactorTestPipeline:
             因子名称
         save_result : bool
             是否保存结果
+        stock_universe : List[str] or str, optional
+            股票池，支持多种格式：
+            - None/'full': 全市场（默认）
+            - 'liquid_1000': 流动性前1000只
+            - 'large_cap_500': 大盘股前500只
+            - './path/to/file.json': 从文件加载
+            - ['000001', '000002']: 直接股票列表
         **override_config
             覆盖配置参数
             
@@ -83,7 +92,8 @@ class SingleFactorTestPipeline:
             factor_name,
             use_base_factors=test_config.get('netral_base', True),
             use_industry=test_config.get('use_industry', True),
-            custom_base_factors=test_config.get('custom_base_factors')
+            custom_base_factors=test_config.get('custom_base_factors'),
+            factor_version=test_config.get('factor_version', 'auto')
         )
         
         if not test_data or 'factor' not in test_data or test_data['factor'].empty:
@@ -92,9 +102,14 @@ class SingleFactorTestPipeline:
             result.errors.append("因子数据为空或加载失败")
             return result
         
+        # 处理股票池参数
+        processed_universe = self._process_stock_universe(stock_universe)
+        
         # 执行测试
         logger.info("执行因子测试...")
-        result = self.tester.test(test_data)
+        if processed_universe:
+            logger.info(f"使用股票池过滤，股票数量: {len(processed_universe)}")
+        result = self.tester.test(test_data, stock_universe=processed_universe)
         
         # 更新结果的配置快照
         result.config_snapshot = test_config
@@ -114,6 +129,7 @@ class SingleFactorTestPipeline:
         save_results: bool = True,
         parallel: bool = True,
         max_workers: Optional[int] = None,
+        stock_universe: Optional[pd.Series] = None,
         **override_config
     ) -> BatchTestResult:
         """
@@ -129,6 +145,8 @@ class SingleFactorTestPipeline:
             是否并行执行
         max_workers : int, optional
             最大工作进程数
+        stock_universe : pd.Series, optional
+            股票池，MultiIndex[TradingDates, StockCodes] Series格式
         **override_config
             覆盖配置参数
             
@@ -152,6 +170,7 @@ class SingleFactorTestPipeline:
                         self.run, 
                         factor_name, 
                         save_results,
+                        stock_universe,
                         **override_config
                     )
                     futures.append((factor_name, future))
@@ -172,7 +191,7 @@ class SingleFactorTestPipeline:
             # 串行执行
             for factor_name in factor_names:
                 try:
-                    result = self.run(factor_name, save_results, **override_config)
+                    result = self.run(factor_name, save_results, stock_universe, **override_config)
                     batch_result.add_result(result)
                 except Exception as e:
                     logger.error(f"因子测试失败 {factor_name}: {e}")
@@ -219,7 +238,7 @@ class SingleFactorTestPipeline:
             批量测试结果
         """
         # 获取所有因子文件
-        raw_factors_path = get_path('raw_factors')
+        raw_factors_path = get_config('main.paths.raw_factors')
         all_factors = []
         
         if os.path.exists(raw_factors_path):
@@ -419,6 +438,113 @@ class SingleFactorTestPipeline:
         }
         
         return profiles.get(profile, {})
+    
+    def _process_stock_universe(self, stock_universe: Optional[Union[List[str], str, pd.Series]]) -> Optional[pd.Series]:
+        """
+        处理股票池参数
+        
+        Parameters
+        ----------
+        stock_universe : Union[List[str], str, pd.Series], optional
+            股票池参数，支持多种格式：
+            - None/'full': 全市场股票
+            - List[str]: 直接传入的股票列表（静态股票池）
+            - str: 股票池名称或文件路径
+            - pd.Series: MultiIndex[TradingDates, StockCodes] Series（时变股票池）
+            
+        Returns
+        -------
+        Union[None, pd.Series], optional
+            处理后的股票池（统一为MultiIndex Series格式）：
+            - None: 全市场，不过滤
+            - pd.Series: 股票池（MultiIndex[TradingDates, StockCodes] Series，值为1）
+        """
+        if stock_universe is None or (isinstance(stock_universe, str) and stock_universe == 'full'):
+            return None  # 全市场，不过滤
+        
+        if isinstance(stock_universe, list):
+            # 直接传入股票列表，转换为MultiIndex Series（统一格式）
+            logger.info(f"使用静态股票池，包含 {len(stock_universe)} 只股票")
+            # 转换为MultiIndex Series格式，保持设计统一性
+            return self._convert_list_to_multiindex_series(stock_universe)
+        
+        if isinstance(stock_universe, pd.Series):
+            # MultiIndex Series格式（时变股票池）
+            if isinstance(stock_universe.index, pd.MultiIndex):
+                dates_count = len(stock_universe.index.get_level_values(0).unique())
+                stocks_count = len(stock_universe.index.get_level_values(1).unique())
+                logger.info(f"使用时变股票池，包含 {dates_count} 个交易日, {stocks_count} 只不同股票, {len(stock_universe)} 个数据点")
+                return stock_universe
+            else:
+                logger.warning("pd.Series格式股票池不是MultiIndex，将转换为List格式")
+                return stock_universe.index.tolist()
+        
+        if isinstance(stock_universe, str):
+            try:
+                # 使用股票池管理器处理字符串参数
+                # 检查是否需要MultiIndex格式
+                if stock_universe.endswith('_multiindex') or 'time_varying' in stock_universe:
+                    # 请求MultiIndex格式的股票池
+                    universe_name = stock_universe.replace('_multiindex', '')
+                    return get_stock_universe_series(universe_name)
+                else:
+                    # 默认返回List格式，但pipeline内部需要MultiIndex Series
+                    # 所以这里也改为使用Series格式
+                    return get_stock_universe_series(stock_universe)
+            except Exception as e:
+                logger.warning(f"股票池加载失败 '{stock_universe}': {e}")
+                return None  # 降级到全市场
+        
+        logger.warning(f"不支持的股票池参数类型: {type(stock_universe)}")
+        return None
+    
+    def _convert_list_to_multiindex_series(self, stocks: List[str]) -> pd.Series:
+        """
+        将股票列表转换为MultiIndex Series格式（统一数据格式）
+        
+        Parameters
+        ----------
+        stocks : List[str]
+            股票代码列表
+            
+        Returns
+        -------
+        pd.Series
+            MultiIndex[TradingDates, StockCodes] Series，值为1
+        """
+        try:
+            # 从股票池管理器获取转换功能
+            from ..stock_universe_manager import get_stock_universe_manager
+            manager = get_stock_universe_manager()
+            
+            # 使用manager的转换方法
+            return manager._convert_to_multiindex_series(stocks)
+            
+        except Exception as e:
+            logger.warning(f"转换股票池格式失败，降级到List格式: {e}")
+            # 如果转换失败，创建一个简单的MultiIndex Series
+            try:
+                # 创建一个基本的日期范围
+                dates = pd.date_range('2018-01-01', '2025-12-31', freq='B')  # 商业日
+                
+                # 创建MultiIndex
+                index_tuples = [(date, stock) for date in dates for stock in stocks]
+                multiindex = pd.MultiIndex.from_tuples(index_tuples, names=['TradingDates', 'StockCodes'])
+                
+                # 创建Series
+                universe_series = pd.Series(
+                    data=1, 
+                    index=multiindex, 
+                    name='stock_universe',
+                    dtype='int8'
+                )
+                
+                logger.info(f"成功转换List[{len(stocks)}只股票] → MultiIndex Series[{len(universe_series)}个数据点]")
+                return universe_series
+                
+            except Exception as e2:
+                logger.error(f"股票池格式转换完全失败: {e2}")
+                raise
     
     def clear_cache(self):
         """清空数据缓存"""

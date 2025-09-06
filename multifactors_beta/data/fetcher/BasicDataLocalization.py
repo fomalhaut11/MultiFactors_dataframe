@@ -15,7 +15,12 @@ import sys
 import logging
 
 # 导入配置管理器
-from core.config_manager import config, get_config, get_path, get_database_config
+from config import get_config, config_manager
+
+# 便捷的数据库配置获取函数
+def get_database_config():
+    """获取数据库配置"""
+    return get_config('main.database')
 
 int_today = int(date.today().strftime("%Y%m%d"))
 str_today = str(date.today().strftime("%Y%m%d"))
@@ -32,7 +37,7 @@ def _get_last_trading_date_from_local():
         int: 最新交易日期的整数格式，如果没有本地数据则返回None
     """
     try:
-        data_root = get_path('data_root')
+        data_root = get_config('main.paths.data_root')
         price_file = os.path.join(data_root, "Price.pkl")
         
         if not os.path.exists(price_file):
@@ -109,7 +114,7 @@ def _merge_with_local_data(new_data, data_root):
 
 # 尝试导入板块成份API，如果失败则记录警告
 try:
-    project_path = get_config('paths', 'project_parent', default=r"E:\Documents\PythonProject\StockProject")
+    project_path = get_config('main.paths.project_parent') or r"E:\Documents\PythonProject\StockProject"
     sys.path.append(project_path)
     import lgc_板块成份api as ComData
 except ImportError as e:
@@ -133,7 +138,7 @@ def GetMacroIndexFromSql_save(
     """
     # 获取数据保存路径
     if datasavepath is None:
-        datasavepath = get_path('data_root')
+        datasavepath = get_config('main.paths.data_root')
     
     # 获取数据库配置
     db_config = get_database_config()
@@ -232,7 +237,7 @@ def Get3SheetsFromSql(
     
     # 获取数据保存路径
     if datasavepath is None:
-        datasavepath = get_path('data_root')
+        datasavepath = get_config('main.paths.data_root')
 
     if not os.path.exists(datasavepath):
         os.makedirs(datasavepath)
@@ -326,7 +331,7 @@ def GetAllDayPriceDataFromSql_save(
     
     # 获取数据保存路径
     if datasavepath is None:
-        datasavepath = get_path('data_root')
+        datasavepath = get_config('main.paths.data_root')
     if not os.path.exists(datasavepath):
         os.makedirs(datasavepath)
     
@@ -938,7 +943,7 @@ def GetStockDayDataDFFromSql(
         PriceDf["freeturnoverrate"] = PriceDf["v"] / PriceDf["free_float_shares"]
         
         # 与本地数据合并
-        data_root = get_path('data_root')
+        data_root = get_config('main.paths.data_root')
         merged_data = _merge_with_local_data(PriceDf, data_root)
         
         # 保存合并后的数据
@@ -1435,7 +1440,7 @@ def GetFinancialh5fileFromLAN_save(
     if sourcepath is None:
         sourcepath = get_config('lan.financial_h5_source', r"\\198.16.102.65\lgc\h5")
     if savepath is None:
-        savepath = get_path('data_root')
+        savepath = get_config('main.paths.data_root')
     if not os.path.exists(sourcepath):
         raise FileNotFoundError("sourcepath not exists")
 
@@ -1474,7 +1479,7 @@ def run():
     logger.info("开始运行数据获取主程序")
     
     # 从配置获取基础路径
-    basedatapath = get_path('data_root')
+    basedatapath = get_config('main.paths.data_root')
     
     if not os.path.exists(basedatapath):
         os.makedirs(basedatapath)

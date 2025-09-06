@@ -13,7 +13,7 @@ from typing import Dict, Tuple, Optional, List
 from pathlib import Path
 
 from .base_processor import BaseDataProcessor
-from core.config_manager import get_path
+from config import get_config
 
 
 class PriceDataProcessor(BaseDataProcessor):
@@ -27,8 +27,8 @@ class PriceDataProcessor(BaseDataProcessor):
             config_path: 配置文件路径
         """
         super().__init__(config_path)
-        self.price_file_path = Path(get_path('data_root')) / "Price.pkl"
-        self.tradable_file_path = Path(get_path('data_root')) / "TradableDF.pkl"
+        self.price_file_path = Path(get_config('main.paths.data_root')) / "Price.pkl"
+        self.tradable_file_path = Path(get_config('main.paths.data_root')) / "TradableDF.pkl"
         
     def validate_input(self, **kwargs) -> bool:
         """验证输入文件是否存在"""
@@ -36,9 +36,9 @@ class PriceDataProcessor(BaseDataProcessor):
             self.logger.error(f"价格文件不存在: {self.price_file_path}")
             return False
             
+        # TradableDF.pkl是可选的，如果不存在则跳过交易状态过滤
         if not self.tradable_file_path.exists():
-            self.logger.error(f"可交易状态文件不存在: {self.tradable_file_path}")
-            return False
+            self.logger.warning(f"可交易状态文件不存在: {self.tradable_file_path}，将跳过交易状态过滤")
             
         return True
         
@@ -134,7 +134,7 @@ class PriceDataProcessor(BaseDataProcessor):
         
         # 保存结果
         if save_to_file:
-            save_path = Path(get_path('data_root')) / "Stock3d.pkl"
+            save_path = Path(get_config('main.paths.data_root')) / "Stock3d.pkl"
             with open(save_path, "wb") as f:
                 pickle.dump(stock_3d, f)
             self.logger.info(f"3D矩阵已保存至: {save_path}")

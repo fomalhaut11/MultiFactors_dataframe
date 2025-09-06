@@ -23,7 +23,7 @@ from .schemas import (
     validate_factor_format, convert_to_factor_format
 )
 from .fetcher.data_fetcher import StockDataFetcher
-from core.config_manager import get_path
+from config import get_config
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +40,7 @@ class DataBridge:
         data_root : str, optional
             数据根目录路径
         """
-        self.data_root = Path(data_root or get_path('data_root'))
+        self.data_root = Path(data_root or get_config('main.paths.data_root'))
         self.auxiliary_path = self.data_root / 'auxiliary'
         self.fetcher = StockDataFetcher()
         

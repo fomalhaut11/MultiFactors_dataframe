@@ -25,8 +25,8 @@ from datetime import datetime, timedelta
 from typing import Optional, Tuple
 import shutil
 
-from core.config_manager import get_path
-from core.database import execute_stock_data_query
+from config import get_config
+from core.database import execute_stock_data_query, get_db_table_config
 from .chunked_price_fetcher import ChunkedPriceFetcher
 
 logger = logging.getLogger(__name__)
@@ -36,10 +36,12 @@ class IncrementalPriceUpdater:
     """增量价格数据更新器"""
     
     def __init__(self):
-        self.data_root = get_path('data_root')
+        self.data_root = get_config('main.paths.data_root')
         self.price_file = os.path.join(self.data_root, "Price.pkl")
         self.backup_dir = os.path.join(self.data_root, "backups")
         self.fetcher = ChunkedPriceFetcher(chunk_days=30, chunk_stocks=1000)
+        # 获取数据库表名配置
+        self.db_config = get_db_table_config()
         
         # 确保备份目录存在
         os.makedirs(self.backup_dir, exist_ok=True)
@@ -106,7 +108,7 @@ class IncrementalPriceUpdater:
         """
         try:
             logger.info("查询数据库最新交易日期...")
-            sql = "SELECT MAX(tradingday) FROM [stock_data].[dbo].[day5]"
+            sql = f"SELECT MAX(tradingday) FROM {self.db_config.price_table}"
             result = execute_stock_data_query(sql, db_name='database')
             
             if result.empty:

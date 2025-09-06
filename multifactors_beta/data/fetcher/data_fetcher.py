@@ -13,8 +13,8 @@ from typing import Dict, List, Optional, Any, Union
 from datetime import datetime, date
 import logging
 
-from core.config_manager import get_config, get_path
-from core.database import execute_stock_data_query, execute_query_to_dataframe
+from config import get_config
+from core.database import execute_stock_data_query, execute_query_to_dataframe, get_db_table_config
 
 logger = logging.getLogger(__name__)
 
@@ -25,8 +25,8 @@ class BaseDataFetcher(ABC):
     def __init__(self, name: str, config_section: str = None):
         self.name = name
         self.config_section = config_section or name.lower()
-        self.cache_enabled = get_config('system', 'cache_enabled', default=True)
-        self.data_root = get_path('data_root')
+        self.cache_enabled = get_config('main.system.cache_enabled') or True
+        self.data_root = get_config('main.paths.data_root')
         
         logger.info(f"初始化数据获取器: {self.name}")
     
@@ -37,7 +37,7 @@ class BaseDataFetcher(ABC):
     
     def get_cache_path(self, data_type: str) -> str:
         """获取缓存文件路径"""
-        cache_dir = get_path('cache', os.path.join(self.data_root, 'cache'))
+        cache_dir = get_config('main.paths.cache', os.path.join(self.data_root, 'cache'))
         os.makedirs(cache_dir, exist_ok=True)
         return os.path.join(cache_dir, f"{self.name}_{data_type}.pkl")
     
@@ -85,8 +85,10 @@ class StockDataFetcher(BaseDataFetcher):
         super().__init__("StockData", "stock_data")
         self.supported_data_types = [
             'price', 'volume', 'financial', 'macro', 'index', 
-            'tradable', 'stop_price', 'industry', 'concept'
+            'tradable', 'stop_price', 'concept', 'sector_changes'
         ]
+        # 获取数据库表名配置
+        self.db_config = get_db_table_config()
     
     def fetch_data(self, data_type: str, **kwargs) -> pd.DataFrame:
         """
@@ -121,27 +123,29 @@ class StockDataFetcher(BaseDataFetcher):
     def _fetch_price_data(self, begin_date: int = 20200101, end_date: int = 0, 
                          incremental: bool = True, **kwargs) -> pd.DataFrame:
         """获取价格数据"""
+        price_table = self.db_config.price_table
+        
         if end_date == 0:
             sql = (
                 "SELECT [code],[tradingday],[o],[h],[l],[c],[v],[amt],[adjfactor],"
                 "[total_shares],[free_float_shares],[exchange_id] "
-                "FROM [stock_data].[dbo].[day5] WHERE tradingday >= %d"
-            ) % begin_date
+                "FROM {} WHERE tradingday >= %d"
+            ).format(price_table) % begin_date
         else:
             sql = (
                 "SELECT [code],[tradingday],[o],[h],[l],[c],[v],[amt],[adjfactor],"
                 "[total_shares],[free_float_shares],[exchange_id] "
-                "FROM [stock_data].[dbo].[day5] WHERE tradingday >= %d AND tradingday <= %d"
-            ) % (begin_date, end_date)
+                "FROM {} WHERE tradingday >= %d AND tradingday <= %d"
+            ).format(price_table) % (begin_date, end_date)
         
         return execute_stock_data_query(sql, db_name='database')
     
     def _fetch_financial_data(self, sheet_type: str = 'all', **kwargs) -> Union[pd.DataFrame, Dict[str, pd.DataFrame]]:
         """获取财务数据"""
         tables = {
-            'fzb': '[stock_data].[dbo].[fzb]',
-            'xjlb': '[stock_data].[dbo].[xjlb]',
-            'lrb': '[stock_data].[dbo].[lrb]'
+            'fzb': self.db_config.fzb_table,
+            'xjlb': self.db_config.xjlb_table,
+            'lrb': self.db_config.lrb_table
         }
         
         if sheet_type == 'all':
@@ -167,7 +171,7 @@ class StockDataFetcher(BaseDataFetcher):
         # 行业利润数据
         industry_sql = (
             "SELECT DISTINCT [tradingday],[行业],[利润总额累计值] "
-            "FROM [stock_data].[dbo].[lgc_行业经济数据]"
+            "FROM {}".format(self.db_config.macro_industry_table)
         )
         industry_data = execute_query_to_dataframe(
             industry_sql, 
@@ -177,12 +181,12 @@ class StockDataFetcher(BaseDataFetcher):
         )
         
         # 宏观利率数据
-        macro_sql = """
+        macro_sql = f"""
         SELECT [tradingday],[美国十年国债收益率],[美国单月同比CPI],[中国十年国债收益率],
                [中国单月同比CPI],[官方外汇储备],[季度GDP累计值],[工业企业利润累计值],
                [社会融资规模_亿],[PPI],[M2],[M2_同比],[GDP_当季值亿],
                [既期10点美元汇率],[写入日期时间]
-        FROM [stock_data].[dbo].[美国国债收益率及CPI]
+        FROM {self.db_config.us_treasury_table}
         """
         macro_columns = [
             "tradingday", "美国十年国债收益率", "美国单月同比CPI", "中国十年国债收益率",
@@ -204,7 +208,7 @@ class StockDataFetcher(BaseDataFetcher):
         """获取可交易股票数据"""
         sql = (
             "SELECT [ipo_date],[code],[exchange_id],[last_trade_day],"
-            "[tradingday],[trade_status] FROM [stock_data].[dbo].[all_stocks]"
+            "[tradingday],[trade_status] FROM {}".format(self.db_config.all_stocks_table)
         )
         return execute_stock_data_query(sql, db_name='database')
     
@@ -212,7 +216,7 @@ class StockDataFetcher(BaseDataFetcher):
         """获取涨跌停价格数据"""
         sql = (
             "SELECT DISTINCT [code],[tradingday],[high_limit],[low_limit] "
-            "FROM [stock_data].[dbo].[lgc_涨跌停板]"
+            "FROM {}".format(self.db_config.stop_price_table)
         )
         columns = ["code", "tradingday", "high_limit", "low_limit"]
         return execute_query_to_dataframe(sql, columns, db_name='database')
@@ -220,10 +224,10 @@ class StockDataFetcher(BaseDataFetcher):
     def _fetch_index_data(self, index_codes: List[str] = None, 
                          begin_date: int = None, end_date: int = None, **kwargs) -> pd.DataFrame:
         """获取指数数据"""
-        sql_base = """
+        sql_base = f"""
         SELECT [bankuai],[tradingday],[exchange_id],[index_name],[code],
                [o],[h],[l],[c],[v],[amt],[writing_day] 
-        FROM [stock_data].[dbo].[wind_index] WHERE 1=1
+        FROM {self.db_config.wind_index_table} WHERE 1=1
         """
         
         conditions = []
@@ -243,6 +247,119 @@ class StockDataFetcher(BaseDataFetcher):
         sql += " ORDER BY tradingday"
         
         return execute_stock_data_query(sql, db_name='database')
+    
+    
+    def _fetch_concept_data(self, concept_code: str = None, 
+                          trading_date: int = None, **kwargs) -> pd.DataFrame:
+        """
+        获取概念板块数据
+        
+        Args:
+            concept_code: 概念代码，为None时获取所有概念
+            trading_date: 交易日期，格式YYYYMMDD，为None时获取最新数据
+            **kwargs: 其他参数
+            
+        Returns:
+            包含概念板块信息的DataFrame
+        """
+        logger.info(f"获取概念板块数据: concept_code={concept_code}")
+        
+        if concept_code is None and trading_date is None:
+            # 获取所有概念代码和名称
+            sql = f"""
+            SELECT DISTINCT [concept_code], [concept_name] 
+            FROM {self.db_config.concept_table}
+            WHERE 指数类型 != '申万行业板块'
+            ORDER BY concept_code
+            """
+            columns = ["concept_code", "concept_name"]
+        elif concept_code is None and trading_date is not None:
+            # 获取指定日期的所有概念数据
+            sql = f"""
+            SELECT [tradingday],[sel_day],[指数类型],[concept_code],[concept_name],[code]
+            FROM {self.db_config.concept_table}
+            WHERE tradingday = {trading_date} AND 指数类型 != '申万行业板块'
+            ORDER BY concept_code, code
+            """
+            columns = ["tradingday", "sel_day", "指数类型", "concept_code", "concept_name", "code"]
+        elif concept_code is not None and trading_date is None:
+            # 获取指定概念的最新数据
+            sql = f"""
+            SELECT [tradingday],[sel_day],[指数类型],[concept_code],[concept_name],[code]
+            FROM {self.db_config.concept_table}
+            WHERE concept_code = '{concept_code}' 
+            AND tradingday = (
+                SELECT MAX(tradingday) 
+                FROM {self.db_config.concept_table} 
+                WHERE concept_code = '{concept_code}'
+            )
+            ORDER BY code
+            """
+            columns = ["tradingday", "sel_day", "指数类型", "concept_code", "concept_name", "code"]
+        else:
+            # 获取指定概念和日期的数据
+            sql = f"""
+            SELECT [tradingday],[sel_day],[指数类型],[concept_code],[concept_name],[code]
+            FROM {self.db_config.concept_table}
+            WHERE concept_code = '{concept_code}' AND tradingday = {trading_date}
+            ORDER BY code
+            """
+            columns = ["tradingday", "sel_day", "指数类型", "concept_code", "concept_name", "code"]
+        
+        return execute_query_to_dataframe(sql, columns, db_name='database')
+    
+    def _fetch_sector_changes_data(self, begin_date: int = None, end_date: int = None, 
+                                 concept_code: str = None, **kwargs) -> pd.DataFrame:
+        """
+        获取板块进出调整数据
+        
+        Args:
+            begin_date: 开始日期，格式YYYYMMDD
+            end_date: 结束日期，格式YYYYMMDD
+            concept_code: 概念代码，为None时获取所有概念
+            **kwargs: 其他参数
+            
+        Returns:
+            包含板块调整信息的DataFrame，按sel_day排序
+        """
+        logger.info(f"获取板块进出数据: begin_date={begin_date}, end_date={end_date}, concept_code={concept_code}")
+        
+        # 构建基础SQL
+        base_sql = f"""
+        SELECT [sel_day], [code], [exchange_id], [code_cn], [纳入_剔除], 
+               [concept_code], [concept_exid], [concept_name], [industry], 
+               [指数类型], [写入时间]
+        FROM {self.db_config.sector_changes_table}
+        """
+        
+        # 构建WHERE条件
+        conditions = []
+        
+        if begin_date is not None:
+            conditions.append(f"sel_day >= {begin_date}")
+            
+        if end_date is not None:
+            conditions.append(f"sel_day <= {end_date}")
+            
+        if concept_code is not None:
+            conditions.append(f"concept_code = '{concept_code}'")
+        
+        # 拼接WHERE条件
+        if conditions:
+            where_clause = " WHERE " + " AND ".join(conditions)
+        else:
+            where_clause = ""
+        
+        # 添加排序
+        order_clause = " ORDER BY sel_day, concept_code, code"
+        
+        sql = base_sql + where_clause + order_clause
+        
+        columns = ["sel_day", "code", "exchange_id", "code_cn", "纳入_剔除", 
+                  "concept_code", "concept_exid", "concept_name", "industry", 
+                  "指数类型", "写入时间"]
+        
+        return execute_query_to_dataframe(sql, columns, db_name='database')
 
 
 class MarketDataFetcher(BaseDataFetcher):
@@ -250,6 +367,8 @@ class MarketDataFetcher(BaseDataFetcher):
     
     def __init__(self):
         super().__init__("MarketData", "market_data")
+        # 获取数据库表名配置
+        self.db_config = get_db_table_config()
     
     def fetch_data(self, data_type: str, **kwargs) -> pd.DataFrame:
         """获取市场数据"""
@@ -271,7 +390,7 @@ class MarketDataFetcher(BaseDataFetcher):
         """获取ST股票信息"""
         sql = (
             "SELECT [tradingday],[code],[exchange_id],[sec_name] "
-            "FROM [stock_data].[dbo].[ST] ORDER BY tradingday"
+            "FROM {} ORDER BY tradingday".format(self.db_config.st_stocks_table)
         )
         columns = ['tradingday', 'code', 'exchange_id', 'sec_name']
         return execute_query_to_dataframe(sql, columns, db_name='database')

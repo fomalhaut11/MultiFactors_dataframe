@@ -169,12 +169,12 @@ def example_6_config_usage():
     
     # 获取配置
     print("数据路径配置:")
-    print(f"  数据根目录: {get_path('data_root')}")
-    print(f"  因子目录: {get_path('raw_factors')}")
-    print(f"  测试结果目录: {get_path('single_factor_test')}")
+    print(f"  数据根目录: {get_config('main.paths.data_root')}")
+    print(f"  因子目录: {get_config('main.paths.raw_factors')}")
+    print(f"  测试结果目录: {get_config('main.paths.single_factor_test')}")
     
     # 获取特定配置
-    db_config = get_config('database')
+    db_config = get_config('main.database')
     if db_config:
         print(f"\n数据库配置:")
         print(f"  数据库: {db_config.get('database', 'N/A')}")

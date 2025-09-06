@@ -130,10 +130,10 @@ def load_test_result(factor_name: str, test_id: str = None):
     ...     print(f"IC: {result.ic_result.ic_mean:.4f}")
     """
     from pathlib import Path
-    from ..core.config_manager import get_path
+    from config import get_config
     
     manager = ResultManager()
-    test_path = Path(get_path('single_factor_test'))
+    test_path = Path(get_config('main.paths.single_factor_test'))
     
     if test_id:
         # 加载指定ID的结果

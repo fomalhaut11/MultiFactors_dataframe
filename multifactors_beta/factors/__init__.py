@@ -35,15 +35,43 @@
 - utils/       通用工具函数
 """
 
-# 导入子模块
-from . import generator, tester, analyzer, base, utils, operations
+# 导入子模块（移除已删除的generator）
+from . import tester, analyzer, base, utils, operations, combiner
+from . import generators, library
 
-# 从子模块导入主要接口
-from .generator import (
-    FactorGenerator,
-    generate_factor,
-    batch_generate_factors,
-    list_available_factors
+# 从generators导入基础数据处理工具
+from .generators.financial import (
+    calculate_ttm,
+    calculate_single_quarter,
+    calculate_yoy,
+    calculate_qoq,
+    calculate_zscore,
+    expand_to_daily_vectorized
+)
+
+from .generators.technical import (
+    MovingAverageCalculator,
+    TechnicalIndicators,
+    VolatilityCalculator
+)
+
+from .generators.alpha191 import (
+    ts_rank,
+    ts_mean,
+    delta,
+    rank,
+    scale
+)
+
+# 从library导入因子计算接口
+from .library import (
+    get_factor,
+    calculate_factor,
+    batch_calculate_factors,
+    list_factors,
+    search_factors,
+    get_factor_info,
+    get_factor_summary
 )
 
 from .tester import (
@@ -59,6 +87,11 @@ from .analyzer import (
     get_analyzer_config
 )
 
+from .combiner import (
+    CombinerBase,
+    FactorCombiner
+)
+
 from .base import (
     FactorBase,
     MultiFactorBase,
@@ -68,17 +101,39 @@ from .base import (
 
 __all__ = [
     # 子模块
-    'generator',
+    'generators',
+    'library',
     'tester',
     'analyzer',
+    'combiner',
     'base',
     'utils',
     'operations',
     
-    # 生成接口
-    'FactorGenerator',
-    'generate_factor',
-    'batch_generate_factors',
+    # 基础数据处理工具
+    'calculate_ttm',
+    'calculate_single_quarter',
+    'calculate_yoy',
+    'calculate_qoq',
+    'calculate_zscore',
+    'expand_to_daily_vectorized',
+    'MovingAverageCalculator',
+    'TechnicalIndicators',
+    'VolatilityCalculator',
+    'ts_rank',
+    'ts_mean',
+    'delta',
+    'rank',
+    'scale',
+    
+    # 因子计算接口
+    'get_factor',
+    'calculate_factor',
+    'batch_calculate_factors',
+    'list_factors',
+    'search_factors',
+    'get_factor_info',
+    'get_factor_summary',
     'list_available_factors',
     
     # 测试接口
@@ -91,6 +146,10 @@ __all__ = [
     # 分析接口
     'FactorScreener',
     'get_analyzer_config',
+    
+    # 因子组合接口
+    'CombinerBase',
+    'FactorCombiner',
     
     # 基础类
     'FactorBase',

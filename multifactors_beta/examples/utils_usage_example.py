@@ -11,9 +11,12 @@ from datetime import datetime, timedelta
 # 导入工具模块
 from core.utils import (
     OutlierHandler, Normalizer, DataCleaner,
-    MovingAverageCalculator, VolatilityCalculator, TechnicalIndicators,
     FactorOrthogonalizer, FactorProcessor,
     MarketCapFilter, LiquidityMetrics
+)
+# 导入技术指标（从新位置）
+from factors.generator.technical.indicators import (
+    MovingAverageCalculator, VolatilityCalculator, TechnicalIndicators
 )
 
 

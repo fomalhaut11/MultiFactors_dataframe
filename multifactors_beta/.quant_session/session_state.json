@@ -1,0 +1,19 @@
+{
+  "current_mode": "beginner",
+  "recent_factors": [],
+  "recent_results": {},
+  "user_preferences": {
+    "auto_test": true,
+    "auto_interpret": true,
+    "default_test_period": "2020-01-01,2024-12-31"
+  },
+  "operation_history": [
+    {
+      "timestamp": "2025-09-01T18:58:35.653705",
+      "operation": "start_session",
+      "success": true,
+      "summary": ""
+    }
+  ],
+  "last_session_time": "2025-09-01T18:58:35.653705"
+}

@@ -75,10 +75,10 @@ def resume_from_chunks():
     """从中间文件恢复数据（如果获取过程中断）"""
     logger.info("尝试从中间文件恢复数据")
     
-    from core.config_manager import get_path
+    from config import get_config
     import pandas as pd
     
-    data_root = get_path('data_root')
+    data_root = get_config('main.paths.data_root')
     
     # 查找所有临时文件
     temp_files = []

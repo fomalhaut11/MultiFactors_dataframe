@@ -1,0 +1,55 @@
+{
+  "current_mode": "beginner",
+  "recent_factors": [],
+  "recent_results": {},
+  "user_preferences": {
+    "auto_test": true,
+    "auto_interpret": true,
+    "default_test_period": "2020-01-01,2024-12-31"
+  },
+  "operation_history": [
+    {
+      "timestamp": "2025-09-01T15:39:55.388055",
+      "operation": "start_session",
+      "success": true,
+      "summary": ""
+    },
+    {
+      "timestamp": "2025-09-01T18:06:08.375079",
+      "operation": "start_session",
+      "success": true,
+      "summary": ""
+    },
+    {
+      "timestamp": "2025-09-01T18:08:41.298961",
+      "operation": "start_session",
+      "success": true,
+      "summary": ""
+    },
+    {
+      "timestamp": "2025-09-01T18:09:52.891763",
+      "operation": "start_session",
+      "success": true,
+      "summary": ""
+    },
+    {
+      "timestamp": "2025-09-01T18:18:47.249597",
+      "operation": "start_session",
+      "success": true,
+      "summary": ""
+    },
+    {
+      "timestamp": "2025-09-01T18:42:37.024099",
+      "operation": "quick_factor",
+      "success": false,
+      "summary": "\n⚠️ **因子质量评估**: 一般\n\n📊 **信息系数 (IC)**: 0.0250\n\n💡 **业务解读**:\n效果一般，建议优化或与强因子组合\n\n📈 **使用建议**:\n• 如果质量不佳，可以尝试"
+    },
+    {
+      "timestamp": "2025-09-01T18:52:41.729149",
+      "operation": "smart_test",
+      "success": true,
+      "summary": "\n👍 **因子质量评估**: 良好\n\n📊 **信息系数 (IC)**: 0.0320\n\n💡 **业务解读**:\n表现不错，可考虑与其他因子组合使用\n\n📈 **使用建议**:\n• 如果质量良好，可以尝试"
+    }
+  ],
+  "last_session_time": "2025-09-01T18:52:41.729149"
+}

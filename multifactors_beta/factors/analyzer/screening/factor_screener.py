@@ -13,7 +13,7 @@ from datetime import datetime, timedelta
 
 from factors.tester.core import ResultManager
 from factors.tester.base import TestResult
-from core.config_manager import get_config
+from config import get_config
 from ..config import get_analyzer_config
 
 logger = logging.getLogger(__name__)

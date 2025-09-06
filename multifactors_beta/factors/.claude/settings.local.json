@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python:*)",
+      "Read(E:\\Documents\\PythonProject\\StockProject\\MultiFactors\\multifactors_beta/**)",
+      "Read(E:\\Documents\\PythonProject\\StockProject\\MultiFactors\\multifactors_beta/**)",
+      "Read(E:\\Documents\\PythonProject\\StockProject\\MultiFactors\\multifactors_beta/**)",
+      "Read(E:\\Documents\\PythonProject\\StockProject\\MultiFactors\\multifactors_beta/**)",
+      "Read(E:\\Documents\\PythonProject\\StockProject\\MultiFactors\\multifactors_beta\\tests/**)",
+      "Bash(claude --version)",
+      "Bash(set PYTHONIOENCODING=utf-8)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

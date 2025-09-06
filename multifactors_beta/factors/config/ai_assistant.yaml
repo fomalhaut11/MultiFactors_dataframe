@@ -1,0 +1,244 @@
+# AI量化助手配置文件
+# 专为AI助手优化的配置，简化参数管理
+
+# ============================================================================
+# 数据路径配置
+# ============================================================================
+data_paths:
+  financial: "E:/Documents/PythonProject/StockProject/StockData/auxiliary/FinancialData_unified.pkl"
+  price: "E:/Documents/PythonProject/StockProject/StockData/auxiliary/PriceData_unified.pkl" 
+  trading_dates: "E:/Documents/PythonProject/StockProject/StockData/auxiliary/TradingDates.pkl"
+  market_cap: "E:/Documents/PythonProject/StockProject/StockData/auxiliary/MarketCap.pkl"
+  industry: "E:/Documents/PythonProject/StockProject/StockData/auxiliary/IndustryData.pkl"
+
+# ============================================================================
+# 测试配置
+# ============================================================================
+testing:
+  # 测试时间范围
+  begin_date: "2020-01-01"
+  end_date: "2023-12-31"
+  
+  # 中性化设置
+  neutralize_market_cap: true
+  neutralize_industry: true
+  
+  # 分组测试
+  group_nums: 10
+  
+  # IC测试
+  ic_periods: [1, 5, 10, 20]  # 测试多个周期的IC
+  
+  # 回测设置
+  rebalance_period: 20  # 调仓周期（天）
+  commission_rate: 0.001  # 手续费率
+  
+  # 结果保存
+  save_results: true
+  result_path: "results/ai_assistant"
+
+# ============================================================================
+# 因子默认参数
+# ============================================================================
+factor_defaults:
+  # 财务因子默认参数
+  financial:
+    window: 12          # TTM窗口期（季度）
+    min_periods: 4      # 最少需要的数据点
+    method: "ttm"       # 默认使用TTM计算
+    zscore_window: 12   # zscore计算窗口
+    
+  # 技术因子默认参数  
+  technical:
+    window: 20          # 技术指标窗口期（交易日）
+    min_periods: 10     # 最少需要的数据点
+    method: "simple"    # 默认计算方法
+    
+  # 混合因子默认参数
+  mixed:
+    alignment_method: "forward_fill"  # 数据对齐方法
+    max_gap_days: 90                  # 允许的最大数据缺失天数
+    outlier_clip: [-5, 5]             # 异常值裁剪范围
+
+# ============================================================================
+# 因子计算配置
+# ============================================================================
+calculation:
+  # 数据处理
+  handle_missing: "interpolate"  # 缺失值处理方式: drop, interpolate, forward_fill
+  outlier_method: "zscore"       # 异常值检测方法: zscore, iqr, quantile
+  outlier_threshold: 3           # 异常值阈值
+  
+  # TTM计算
+  ttm_quarters: 4               # TTM使用的季度数
+  ttm_method: "sum"             # TTM计算方法: sum, mean
+  
+  # 时序标准化
+  zscore_method: "rolling"      # zscore方法: rolling, expanding
+  standardize_by: "cross_section"  # 标准化方式: cross_section, time_series
+  
+  # 截面标准化  
+  rank_pct: true                # 是否转换为百分位排名
+  winsorize_quantiles: [0.01, 0.99]  # 缩尾处理分位数
+
+# ============================================================================
+# 因子类别配置
+# ============================================================================
+factor_categories:
+  # 财务因子类别
+  financial:
+    profitability:     # 盈利能力
+      - "ROE_ttm"
+      - "ROA_ttm" 
+      - "ROIC_ttm"
+      - "GROSS_MARGIN_ttm"
+      - "NET_MARGIN_ttm"
+      
+    solvency:         # 偿债能力
+      - "CURRENT_RATIO"
+      - "QUICK_RATIO"
+      - "DEBT_TO_EQUITY"
+      - "DEBT_RATIO"
+      - "INTEREST_COVER_RATIO"
+      
+    efficiency:       # 营运效率
+      - "ASSET_TURNOVER_ttm"
+      - "INVENTORY_TURNOVER_ttm"
+      - "RECEIVABLES_TURNOVER_ttm"
+      
+    growth:           # 成长能力
+      - "REVENUE_GROWTH_ttm"
+      - "PROFIT_GROWTH_ttm"
+      - "ASSET_GROWTH_ttm"
+      
+    earnings_surprise:  # 盈余惊喜
+      - "SUE"
+      - "EARNINGS_REVISION"
+      - "EARNINGS_MOMENTUM"
+      
+  # 技术因子类别  
+  technical:
+    momentum:          # 动量因子
+      - "MOMENTUM_20d"
+      - "MOMENTUM_60d" 
+      - "MOMENTUM_120d"
+      - "REVERSAL_5d"
+      
+    volatility:       # 波动率因子
+      - "VOL_20d"
+      - "VOL_60d"
+      - "REALIZED_VOL_20d"
+      - "GARCH_VOL"
+      
+    oscillators:      # 振荡器
+      - "RSI_14"
+      - "MACD"
+      - "STOCH_K"
+      - "WILLIAMS_R"
+      
+    moving_averages:  # 移动平均
+      - "MA_20"
+      - "MA_60"  
+      - "EMA_20"
+      - "BOLLINGER_RATIO"
+
+# ============================================================================
+# 常用因子公式
+# ============================================================================
+common_formulas:
+  # 估值因子
+  "EP_ttm": 
+    formula: "NET_PROFIT_ttm / MARKET_CAP"
+    description: "TTM收益价格比"
+    
+  "BP":
+    formula: "TOTAL_EQUITY / MARKET_CAP" 
+    description: "账面市值比"
+    
+  "SP_ttm":
+    formula: "TOT_OPER_REV_ttm / MARKET_CAP"
+    description: "TTM销售价格比"
+    
+  # 质量因子
+  "QUALITY_SCORE":
+    formula: "zscore(ROE_ttm) + zscore(DEBT_RATIO) * (-1) + zscore(CURRENT_RATIO)"
+    description: "综合质量得分"
+    
+  # 用户请求的复杂因子
+  "COMPLEX_MIXED_FACTOR":
+    formula:
+      numerator:
+        type: "ratio"
+        components:
+          - factor: "RevenueGrowth_yoy"
+            operation: "rolling_zscore" 
+            window: 12
+          - factor: "QuickRatio"
+            operation: "rolling_zscore"
+            window: 12
+        operation: "divide"
+      denominator:
+        factor: "Momentum_20d"
+        operation: "cross_section_zscore"
+      operation: "divide"
+    description: "(营收增长率时序zscore / 速动比率时序zscore) / 20日动量截面标准化"
+
+# ============================================================================
+# 系统配置
+# ============================================================================
+system:
+  # 内存管理
+  max_memory_gb: 12
+  chunk_size: 10000        # 分块处理的大小
+  
+  # 并行处理
+  use_parallel: true
+  n_jobs: -1               # 使用所有CPU核心
+  
+  # 日志配置
+  log_level: "INFO"
+  log_file: "logs/ai_assistant.log"
+  
+  # 缓存设置
+  enable_cache: true
+  cache_size_mb: 1000
+  
+  # 错误处理
+  raise_on_error: false    # 是否在遇到错误时抛出异常
+  max_retries: 3           # 最大重试次数
+  
+# ============================================================================
+# 用户偏好（可根据使用习惯调整）
+# ============================================================================
+preferences:
+  # 默认测试参数
+  default_neutralization: ["market_cap", "industry"]
+  default_test_period: "recent_3_years"  # recent_3_years, all_available, custom
+  
+  # 输出格式
+  result_format: "detailed"    # simple, detailed, full
+  include_diagnostics: true    # 是否包含诊断信息
+  
+  # 自动保存
+  auto_save_factors: true      # 是否自动保存生成的因子
+  auto_save_results: true      # 是否自动保存测试结果
+  
+  # 通知设置
+  verbose: true                # 是否显示详细信息
+  show_progress: true          # 是否显示进度条
+  
+# ============================================================================
+# 高级配置（专业用户使用）
+# ============================================================================
+advanced:
+  # 数据验证
+  strict_validation: true      # 是否启用严格的数据验证
+  allow_partial_data: false    # 是否允许部分数据缺失
+  
+  # 性能优化
+  optimize_memory: true        # 是否启用内存优化
+  use_efficient_dtypes: true   # 是否使用高效的数据类型
+  
+  # 实验性功能
+  enable_experimental: false   # 是否启用实验性功能
+  experimental_features: []    # 实验性功能列表

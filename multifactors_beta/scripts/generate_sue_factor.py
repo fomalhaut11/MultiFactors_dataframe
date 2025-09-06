@@ -20,7 +20,7 @@ warnings.filterwarnings('ignore')
 
 from core.database import DatabaseManager
 from factors.financial import SUE
-from core.config_manager import get_path
+from config import get_config
 
 
 def fetch_eps_data(start_date='2020-01-01', end_date='2024-12-31'):
@@ -162,7 +162,7 @@ def save_sue_factor(sue_factor, filename='SUE.pkl'):
         保存的文件名
     """
     # 获取因子保存路径
-    factor_dir = Path(get_path('factors'))
+    factor_dir = Path(get_config('main.paths.factors'))
     factor_dir.mkdir(parents=True, exist_ok=True)
     
     filepath = factor_dir / filename

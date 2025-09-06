@@ -1,0 +1,464 @@
+# 批量因子生成配置文件 📋
+# 定义所有可生成的因子及其分组和参数
+
+# 基本配置
+settings:
+  output_dir: "E:/Documents/PythonProject/StockProject/StockData/factors"  # 因子输出目录
+  parallel_jobs: 4                 # 并行作业数
+  cache_enabled: true              # 启用缓存
+  validation_enabled: true         # 启用结果验证
+  backup_enabled: true            # 启用自动备份
+
+# 因子分组配置
+factor_groups:
+  
+  # 💰 财务因子 (Pure Financial Factors)
+  financial:
+    description: "基于财务报表数据的因子，不依赖市场数据"
+    enabled: true
+    priority: 1
+    
+    # 盈利能力因子 (Profitability) - 13个
+    profitability:
+      - name: "ROE_ttm"
+        description: "净资产收益率(TTM)"
+        calculator: "PureFinancialFactorCalculator"
+        method: "calculate_ROE_ttm"
+        data_requirements: ["financial_data"]
+        
+      - name: "ROE_lyr"
+        description: "净资产收益率(年报)"
+        calculator: "PureFinancialFactorCalculator" 
+        method: "calculate_ROE_lyr"
+        data_requirements: ["financial_data"]
+        
+      - name: "ROA_ttm"
+        description: "总资产收益率(TTM)"
+        calculator: "PureFinancialFactorCalculator"
+        method: "calculate_ROA_ttm"
+        data_requirements: ["financial_data"]
+        
+      - name: "ROA_lyr"
+        description: "总资产收益率(年报)"
+        calculator: "PureFinancialFactorCalculator"
+        method: "calculate_ROA_lyr"
+        data_requirements: ["financial_data"]
+        
+      - name: "ROIC_ttm"
+        description: "投入资本收益率"
+        calculator: "PureFinancialFactorCalculator"
+        method: "calculate_ROIC_ttm"
+        data_requirements: ["financial_data"]
+        
+      - name: "GrossProfitMargin_ttm"
+        description: "毛利率"
+        calculator: "PureFinancialFactorCalculator"
+        method: "calculate_GrossProfitMargin_ttm"
+        data_requirements: ["financial_data"]
+        
+      - name: "NetProfitMargin_ttm"
+        description: "净利率"
+        calculator: "PureFinancialFactorCalculator"
+        method: "calculate_NetProfitMargin_ttm"
+        data_requirements: ["financial_data"]
+        
+      - name: "OperatingMargin_ttm"
+        description: "营业利润率"
+        calculator: "PureFinancialFactorCalculator"
+        method: "calculate_OperatingMargin_ttm"
+        data_requirements: ["financial_data"]
+        
+      - name: "EBITDAMargin_ttm"
+        description: "EBITDA利润率"
+        calculator: "PureFinancialFactorCalculator"
+        method: "calculate_EBITDAMargin_ttm"
+        data_requirements: ["financial_data"]
+        
+      - name: "InterestMargin_ttm"
+        description: "净息差(银行业)"
+        calculator: "PureFinancialFactorCalculator"
+        method: "calculate_InterestMargin_ttm"
+        data_requirements: ["financial_data"]
+        
+      - name: "CostIncomeRatio_ttm"
+        description: "成本收入比"
+        calculator: "PureFinancialFactorCalculator"
+        method: "calculate_CostIncomeRatio_ttm"
+        data_requirements: ["financial_data"]
+    
+    # 偿债能力因子 (Solvency) - 8个
+    solvency:
+      - name: "CurrentRatio"
+        description: "流动比率"
+        calculator: "PureFinancialFactorCalculator"
+        method: "calculate_CurrentRatio"
+        data_requirements: ["financial_data"]
+        
+      - name: "QuickRatio"
+        description: "速动比率"
+        calculator: "PureFinancialFactorCalculator"
+        method: "calculate_QuickRatio"
+        data_requirements: ["financial_data"]
+        
+      - name: "CashRatio"
+        description: "现金比率"
+        calculator: "PureFinancialFactorCalculator"
+        method: "calculate_CashRatio"
+        data_requirements: ["financial_data"]
+        
+      - name: "DebtToAssets"
+        description: "资产负债率"
+        calculator: "PureFinancialFactorCalculator"
+        method: "calculate_DebtToAssets"
+        data_requirements: ["financial_data"]
+        
+      - name: "DebtToEquity"
+        description: "产权比率"
+        calculator: "PureFinancialFactorCalculator"
+        method: "calculate_DebtToEquity"
+        data_requirements: ["financial_data"]
+        
+      - name: "EquityMultiplier"
+        description: "权益乘数"
+        calculator: "PureFinancialFactorCalculator"
+        method: "calculate_EquityMultiplier"
+        data_requirements: ["financial_data"]
+        
+      - name: "InterestCoverage_ttm"
+        description: "利息保障倍数"
+        calculator: "PureFinancialFactorCalculator"
+        method: "calculate_InterestCoverage_ttm"
+        data_requirements: ["financial_data"]
+        
+      - name: "DebtServiceCoverage_ttm"
+        description: "债务偿付比率"
+        calculator: "PureFinancialFactorCalculator"
+        method: "calculate_DebtServiceCoverage_ttm"
+        data_requirements: ["financial_data"]
+    
+    # 营运效率因子 (Efficiency) - 9个
+    efficiency:
+      - name: "AssetTurnover_ttm"
+        description: "总资产周转率"
+        calculator: "PureFinancialFactorCalculator"
+        method: "calculate_AssetTurnover_ttm"
+        data_requirements: ["financial_data"]
+        
+      - name: "EquityTurnover_ttm"
+        description: "净资产周转率"
+        calculator: "PureFinancialFactorCalculator"
+        method: "calculate_EquityTurnover_ttm"
+        data_requirements: ["financial_data"]
+        
+      - name: "InventoryTurnover_ttm"
+        description: "存货周转率"
+        calculator: "PureFinancialFactorCalculator"
+        method: "calculate_InventoryTurnover_ttm"
+        data_requirements: ["financial_data"]
+        
+      - name: "AccountsReceivableTurnover_ttm"
+        description: "应收账款周转率"
+        calculator: "PureFinancialFactorCalculator"
+        method: "calculate_AccountsReceivableTurnover_ttm"
+        data_requirements: ["financial_data"]
+        
+      - name: "AccountsPayableTurnover_ttm"
+        description: "应付账款周转率"
+        calculator: "PureFinancialFactorCalculator"
+        method: "calculate_AccountsPayableTurnover_ttm"
+        data_requirements: ["financial_data"]
+        
+      - name: "CashCycle_ttm"
+        description: "现金转换周期"
+        calculator: "PureFinancialFactorCalculator"
+        method: "calculate_CashCycle_ttm"
+        data_requirements: ["financial_data"]
+        
+      - name: "WorkingCapitalTurnover_ttm"
+        description: "营运资本周转率"
+        calculator: "PureFinancialFactorCalculator"
+        method: "calculate_WorkingCapitalTurnover_ttm"
+        data_requirements: ["financial_data"]
+        
+      - name: "FixedAssetTurnover_ttm"
+        description: "固定资产周转率"
+        calculator: "PureFinancialFactorCalculator"
+        method: "calculate_FixedAssetTurnover_ttm"
+        data_requirements: ["financial_data"]
+  
+  # 📈 技术因子 (Technical Factors)
+  technical:
+    description: "基于价格、成交量等市场数据的技术指标因子"
+    enabled: true
+    priority: 2
+    
+    # 价格动量因子 (Price Momentum)
+    momentum:
+      - name: "Price_Momentum_1M"
+        description: "1个月价格动量"
+        calculator: "PriceFactorCalculator"
+        method: "calculate_momentum"
+        parameters: {"window": 22}
+        data_requirements: ["price_data"]
+        
+      - name: "Price_Momentum_3M" 
+        description: "3个月价格动量"
+        calculator: "PriceFactorCalculator"
+        method: "calculate_momentum"
+        parameters: {"window": 66}
+        data_requirements: ["price_data"]
+        
+      - name: "Price_Momentum_6M"
+        description: "6个月价格动量"
+        calculator: "PriceFactorCalculator"
+        method: "calculate_momentum"
+        parameters: {"window": 132}
+        data_requirements: ["price_data"]
+        
+      - name: "Price_Momentum_12M"
+        description: "12个月价格动量"
+        calculator: "PriceFactorCalculator"
+        method: "calculate_momentum"
+        parameters: {"window": 252}
+        data_requirements: ["price_data"]
+        
+      - name: "Price_Reversal_1M"
+        description: "1个月价格反转"
+        calculator: "PriceFactorCalculator"
+        method: "calculate_reversal"
+        parameters: {"window": 22}
+        data_requirements: ["price_data"]
+        
+    # 波动率因子 (Volatility)
+    volatility:
+      - name: "Volatility_1M"
+        description: "1个月波动率"
+        calculator: "VolatilityFactorCalculator"
+        method: "calculate_volatility"
+        parameters: {"window": 22}
+        data_requirements: ["price_data"]
+        
+      - name: "Volatility_3M"
+        description: "3个月波动率"
+        calculator: "VolatilityFactorCalculator"
+        method: "calculate_volatility"
+        parameters: {"window": 66}
+        data_requirements: ["price_data"]
+        
+      - name: "Volatility_6M"
+        description: "6个月波动率"
+        calculator: "VolatilityFactorCalculator"
+        method: "calculate_volatility"
+        parameters: {"window": 132}
+        data_requirements: ["price_data"]
+        
+      - name: "Volatility_12M"
+        description: "12个月波动率"
+        calculator: "VolatilityFactorCalculator"
+        method: "calculate_volatility"
+        parameters: {"window": 252}
+        data_requirements: ["price_data"]
+
+  # 🎯 风险因子 (Risk Factors)
+  risk:
+    description: "市场风险、Beta等风险相关因子"
+    enabled: true
+    priority: 3
+    
+    # Beta因子
+    beta:
+      - name: "Market_Beta"
+        description: "市场Beta(默认252天)"
+        calculator: "BetaFactorCalculator"
+        method: "calculate_market_beta"
+        parameters: {"window": 252}
+        data_requirements: ["price_data", "market_index"]
+        
+      - name: "Market_Beta_60D"
+        description: "60天市场Beta"
+        calculator: "BetaFactorCalculator"
+        method: "calculate_market_beta"
+        parameters: {"window": 60}
+        data_requirements: ["price_data", "market_index"]
+        
+      - name: "Market_Beta_120D"
+        description: "120天市场Beta"
+        calculator: "BetaFactorCalculator"
+        method: "calculate_market_beta"
+        parameters: {"window": 120}
+        data_requirements: ["price_data", "market_index"]
+        
+      - name: "Downside_Beta"
+        description: "下行Beta"
+        calculator: "BetaFactorCalculator"
+        method: "calculate_downside_beta"
+        data_requirements: ["price_data", "market_index"]
+        
+      - name: "Beta_Stability"
+        description: "Beta稳定性"
+        calculator: "BetaFactorCalculator"
+        method: "calculate_beta_stability"
+        data_requirements: ["price_data", "market_index"]
+
+  # 🏢 混合因子 (Mixed Factors - 需要多种数据)
+  mixed:
+    description: "需要多种数据源的综合因子"
+    enabled: true
+    priority: 4
+    
+    # 估值因子 (Valuation)
+    valuation:
+      - name: "BP"
+        description: "净资产市值比(Book-to-Price)"
+        calculator: "ValuationFactorCalculator"
+        method: "calculate_BP"
+        data_requirements: ["financial_data", "market_cap"]
+        
+      - name: "EP_ttm"
+        description: "收益市值比(Earnings-to-Price TTM)"
+        calculator: "ValuationFactorCalculator"
+        method: "calculate_EP_ttm"
+        data_requirements: ["financial_data", "market_cap"]
+        
+      - name: "SP_ttm"
+        description: "销售收入市值比(Sales-to-Price TTM)"
+        calculator: "ValuationFactorCalculator"
+        method: "calculate_SP_ttm"
+        data_requirements: ["financial_data", "market_cap"]
+        
+      - name: "CFP_ttm"
+        description: "现金流市值比(CashFlow-to-Price TTM)"
+        calculator: "ValuationFactorCalculator"
+        method: "calculate_CFP_ttm"
+        data_requirements: ["financial_data", "market_cap"]
+        
+    # 规模因子 (Size)
+    size:
+      - name: "Size"
+        description: "市值规模因子"
+        calculator: "custom"  # 特殊处理
+        method: "direct_market_cap"
+        data_requirements: ["market_cap"]
+        
+      - name: "LogSize"
+        description: "对数市值规模因子"
+        calculator: "custom"  # 特殊处理
+        method: "log_market_cap"
+        data_requirements: ["market_cap"]
+    
+    # 盈余惊喜因子
+    earnings_surprise:
+      - name: "SUE"
+        description: "标准化未预期盈余(Standardized Unexpected Earnings)"
+        calculator: "SUEFactorCalculator"
+        method: "calculate_SUE"
+        data_requirements: ["financial_data", "release_dates"]
+
+# 因子生成预设模式
+generation_modes:
+  # 核心因子 - 最重要的20个因子
+  core:
+    description: "核心因子集合，包含最重要的因子"
+    factors:
+      - "ROE_ttm"
+      - "ROA_ttm" 
+      - "BP"
+      - "EP_ttm"
+      - "Size"
+      - "LogSize"
+      - "Price_Momentum_1M"
+      - "Price_Momentum_12M"
+      - "Volatility_1M"
+      - "Volatility_3M"
+      - "Market_Beta"
+      - "CurrentRatio"
+      - "DebtToAssets"
+      - "AssetTurnover_ttm"
+      - "RevenueGrowth_yoy"
+      - "NetIncomeGrowth_yoy"
+      - "OperatingCashFlowRatio_ttm"
+      - "SUE"
+      - "GrossProfitMargin_ttm"
+      - "NetProfitMargin_ttm"
+  
+  # 基础因子 - 包含各个大类的代表性因子
+  basic:
+    description: "基础因子集合，覆盖主要因子大类"
+    factors:
+      - "ROE_ttm"
+      - "BP"
+      - "Size"
+      - "Price_Momentum_1M"
+      - "Volatility_1M" 
+      - "Market_Beta"
+      - "CurrentRatio"
+      - "AssetTurnover_ttm"
+  
+  # 测试因子 - 用于快速测试
+  test:
+    description: "测试用因子集合，数量较少"
+    factors:
+      - "ROE_ttm"
+      - "BP"
+      - "Size"
+      - "Price_Momentum_1M"
+      
+# 数据要求映射 
+data_requirements:
+  financial_data:
+    file_path: "data/auxiliary/FinancialData_unified.pkl"
+    description: "统一格式的财务数据"
+    required: true
+    
+  market_cap:
+    file_path: "MarketCap.pkl"
+    alt_paths: ["LogMarketCap.pkl", "data/auxiliary/MarketCap.pkl"]
+    description: "市值数据"
+    required: false
+    
+  price_data:
+    file_path: "Price.pkl"
+    description: "日线价格数据"
+    required: false
+    
+  release_dates:
+    file_path: "data/auxiliary/ReleaseDates.pkl" 
+    description: "财报发布日期数据"
+    required: false
+    
+  trading_dates:
+    file_path: "data/auxiliary/TradingDates.pkl"
+    description: "交易日历数据"  
+    required: false
+    
+  market_index:
+    file_path: "MarketIndex.pkl"
+    description: "市场指数数据(计算Beta用)"
+    required: false
+
+# 质量控制配置
+quality_control:
+  # 数据质量阈值
+  max_null_ratio: 0.7        # 最大空值比例
+  max_inf_count: 1000        # 最大无穷值数量
+  min_unique_count: 10       # 最小唯一值数量
+  min_quality_score: 60      # 最小质量分数
+  
+  # 自动修复选项
+  auto_fix_inf: true         # 自动修复无穷值
+  auto_fill_null: false      # 自动填充空值(慎用)
+  outlier_detection: true    # 异常值检测
+  
+# 输出配置
+output:
+  save_format: "pickle"      # 保存格式: pickle, csv, hdf5
+  compression: true          # 启用压缩
+  backup_count: 3            # 备份文件数量
+  generate_report: true      # 生成HTML报告
+  
+# 日志配置
+logging:
+  level: "INFO"              # 日志级别: DEBUG, INFO, WARNING, ERROR
+  save_log: true             # 保存日志文件
+  log_rotation: true         # 日志轮转
+  max_log_size: "10MB"       # 最大日志文件大小

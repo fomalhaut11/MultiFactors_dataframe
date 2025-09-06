@@ -21,10 +21,10 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 import logging
 from datetime import datetime, time
 from data.fetcher.incremental_price_updater import IncrementalPriceUpdater
-from core.config_manager import get_path
+from config import get_config
 
 # 配置日志到文件
-log_dir = os.path.join(get_path('data_root'), 'logs')
+log_dir = os.path.join(get_config('main.paths.data_root'), 'logs')
 os.makedirs(log_dir, exist_ok=True)
 
 log_file = os.path.join(log_dir, f"price_update_{datetime.now().strftime('%Y%m%d')}.log")

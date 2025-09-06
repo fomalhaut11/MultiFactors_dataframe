@@ -1,0 +1,415 @@
+# A股多因子量化预测系统 - 主配置文件
+# 配置文件版本: beta
+# 创建时间: 2025-01-29
+
+# =============================================================================
+# 数据库配置 (敏感信息已移至.env文件)
+# =============================================================================
+database:
+  # 主数据库（股票数据） - 实际值从环境变量读取
+  host: '${DB_HOST}'
+  user: '${DB_USER}'
+  password: '${DB_PASSWORD}'
+  database: '${DB_DATABASE}'
+  
+  # 其他数据库 - 实际值从环境变量读取
+  min_database: '${DB_MIN_DATABASE}'    # 分钟数据.
+  jq_database: '${DB_JQ_DATABASE}'         # 聚宽数据
+  wind_database: '${DB_WIND_DATABASE}'         # Wind数据
+  
+  # 数据表配置
+  tables:
+    # 价格数据表
+    price: "[stock_data].[dbo].[day5]"
+    
+    # 财务数据表
+    financial:
+      lrb: "[stock_data].[dbo].[lrb]"      # 利润表
+      xjlb: "[stock_data].[dbo].[xjlb]"    # 现金流量表
+      fzb: "[stock_data].[dbo].[fzb]"      # 资产负债表
+    
+    # 市场数据表
+    stop_price: "[stock_data].[dbo].[lgc_涨跌停板]"
+    all_stocks: "[stock_data].[dbo].[all_stocks]"
+    st_stocks: "[stock_data].[dbo].[ST]"
+    
+    # 宏观数据表
+    macro_industry: "[stock_data].[dbo].[lgc_行业经济数据]"
+    us_treasury: "[stock_data].[dbo].[美国国债收益率及CPI]"
+    
+    # 指数数据表
+    wind_index: "[stock_data].[dbo].[wind_index]"
+    
+    # 板块数据表
+    concept: "[stock_data].[dbo].[lgc_板块成份股]"
+    sector_changes: "[stock_data].[dbo].[lgc_板块进出表]"
+    
+    # 预报数据表
+    foreshow: "[stock_data].[dbo].[foreshow]"
+  
+# 数据更新配置
+data_update:
+  # 默认更新模式：full（全量）或 incremental（增量）
+  default_mode: 'incremental'
+  # 全量更新起始日期
+  full_update_start: 20140101
+  # 增量更新起始日期（会被本地数据最新日期覆盖）
+  incremental_update_start: 20250101
+# =============================================================================
+# 路径配置
+# =============================================================================
+paths:
+  # 项目根目录 (会自动设置)
+  project_root: 'E:\Documents\PythonProject\StockProject\MultiFactors\MutiFactors_1.0'
+  
+  # 数据存储路径
+  data_root: 'E:\Documents\PythonProject\StockProject\StockData'
+  raw_factors: 'E:\Documents\PythonProject\StockProject\StockData\RawFactors'
+  raw_factors_alpha191: 'E:\Documents\PythonProject\StockProject\StockData\RawFactors_alpha191'
+  orthogonalization_factors: 'E:\Documents\PythonProject\StockProject\StockData\OrthogonalizationFactors'
+  classification_data: 'E:\Documents\PythonProject\StockProject\StockData\Classificationdata'
+  single_factor_test: 'E:\Documents\PythonProject\StockProject\StockData\SingleFactorTestData'
+  temp_data: 'E:\Documents\PythonProject\StockProject\StockData\TempData'
+  
+  # 因子存储路径 (新增)
+  factors: 'E:\Documents\PythonProject\StockProject\StockData\factors'
+  
+  # 股票池存储路径 (新增)
+  stock_universe: 'E:\Documents\PythonProject\StockProject\StockData\stock_universe'
+  
+  # 输出路径
+  results: './results'
+  logs: './logs' 
+  cache: './cache'
+
+# =============================================================================
+# 因子测试配置
+# =============================================================================
+factor_test:
+  # 测试时间范围
+  begin_date: '2018-01-01'
+  end_date: '2025-12-31'
+  
+  # 回测设置
+  backtest_type: 'daily'        # daily, weekly, monthly
+  group_nums: 10                # 分组数量
+  netral_base: true             # 是否基准中性化
+  back_test_trading_price: 'o2o' # 交易价格类型: o2o, vwap
+  
+  # 因子版本选择
+  use_orthogonal_factors: false  # 是否优先使用预中性化因子
+  factor_version: 'auto'        # 因子版本: 'raw', 'orthogonal', 'auto'
+  
+  # 基准因子
+  base_factors: 
+    - 'LogMarketCap'
+    - 'BP'
+    - 'EP_ttm'
+    - 'ma_120'
+    - 'Vol_120'
+  
+  # 分类器配置  
+  classification_name: 'classification_one_hot'
+  matrix_name: 'similarity_matrix'
+  nearest_nums: 50
+
+# =============================================================================
+# 数据处理配置
+# =============================================================================
+data_processing:
+  # 因子制备阶段配置 (通用层 - 宽松去极值)
+  factor_preparation:
+    outlier_method: 'IQR'       # 去极值方法
+    outlier_param: 6            # 宽松去极值参数，保留更多信息
+    normalization_method: 'zscore'
+    description: "因子制备阶段使用宽松参数，为多种股票池保留更多信息"
+  
+  # 因子测试阶段配置 (应用层 - 正常去极值)
+  factor_testing:
+    outlier_method: 'IQR'       # 去极值方法
+    outlier_param: 3            # 正常去极值参数，适合特定股票池
+    normalization_method: 'zscore'
+    cross_sectional_neutralize: true  # 股票池内截面中心化
+    description: "因子测试阶段使用正常参数，针对特定股票池优化"
+  
+  # 向后兼容：默认配置 (用于不指定阶段的场景)
+  outlier_method: 'IQR'         # IQR, median, mean
+  outlier_param: 5              # 中等去极值参数 (向后兼容)
+  normalization_method: 'zscore' # zscore, minmax, robust
+  
+  # 缺失值处理
+  fill_method: 'ffill'          # ffill, bfill, median, mean
+  min_periods: 252              # 最少交易日数
+  max_missing_ratio: 0.5        # 最大缺失率
+
+# =============================================================================
+# 机器学习模型配置
+# =============================================================================
+ml_models:
+  # LightGBM配置
+  lightgbm:
+    objective: 'regression'
+    metric: 'rmse'
+    boosting_type: 'gbdt'
+    num_leaves: 31
+    learning_rate: 0.05
+    feature_fraction: 0.9
+    bagging_fraction: 0.8
+    bagging_freq: 5
+    verbose: -1
+    random_state: 42
+    n_estimators: 100
+    early_stopping_rounds: 20
+    max_depth: 8
+    min_child_samples: 20
+    reg_alpha: 0.1
+    reg_lambda: 0.1
+  
+  # 交叉验证配置
+  cross_validation:
+    n_splits: 5
+    test_size: 0.2
+    random_state: 42
+
+# =============================================================================
+# 股票池配置
+# =============================================================================
+stock_pools:
+  # 基础筛选条件
+  min_price: 2.0                # 最低股价(元)
+  min_market_cap: 5000000000    # 最小市值(50亿)
+  max_suspend_days: 30          # 最大停牌天数
+  
+  # 股票类型筛选
+  exclude_st: true              # 排除ST股票
+  exclude_new_stocks: true      # 排除新股
+  new_stock_days: 252           # 新股定义天数
+  
+  # 流动性筛选
+  liquidity_threshold: 1000000  # 流动性阈值(成交额)
+  min_turnover_rate: 0.001      # 最小换手率
+  
+  # 交易所筛选
+  exclude_exchanges: ['BJ']     # 排除的交易所
+  
+  # 行业筛选
+  exclude_industries: []        # 排除的行业
+  
+  # 动态股票池配置
+  rebalance_frequency: 'monthly' # 调仓频率
+  pool_size: 500                # 股票池大小
+
+# =============================================================================
+# 因子工程配置
+# =============================================================================
+factor_engineering:
+  # 技术指标周期
+  technical_periods: [5, 10, 20, 60, 120]
+  ma_periods: [5, 10, 20, 60, 120]
+  volatility_periods: [20, 60, 120]
+  momentum_periods: [5, 10, 20, 60]
+  
+  # 特定指标配置
+  rsi_period: 14
+  bollinger_period: 20
+  bollinger_std: 2.0
+  
+  # 因子组合配置
+  combination_methods: 
+    - 'arithmetic'
+    - 'geometric'
+    - 'rank_weighted'
+    - 'pca'
+  
+  # 交互特征配置
+  interaction_types:
+    - 'multiply'
+    - 'divide'
+    - 'subtract'
+    - 'rank_interaction'
+  
+  # 因子筛选配置
+  min_ic: 0.02                  # 最小IC阈值
+  min_ic_ir: 0.5                # 最小IC_IR阈值
+  max_correlation: 0.8          # 最大相关性阈值
+
+# =============================================================================
+# 因子分析配置
+# =============================================================================
+factor_analyzer:
+  # 筛选标准默认值
+  screening:
+    ic_mean_min: 0.02          # IC均值最小阈值
+    ic_std_max: 0.05           # IC标准差最大阈值
+    icir_min: 0.5              # ICIR最小阈值
+    monotonicity_min: 0.6      # 单调性最小阈值
+    sharpe_min: 1.0            # 夏普比率最小阈值
+    t_value_min: 2.0           # t值最小阈值（绝对值）
+    win_rate_min: 0.55         # 胜率最小阈值
+    max_drawdown_limit: 0.3    # 最大回撤限制
+    
+  # 稳定性分析
+  stability:
+    lookback_window: 30        # 回望窗口（天）
+    min_test_count: 3          # 最少测试次数
+    rolling_window: 252        # 滚动窗口（交易日）
+    stability_threshold: 0.7   # 稳定性阈值
+    
+  # 相关性分析
+  correlation:
+    method: 'pearson'          # pearson, spearman, kendall
+    threshold: 0.7             # 高相关阈值
+    cluster_method: 'ward'     # 聚类方法
+    max_correlation: 0.95      # 最大相关系数（去重用）
+    
+  # 因子组合
+  combination:
+    default_method: 'ic_weight' # equal_weight, ic_weight, optimal
+    max_factors: 10            # 最大因子数量
+    min_weight: 0.05           # 最小权重
+    max_weight: 0.4            # 最大权重
+    rebalance_freq: 'monthly'  # 再平衡频率
+    
+  # 报告设置
+  reports:
+    output_format: 'html'      # html, pdf, excel
+    include_charts: true       # 是否包含图表
+    language: 'zh_CN'          # 报告语言
+    save_path: './results/factor_analysis'  # 报告保存路径
+    
+  # 缓存设置
+  cache:
+    enable: true               # 是否启用缓存
+    ttl: 86400                 # 缓存有效期（秒）
+    max_size: 1000             # 最大缓存条目
+    cache_path: './cache/analyzer'  # 缓存路径
+
+# =============================================================================
+# 风险管理配置
+# =============================================================================
+risk_management:
+  # 仓位控制
+  max_position: 0.05            # 单股最大仓位
+  max_sector_exposure: 0.3      # 单行业最大暴露
+  max_total_leverage: 1.0       # 最大总杠杆
+  
+  # 风险控制
+  max_drawdown: 0.15            # 最大回撤
+  stop_loss: 0.08               # 止损线
+  profit_taking: 0.15           # 止盈线
+  
+  # 调仓设置
+  rebalance_frequency: 'monthly' # 调仓频率
+  min_rebalance_threshold: 0.05  # 最小调仓阈值
+  
+  # 风险模型
+  risk_model: 'barra'           # barra, fama_french
+  factor_exposure_limit: 2.0     # 因子暴露限制
+
+# =============================================================================
+# 回测配置
+# =============================================================================
+backtest:
+  # 回测时间范围
+  start_date: '2014-01-01'
+  end_date: '2020-12-31'
+  
+  # 交易设置
+  trading_cost: 0.003           # 交易成本
+  slippage: 0.001               # 滑点
+  min_order_size: 100           # 最小交易单位
+  
+  # 基准设置
+  benchmark: 'SH000300'         # 基准指数
+  
+  # 评估指标
+  evaluation_metrics:
+    - 'annual_return'
+    - 'volatility'
+    - 'sharpe_ratio'
+    - 'max_drawdown'
+    - 'calmar_ratio'
+    - 'information_ratio'
+
+# =============================================================================
+# 系统配置
+# =============================================================================
+system:
+  # 日志配置
+  log_level: 'INFO'             # DEBUG, INFO, WARNING, ERROR
+  log_format: '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+  log_file: 'multifactor.log'
+  log_rotation: 'daily'         # daily, weekly, monthly
+  log_retention: 30             # 日志保留天数
+  
+  # 性能配置
+  cache_enabled: true           # 是否启用缓存
+  parallel_jobs: -1             # 并行任务数量 (-1表示使用所有CPU)
+  memory_limit: '8GB'           # 内存限制
+  chunk_size: 10000             # 批处理大小
+  
+  # 数据库连接池配置
+  db_pool_size: 5               # 数据库连接池大小
+  db_pool_timeout: 30           # 连接超时时间
+  db_retry_times: 3             # 重试次数
+  
+  # 缓存配置
+  cache_expire: 3600            # 缓存过期时间(秒)
+  cache_max_size: 1000          # 最大缓存条目数
+
+# =============================================================================
+# 模块特定配置
+# =============================================================================
+modules:
+  # 数据加载器配置
+  data_loader:
+    batch_size: 1000
+    prefetch_factor: 2
+    num_workers: 4
+    
+  # 因子计算器配置  
+  factor_calculator:
+    update_frequency: 'daily'
+    calculation_method: 'vectorized'
+    
+  # 股票池管理器配置
+  pool_manager:
+    update_frequency: 'monthly'
+    selection_method: 'quantile'
+    
+  # 回测引擎配置
+  backtest_engine:
+    simulation_frequency: 'daily'
+    portfolio_update: 'monthly'
+
+# =============================================================================
+# 开发和调试配置
+# =============================================================================
+development:
+  # 调试模式
+  debug_mode: false
+  test_mode: false
+  
+  # 数据采样 (调试时使用)
+  sample_stocks: 100            # 采样股票数量
+  sample_dates: 252             # 采样交易日数
+  
+  # 性能监控
+  profile_enabled: false        # 是否启用性能分析
+  memory_monitor: false         # 是否监控内存使用
+
+# =============================================================================
+# 环境配置
+# =============================================================================
+environment:
+  # 运行环境
+  env: 'production'             # development, testing, production
+  
+  # 时区设置
+  timezone: 'Asia/Shanghai'
+  
+  # 编码设置
+  encoding: 'utf-8'
+  
+  # 随机种子
+  random_seed: 42

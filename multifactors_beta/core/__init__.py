@@ -3,8 +3,19 @@
 提供项目核心功能的便捷访问接口
 """
 
-# 配置管理
-from .config_manager import ConfigManager, get_config, get_path
+# 简单的编码修复 - 只在必要时执行
+import os
+import sys
+if sys.platform.startswith('win') and os.environ.get('PYTHONIOENCODING') != 'utf-8':
+    os.environ.setdefault('PYTHONIOENCODING', 'utf-8')
+    # 静默设置控制台代码页
+    try:
+        os.system('chcp 65001 >nul 2>&1')
+    except:
+        pass
+
+# 配置管理 - 使用新的统一配置管理器
+from config import ConfigManager, get_config, config_manager
 
 # 数据库连接
 from .database.connection_manager import DatabaseManager
@@ -137,7 +148,7 @@ def load_factor_data(factor_name: str):
     import pandas as pd
     from pathlib import Path
     
-    factor_path = Path(get_path('raw_factors')) / f'{factor_name}.pkl'
+    factor_path = Path(get_config('main.paths.raw_factors')) / f'{factor_name}.pkl'
     if factor_path.exists():
         return pd.read_pickle(factor_path)
     else:
@@ -171,7 +182,7 @@ def get_factor_test_result(factor_name: str):
     
     manager = ResultManager()
     # 查找最新的测试结果
-    test_path = Path(get_path('single_factor_test'))
+    test_path = Path(get_config('main.paths.single_factor_test'))
     pattern = f"*/{factor_name}_*.pkl"
     files = list(test_path.glob(pattern))
     
@@ -188,7 +199,7 @@ __all__ = [
     # 配置管理
     'ConfigManager',
     'get_config', 
-    'get_path',
+    'config_manager',
     # 数据库
     'DatabaseManager',
     'SQLExecutor',

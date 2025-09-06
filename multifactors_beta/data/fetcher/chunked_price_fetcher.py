@@ -17,8 +17,8 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-from core.config_manager import get_path, get_config
-from core.database import execute_stock_data_query, execute_query
+from config import get_config
+from core.database import execute_stock_data_query, execute_query, get_db_table_config
 
 logger = logging.getLogger(__name__)
 
@@ -36,13 +36,15 @@ class ChunkedPriceFetcher:
         """
         self.chunk_days = chunk_days
         self.chunk_stocks = chunk_stocks
-        self.data_root = get_path('data_root')
+        self.data_root = get_config('main.paths.data_root')
+        # 获取数据库表名配置
+        self.db_config = get_db_table_config()
         
         logger.info(f"初始化分块价格获取器 - 分块天数: {chunk_days}, 分块股票数: {chunk_stocks}")
     
     def get_stock_list(self, db_name: str = 'database') -> List[str]:
         """获取所有股票代码列表"""
-        sql = "SELECT DISTINCT code FROM [stock_data].[dbo].[day5] ORDER BY code"
+        sql = f"SELECT DISTINCT code FROM {self.db_config.price_table} ORDER BY code"
         results = execute_query(sql, db_name)
         stock_codes = [row[0] for row in results]
         logger.info(f"获取到 {len(stock_codes)} 只股票")
@@ -117,7 +119,7 @@ class ChunkedPriceFetcher:
         base_sql = """
         SELECT [code],[tradingday],[o],[h],[l],[c],[v],[amt],[adjfactor],
                [total_shares],[free_float_shares],[exchange_id] 
-        FROM [stock_data].[dbo].[day5] 
+        FROM {self.db_config.price_table} 
         WHERE tradingday >= {begin_date} AND tradingday <= {end_date}
         """
         

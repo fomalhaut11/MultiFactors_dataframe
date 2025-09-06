@@ -26,6 +26,27 @@ class RegressionResult:
     factor_return: pd.Series  # 因子收益序列
     cumulative_return: pd.Series  # 累计收益
     
+    @property
+    def factor_return_mean(self) -> float:
+        """平均因子收益"""
+        if len(self.factor_return) > 0:
+            return float(self.factor_return.mean())
+        return 0.0
+    
+    @property
+    def t_stat_mean(self) -> float:
+        """平均t统计量"""
+        if len(self.tvalues) > 0:
+            return float(self.tvalues.mean())
+        return 0.0
+        
+    @property
+    def significance_ratio(self) -> float:
+        """显著性比例(p<0.05)"""
+        if len(self.pvalues) > 0:
+            return float((self.pvalues < 0.05).mean())
+        return 0.0
+    
     def to_dict(self) -> Dict:
         """转换为字典"""
         # 安全地转换Series为字典，处理Timestamp索引
@@ -83,6 +104,13 @@ class ICResult:
     rank_icir: float  # Rank IC信息比率
     ic_decay: pd.Series  # IC衰减
     
+    @property
+    def ic_win_rate(self) -> float:
+        """IC胜率"""
+        if len(self.ic_series) > 0:
+            return float((self.ic_series > 0).mean())
+        return 0.0
+    
     def to_dict(self) -> Dict:
         """转换为字典"""
         return {
@@ -113,6 +141,11 @@ class TestResult:
     test_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
     test_time: datetime = field(default_factory=datetime.now)
     factor_name: str = ""
+    
+    @property
+    def test_date(self) -> str:
+        """测试日期"""
+        return self.test_time.strftime('%Y-%m-%d %H:%M:%S')
     
     # 测试配置快照
     config_snapshot: Dict[str, Any] = field(default_factory=dict)

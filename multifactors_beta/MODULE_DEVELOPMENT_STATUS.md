@@ -656,7 +656,7 @@ FieldMapper: 字段映射管理器
 
 字段映射配置文件：
 - field_mapping.json: JSON格式配置
-- field_mapping.yaml: YAML格式配置
+- field_mapping.yaml: YAML格式配置 (已迁移到config/field_mappings.yaml)
 - 支持嵌套映射和条件映射
 
 状态：✅ 完整实现
@@ -716,7 +716,7 @@ MultiFactorBase: 多因子基类
 
 #### 5.2 数据处理工具
 ```python
-TimeSeriesProcessor:
+FinancialReportProcessor (原TimeSeriesProcessor):
 - calculate_ttm(): TTM计算
 - calculate_yoy(): 同比计算
 - calculate_qoq(): 环比计算

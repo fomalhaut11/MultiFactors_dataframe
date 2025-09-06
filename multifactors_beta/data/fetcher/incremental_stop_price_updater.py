@@ -25,9 +25,9 @@ from datetime import datetime, timedelta
 from typing import Optional, Tuple, Dict, Any
 import shutil
 
-from core.config_manager import get_path
-from core.database import execute_stock_data_query
-from .BasicDataLocalization import GetStockStopPrice
+from config import get_config
+from core.database import execute_stock_data_query, get_db_table_config
+from .data_fetcher import StockDataFetcher
 
 logger = logging.getLogger(__name__)
 
@@ -36,9 +36,14 @@ class IncrementalStopPriceUpdater:
     """涨跌停价格数据增量更新器"""
     
     def __init__(self):
-        self.data_root = get_path('data_root')
+        self.data_root = get_config('main.paths.data_root')
         self.stop_price_file = os.path.join(self.data_root, "StopPrice.pkl")
+        # 获取数据库表名配置
+        self.db_config = get_db_table_config()
         self.backup_dir = os.path.join(self.data_root, "backups")
+        
+        # 初始化数据获取器
+        self.fetcher = StockDataFetcher()
         
         # 确保备份目录存在
         os.makedirs(self.backup_dir, exist_ok=True)
@@ -91,7 +96,7 @@ class IncrementalStopPriceUpdater:
         """
         try:
             logger.info("查询数据库涨跌停数据最新日期...")
-            sql = "SELECT MAX(tradingday) as latest_date FROM [stock_data].[dbo].[lgc_涨跌停板]"
+            sql = f"SELECT MAX(tradingday) as latest_date FROM {self.db_config.stop_price_table}"
             result = execute_stock_data_query(sql, db_name='database')
             
             if not result.empty and not pd.isna(result.iloc[0, 0]):
@@ -148,7 +153,7 @@ class IncrementalStopPriceUpdater:
             
             sql = f"""
             SELECT DISTINCT [code],[tradingday],[high_limit],[low_limit] 
-            FROM [stock_data].[dbo].[lgc_涨跌停板] 
+            FROM {self.db_config.stop_price_table} 
             WHERE tradingday >= {start_date_int}
             ORDER BY tradingday, code
             """
@@ -229,12 +234,13 @@ class IncrementalStopPriceUpdater:
                 # 全量更新
                 logger.info("执行全量更新...")
                 try:
-                    new_data = GetStockStopPrice()
+                    # 使用StockDataFetcher获取涨跌停数据，不再依赖BasicDataLocalization
+                    new_data = self.fetcher.fetch_data('stop_price')
                     
                     if not new_data.empty:
-                        # 转换日期格式
+                        # 转换日期格式（data_fetcher已经处理了日期格式）
                         if not pd.api.types.is_datetime64_any_dtype(new_data['tradingday']):
-                            new_data['tradingday'] = pd.to_datetime(new_data['tradingday'], format='%Y%m%d')
+                            new_data['tradingday'] = pd.to_datetime(new_data['tradingday'])
                         
                         # 保存数据
                         new_data.to_pickle(self.stop_price_file)

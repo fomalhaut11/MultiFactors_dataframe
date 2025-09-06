@@ -45,10 +45,10 @@ def test_historical_fetcher():
                 logger.info("数据合并成功")
                 
                 # 验证生成的文件
-                from core.config_manager import get_path
+                from config import get_config
                 import pandas as pd
                 
-                price_file = os.path.join(get_path('data_root'), "Price.pkl")
+                price_file = os.path.join(get_config('main.paths.data_root'), "Price.pkl")
                 if os.path.exists(price_file):
                     data = pd.read_pickle(price_file)
                     logger.info(f"验证Price.pkl: 形状 {data.shape}")

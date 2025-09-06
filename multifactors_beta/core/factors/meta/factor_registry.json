@@ -1,0 +1,37 @@
+{
+  "CashflowEfficiencyRatio": {
+    "name": "CashflowEfficiencyRatio",
+    "type": "derived",
+    "description": "现金流效率比率：(财务费用+折旧)/销售现金流/净资产市值比",
+    "formula": "((FIN_EXP_CS + DEPR_FA_COGA_DPBA) / CASH_RECP_SG_AND_RS) / BP",
+    "neutralization_category": "optional",
+    "raw_version": null,
+    "orthogonal_version": null,
+    "created_date": "2025-08-26 14:00:37",
+    "updated_date": null,
+    "generator": "CashflowEfficiencyRatio",
+    "generator_params": null,
+    "is_orthogonalized": false,
+    "orthogonalization_date": null,
+    "control_factors": null,
+    "orthogonalization_method": null,
+    "data_range": null,
+    "coverage": null,
+    "update_frequency": null,
+    "test_results": null,
+    "performance_metrics": null,
+    "highly_correlated_factors": null,
+    "correlation_threshold": null,
+    "tags": [
+      "custom",
+      "mixed",
+      "cashflow",
+      "efficiency"
+    ],
+    "category": "financial_efficiency",
+    "priority": 5,
+    "is_active": true,
+    "quality_score": null,
+    "last_validation": null
+  }
+}

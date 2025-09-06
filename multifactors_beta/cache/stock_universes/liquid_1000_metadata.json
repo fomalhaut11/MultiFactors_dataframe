@@ -1,0 +1,9 @@
+{
+  "name": "liquid_1000",
+  "description": "Stock universe: liquid_1000",
+  "stock_count": 1000,
+  "created_date": "2025-09-02T22:14:25.784263",
+  "data_source": "computed",
+  "criteria": {},
+  "last_updated": null
+}

@@ -26,8 +26,8 @@ from typing import Optional, Tuple, Dict, Any, List
 import shutil
 from pathlib import Path
 
-from core.config_manager import get_path
-from core.database import execute_stock_data_query
+from config import get_config
+from core.database import execute_stock_data_query, get_db_table_config
 
 logger = logging.getLogger(__name__)
 
@@ -36,24 +36,26 @@ class IncrementalFinancialUpdater:
     """财务数据增量更新器"""
     
     def __init__(self):
-        self.data_root = get_path('data_root')
+        self.data_root = get_config('main.paths.data_root')
         self.backup_dir = os.path.join(self.data_root, "backups")
+        # 获取数据库表名配置
+        self.db_config = get_db_table_config()
         
         # 财务数据表配置
         self.tables = {
             'fzb': {
                 'local_file': 'fzb.pkl',
-                'db_table': '[stock_data].[dbo].[fzb]',
+                'db_table': self.db_config.fzb_table,
                 'description': '资产负债表'
             },
             'xjlb': {
                 'local_file': 'xjlb.pkl', 
-                'db_table': '[stock_data].[dbo].[xjlb]',
+                'db_table': self.db_config.xjlb_table,
                 'description': '现金流量表'
             },
             'lrb': {
                 'local_file': 'lrb.pkl',
-                'db_table': '[stock_data].[dbo].[lrb]',
+                'db_table': self.db_config.lrb_table,
                 'description': '利润表'
             }
         }

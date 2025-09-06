@@ -1,0 +1,114 @@
+# 因子字段映射配置
+# 定义每个因子需要的具体字段，防止传入错误数据
+
+# 财务因子字段映射
+financial_factors:
+  
+  # 盈余惊喜因子
+  SUE:
+    primary_field: "NET_PROFIT_EXCL_MIN_INT_INC"  # 扣非净利润（主要）
+    alternative_fields:
+      - "EPS_BASIC_IS"       # 基本每股收益
+      - "NET_PROFIT_IS"      # 净利润
+    description: "标准化未预期盈余因子"
+    data_type: "single_column"
+    
+  EarningsRevision:
+    primary_field: "EPS_BASIC_IS"
+    description: "盈余修正因子"
+    data_type: "single_column"
+  
+  EarningsMomentum:
+    primary_field: "NET_PROFIT_EXCL_MIN_INT_INC"
+    description: "盈余动量因子"
+    data_type: "single_column"
+  
+  # 单字段财务因子
+  Revenue_Growth:
+    primary_field: "TOT_OPER_REV"  # 营业总收入
+    description: "营收增长因子"
+    data_type: "single_column"
+  
+  Operating_Margin:
+    primary_field: "OPER_PROFIT"   # 营业利润
+    secondary_field: "TOT_OPER_REV"  # 营业收入（用于计算利润率）
+    description: "营业利润率"
+    data_type: "ratio_calculation"
+  
+  # 多字段财务因子（由计算器内部处理字段组合）
+  ROE_ttm:
+    description: "净资产收益率TTM"
+    data_type: "multi_column"
+    required_fields:
+      - "NET_PROFIT_IS"          # 净利润
+      - "TOT_SHRHLDR_EQY_EXCL_MIN_INT"  # 股东权益
+    calculation_note: "由PureFinancialFactorCalculator内部处理"
+  
+  ROA_ttm:
+    description: "总资产收益率TTM"
+    data_type: "multi_column"
+    required_fields:
+      - "NET_PROFIT_IS"      # 净利润
+      - "TOT_ASSETS"         # 总资产
+    
+  CurrentRatio:
+    description: "流动比率"
+    data_type: "multi_column"
+    required_fields:
+      - "TOT_CUR_ASSETS"     # 流动资产
+      - "TOT_CUR_LIAB"       # 流动负债
+  
+  QuickRatio:
+    description: "速动比率"
+    data_type: "multi_column"
+    required_fields:
+      - "TOT_CUR_ASSETS"     # 流动资产
+      - "INVENTORIES"        # 存货
+      - "TOT_CUR_LIAB"       # 流动负债
+
+# 技术因子字段映射
+technical_factors:
+  Momentum_5d:
+    primary_field: "returns_daily"
+    description: "5日动量因子"
+    data_type: "single_column"
+    
+  Momentum_20d:
+    primary_field: "returns_daily"  
+    description: "20日动量因子"
+    data_type: "single_column"
+  
+  RSI_14:
+    primary_field: "close_price"
+    description: "14日相对强弱指标"
+    data_type: "single_column"
+
+# 混合因子字段映射
+mixed_factors:
+  PE_ratio:
+    financial_field: "EPS_BASIC_IS"
+    market_field: "close_price"
+    description: "市盈率"
+    data_type: "cross_type"
+  
+  PB_ratio:
+    financial_field: "book_value_per_share"
+    market_field: "close_price" 
+    description: "市净率"
+    data_type: "cross_type"
+
+# 因子数据验证规则
+validation_rules:
+  single_column:
+    input_type: "pd.Series"
+    index_levels: 2
+    index_names: ["ReportDates", "StockCodes"]
+    
+  multi_column:
+    input_type: "pd.DataFrame"
+    index_levels: 2
+    index_names: ["ReportDates", "StockCodes"]
+    
+  cross_type:
+    input_type: "dict"
+    required_keys: ["financial_data", "market_data"]

@@ -14,7 +14,7 @@ import time
 import json
 from datetime import datetime, timedelta
 from data.fetcher.chunked_price_fetcher import ChunkedPriceFetcher
-from core.config_manager import get_path
+from config import get_config
 
 # 配置日志
 logging.basicConfig(
@@ -31,7 +31,7 @@ class HistoricalPriceFetcher:
     def __init__(self):
         # 使用更小的分块以确保稳定性
         self.fetcher = ChunkedPriceFetcher(chunk_days=30, chunk_stocks=1000)
-        self.data_root = get_path('data_root')
+        self.data_root = get_config('main.paths.data_root')
         self.progress_file = os.path.join(self.data_root, "price_fetch_progress.json")
         self.temp_dir = os.path.join(self.data_root, "temp_chunks")
         
@@ -311,7 +311,7 @@ def main():
     print("=" * 70)
     
     # 检查是否有进度文件
-    progress_file = os.path.join(get_path('data_root'), "price_fetch_progress.json")
+    progress_file = os.path.join(get_config('main.paths.data_root'), "price_fetch_progress.json")
     has_progress = os.path.exists(progress_file)
     
     if has_progress:

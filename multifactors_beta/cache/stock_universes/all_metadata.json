@@ -1,0 +1,9 @@
+{
+  "name": "all",
+  "description": "Stock universe: all",
+  "stock_count": 5694,
+  "created_date": "2025-09-03T10:29:28.474230",
+  "data_source": "computed",
+  "criteria": {},
+  "last_updated": null
+}

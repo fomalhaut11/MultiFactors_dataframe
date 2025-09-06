@@ -1,0 +1,9 @@
+{
+  "name": "high_turnover_5d_20m",
+  "description": "Stock universe: high_turnover_5d_20m",
+  "stock_count": 5665,
+  "created_date": "2025-09-03T15:29:09.400229",
+  "data_source": "computed",
+  "criteria": {},
+  "last_updated": null
+}

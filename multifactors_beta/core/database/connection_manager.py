@@ -12,7 +12,7 @@ import time
 from contextlib import contextmanager
 from typing import Dict, Any, Optional, Union
 from datetime import datetime, timedelta
-from core.config_manager import get_database_config
+from config import get_config, config_manager, get_database_config
 
 logger = logging.getLogger(__name__)
 
@@ -64,7 +64,8 @@ class ConnectionPool:
                 password=self.db_config['password'],
                 database=self.db_config['database'],
                 timeout=30,
-                login_timeout=30
+                login_timeout=30,
+                charset='utf8'  # 添加UTF-8编码支持
             )
             logger.debug(f"创建新连接到数据库: {self.db_config['database']}")
             return conn

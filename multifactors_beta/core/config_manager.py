@@ -130,6 +130,7 @@ class ConfigManager:
                 'classification_data': str(project_root.parent.parent.parent / 'StockData' / 'Classificationdata'),
                 'single_factor_test': str(project_root.parent.parent.parent / 'StockData' / 'SingleFactorTestData'),
                 'temp_data': str(project_root.parent.parent.parent / 'StockData' / 'TempData'),
+                'factors': str(project_root.parent.parent.parent / 'StockData' / 'factors'),
                 'results': str(project_root / 'results'),
                 'logs': str(project_root / 'logs'),
                 'cache': str(project_root / 'cache')
@@ -282,7 +283,7 @@ class ConfigManager:
         log_file = log_config.get('log_file', 'multifactor.log')
         
         # 设置日志目录
-        log_dir = Path(self.get_path('logs', './logs'))
+        log_dir = Path(self.get('paths', 'logs') or './logs')
         log_dir.mkdir(parents=True, exist_ok=True)
         log_path = log_dir / log_file
         
@@ -500,7 +501,7 @@ class ConfigManager:
                 return False
         
         # 验证路径配置
-        data_root = self.get_path('data_root')
+        data_root = self.get('paths', 'data_root')
         if not data_root or not Path(data_root).exists():
             if hasattr(self, 'logger'):
                 self.logger.warning(f"数据根目录不存在: {data_root}")
@@ -551,5 +552,5 @@ if __name__ == "__main__":
     
     # 测试获取配置
     print(f"\nDatabase host: {config.get('database', 'host')}")
-    print(f"Data root: {config.get_path('data_root')}")
+    print(f"Data root: {config.get('paths', 'data_root')}")
     print(f"Factor test config: {config.get_factor_test_config()}")

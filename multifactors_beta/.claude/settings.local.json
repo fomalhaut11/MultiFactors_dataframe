@@ -29,8 +29,25 @@
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(del PROJECT_STATUS.md)",
-      "Bash(git rm:*)"
+      "Bash(git rm:*)",
+      "Bash(del:*)",
+      "Read(/C:\\Users\\ZhangXi\\.claude/**)",
+      "Read(/E:\\Documents\\PythonProject\\StockProject\\StockData\\factors/**)",
+      "Read(/E:\\Documents\\PythonProject\\StockProject\\StockData\\Classificationdata/**)",
+      "Read(/E:\\Documents\\PythonProject\\StockProject\\StockData\\SingleFactorTestData/**)",
+      "Read(/C:\\Users\\ZhangXi\\.claude/**)",
+      "Read(/C:\\Users\\ZhangXi\\.claude/**)",
+      "Read(/C:\\Users\\ZhangXi\\.claude/**)",
+      "Bash(git restore:*)",
+      "Bash(taskkill:*)",
+      "Bash(pkill:*)",
+      "Read(E:\\Documents\\PythonProject/**)",
+      "WebSearch",
+      "Bash(tree:*)"
     ],
-    "deny": []
+    "deny": [],
+    "additionalDirectories": [
+      "E:\\Documents\\PythonProject\\StockProject"
+    ]
   }
 }

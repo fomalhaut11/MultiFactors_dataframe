@@ -17,10 +17,9 @@ import json
 
 from .data_processing_pipeline import DataProcessingPipeline
 from .price_processor import PriceDataProcessor
-from .optimized_return_calculator import OptimizedReturnCalculator
+from .return_calculator import ReturnCalculator
 from .financial_processor import FinancialDataProcessor
-from .parallel_optimizer import ParallelOptimizer, IncrementalProcessor
-from core.config_manager import get_path
+from config import get_config
 
 
 class ProgressMonitor:
@@ -244,7 +243,7 @@ class EnhancedDataProcessingPipeline(DataProcessingPipeline):
         # 检查是否需要更新
         if self.incremental_processor and not force_full:
             # 获取价格文件的最新日期
-            price_file = Path(get_path('data_root')) / "Price.pkl"
+            price_file = Path(get_config('main.paths.data_root')) / "Price.pkl"
             if price_file.exists():
                 file_mtime = datetime.fromtimestamp(price_file.stat().st_mtime)
                 
@@ -253,7 +252,7 @@ class EnhancedDataProcessingPipeline(DataProcessingPipeline):
                 ):
                     self.logger.info("价格数据未更新，使用缓存")
                     price_df = pd.read_pickle(price_file)
-                    stock_3d_file = Path(get_path('data_root')) / "Stock3d.pkl"
+                    stock_3d_file = Path(get_config('main.paths.data_root')) / "Stock3d.pkl"
                     
                     if stock_3d_file.exists():
                         stock_3d = pd.read_pickle(stock_3d_file)

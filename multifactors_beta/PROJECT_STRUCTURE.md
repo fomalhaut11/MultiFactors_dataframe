@@ -2,60 +2,107 @@
 
 ## 项目概述
 
-这是一个经过工程重构的多因子量化投资系统，具备生产级别的代码质量和性能表现。
+这是一个经过工程重构的多因子量化投资系统，具备生产级别的代码质量和性能表现。采用清晰的三层架构设计，支持从数据获取、因子生产到策略回测的完整投资研究流程。
+
+**🤖 核心特色：AI助手优先设计**
+本系统以AI助手为核心用户界面，通过智能路由机制，用户可通过自然语言完成复杂的量化研究任务。
+
+## 核心架构 
+
+### 四层架构设计
+- **AI助手层**：智能交互界面，自然语言量化研究
+- **数据层**：数据获取、预处理和质量管理
+- **因子层**：因子研究、生产和操作
+- **策略层**：策略构建、回测和评估
+- **基础层**：核心配置、工具和外部集成
 
 ## 目录结构
 
 ```
 multifactors_beta/
-├── 📋 项目文档
+├── 📋 项目文档与配置
 │   ├── README.md                    # 项目介绍和快速开始
 │   ├── PROJECT_STRUCTURE.md         # 本文件，项目结构说明
-│   ├── PROJECT_PROGRESS_20250812.md # 最新进度报告
-│   ├── MODULE_DEVELOPMENT_STATUS.md # 模块开发状态
-│   ├── config.yaml                  # 主配置文件
+│   ├── ARCHITECTURE_V3.md           # 四层架构设计文档
+│   ├── CLAUDE.md                    # Claude AI 使用配置
+│   ├── QUICK_REFERENCE.md           # 快速参考指南
+│   ├── DATA_MODULE_COMPLETE.md      # 数据模块完整指南
+│   ├── TESTING_REPORT.md            # 测试报告
+│   ├── subagent_config.yaml         # AI助手代理配置
 │   └── archive/                     # 历史文档归档
-│       └── docs/                    # 已归档的开发文档
+│       ├── docs/                    # 已归档的开发文档
+│       └── legacy/                  # 历史版本代码
+│
+├── 🤖 AI助手层
+│   ├── factors/ai_quant_assistant_v2.py  # AI量化助手V2.0（主要接口）
+│   ├── factor_manager.py            # 因子管理CLI工具
+│   └── config/agents.yaml           # AI代理专业配置
 │
 ├── 🏗️ 核心框架
 │   ├── core/                        # 核心功能模块
 │   │   ├── config_manager.py        # 配置管理器
+│   │   ├── data_registry.py         # 数据注册管理
 │   │   ├── database/                # 数据库连接管理
+│   │   ├── factors/                 # 因子核心组件
 │   │   ├── utils/                   # 工具函数库
+│   │   ├── cache/                   # 缓存管理
 │   │   └── logs/                    # 日志文件
-│   │
+│
+├── 📂 统一配置管理
+│   └── config/                      # 配置管理包 🆕
+│       ├── main.yaml                # 系统主配置
+│       ├── factors.yaml             # 因子生成配置
+│       ├── field_mappings.yaml      # 数据字段映射
+│       ├── agents.yaml              # AI代理配置
+│       └── schemas/                 # 配置模式定义
+│
+├── 🏗️ 因子研究框架
 │   └── factors/                     # 因子研究框架（v2.1重构版）
+│       ├── ai_quant_assistant_v2.py # AI量化助手V2.0（智能路由器）
 │       ├── ARCHITECTURE_DESIGN.md   # 架构设计文档（核心文档）
-│       ├── CODING_STANDARDS.md      # 编码规范
-│       ├── MODULE_STRUCTURE.md      # 模块结构详细说明
+│       ├── CLAUDE_USAGE_GUIDE.md    # Claude AI 使用指南
 │       │
 │       ├── base/                    # 基础框架层
 │       │   ├── factor_base.py       # 因子基类
 │       │   ├── data_processing_mixin.py     # 数据处理混入
-│       │   ├── time_series_processor.py     # 时间序列处理器
 │       │   ├── flexible_data_adapter.py     # 灵活数据适配器
 │       │   ├── validation.py        # 数据验证框架
 │       │   └── testable_mixin.py    # 可测试性支持
 │       │
 │       ├── generator/               # 因子生成层
 │       │   ├── factor_generator.py  # 生成器基类
-│       │   ├── financial/           # 财务因子
-│       │   │   ├── pure_financial_factors.py    # 纯财务因子（60+个）
-│       │   │   ├── earnings_surprise_factors.py # 盈余惊喜因子
-│       │   │   ├── experimental_factors.py      # 实验性因子
-│       │   │   └── financial_factors_adapter.py # 数据适配器
+│       │   ├── financial/           # 纯财务因子（仅依赖财务报表）
+│       │   │   ├── financial_report_processor.py # ✨ 财务报表数据处理器 (TTM/YoY/QoQ等) [迁移自base/]
+│       │   │   ├── earnings_surprise_factors.py  # 盈余惊喜因子
+│       │   │   ├── experimental_factors.py       # 实验性因子
+│       │   │   ├── ep_ttm_factor.py              # EP_ttm 因子示例
+│       │   │   └── financial_factors_adapter.py  # 数据适配器
+│       │   ├── mixed/               # 混合因子（需要多种数据源）🆕
+│       │   │   ├── mixed_factor_manager.py      # 混合因子统一管理器
+│       │   │   ├── valuation_factors.py         # 估值因子（财务+市值）
+│       │   │   └── __init__.py                  # 模块导入
 │       │   ├── technical/           # 技术因子
+│       │   │   ├── indicators/      # 技术指标库 [迁移自core/utils/]
+│       │   │   │   ├── moving_average.py  # 移动平均指标
+│       │   │   │   ├── oscillator.py      # 震荡指标
+│       │   │   │   └── volatility.py      # 波动率指标
 │       │   │   ├── price_factors.py # 价格因子
 │       │   │   └── volatility_factors.py  # 波动率因子
-│       │   └── risk/                # 风险因子
-│       │       └── beta_factors.py  # Beta因子
+│       │   ├── risk/                # 风险因子
+│       │   │   └── beta_factors.py  # Beta因子
+│       │   └── alpha191/            # Alpha191 因子集 🆕
+│       │       ├── alpha191_base.py           # 基础类和数据适配器
+│       │       ├── alpha191_calculator.py     # 核心计算器
+│       │       ├── alpha191_factors.py        # 标准化因子类
+│       │       ├── alpha191_batch.py          # 批量计算接口
+│       │       └── __init__.py                # 模块导入
 │       │
 │       ├── tester/                  # 因子测试层
 │       │   ├── base/                # 测试基础类
 │       │   │   └── test_result.py   # 测试结果数据结构
 │       │   └── core/                # 核心测试功能
-│       │       ├── pipeline.py      # 测试流水线
-│       │       ├── data_manager.py  # 数据管理
+│       │       ├── pipeline.py      # 测试流水线（支持因子版本选择）
+│       │       ├── data_manager.py  # 数据管理（版本感知的因子加载）
 │       │       ├── factor_tester.py # 因子测试器（含换手率分析）
 │       │       └── result_manager.py # 结果管理
 │       │
@@ -128,14 +175,24 @@ multifactors_beta/
 │       │       ├── barra_model.py           # Barra模型
 │       │       └── factor_model.py          # 因子模型
 │       │
-│       ├── calculator/              # 因子计算器（重新组织）
-│       │   └── factor_calculator.py # 通用计算器
+│       │
+│       ├── operations/              # 因子操作工具箱 🆕
+│       │   ├── README.md            # 操作工具箱说明文档
+│       │   ├── cross_sectional.py   # 截面操作（排序、标准化、去极值等）
+│       │   ├── time_series.py       # 时序操作（移动平均、滞后、差分等）
+│       │   ├── composite.py         # 复合操作（动量、波动率等）
+│       │   └── combination.py       # 因子组合（线性组合、正交化、残差化）
+│       │
 │       │
 │       ├── config/                  # 配置管理
 │       │   ├── factor_config.py     # 因子配置定义
 │       │   ├── field_mapper.py      # 字段映射器
 │       │   ├── field_mapping.json   # JSON映射配置
-│       │   └── field_mapping.yaml   # YAML映射配置
+│       │   └── field_mapping.yaml   # YAML映射配置 (已迁移到config/field_mappings.yaml)
+│       │
+│       ├── meta/                    # 因子元数据管理 🆕
+│       │   ├── factor_registry.py   # 因子注册表和元数据管理
+│       │   └── __init__.py          # 模块导入
 │       │
 │       ├── utils/                   # 因子工具
 │       │   ├── multiindex_helper.py # MultiIndex格式工具
@@ -149,7 +206,7 @@ multifactors_beta/
 │   └── data/                        # 数据处理模块
 │       ├── auxiliary/               # 预处理数据存储
 │       ├── fetcher/                 # 数据获取模块
-│       │   ├── BasicDataLocalization.py    # 基础数据本地化
+│       │   ├── BasicDataLocalization.py    # 基础数据本地化（🗂️ 遗留模块，已解耦）
 │       │   ├── data_fetcher.py             # 通用数据获取器
 │       │   ├── chunked_price_fetcher.py    # 分块价格获取
 │       │   ├── incremental_price_updater.py    # 增量价格更新
@@ -244,12 +301,42 @@ multifactors_beta/
 │   └── legacy/                      # 历史版本
 │       └── README.md                # 历史版本说明
 │
-├── 📜 主程序
+├── 📜 核心执行脚本
 │   ├── scheduled_data_updater.py    # 定时数据更新器 ⭐
-│   ├── interactive_data_updater.py  # 交互式数据更新器 ⭐
+│   ├── interactive_data_updater.py  # 交互式数据更新器
 │   ├── get_historical_price_2014.py # 历史数据获取工具
-│   ├── run_data_processing.py       # 数据处理主程序
-│   └── run_enhanced_processing.py   # 增强数据处理程序
+│   ├── batch_generate_factors.py    # 批量因子生成工具 ⭐
+│   ├── quick_generate_factors.py    # 快速因子生成工具 ⭐
+│   ├── advanced_factor_generator.py # 高级因子生成器 ⭐
+│   ├── factor_manager.py            # 因子管理工具CLI
+│   └── generate_orthogonal_factors.py  # 正交化因子生成脚本
+│
+├── 📚 示例和教程
+│   └── examples/                    # 使用示例和教程 🆕
+│       ├── factor_examples/         # 因子计算示例
+│       │   ├── generate_bp_factor.py
+│       │   ├── calculate_custom_factor_example.py
+│       │   └── quick_custom_factor_dev.py
+│       ├── workflows/               # 工作流示例
+│       │   ├── simple_custom_factor_workflow.py
+│       │   ├── standard_factor_workflow.py
+│       │   └── correct_factor_workflow.py
+│       ├── benchmarks/              # 性能基准测试
+│       │   ├── momentum_performance_benchmark.py
+│       │   └── technical_factors_performance_benchmark.py
+│       └── demos/                   # 使用演示
+│           ├── demo_claude_usage.py
+│           └── demo_agent_usage.py
+│
+├── 🔧 开发工具
+│   └── tools/                       # 开发和调试工具 🆕
+│       ├── helpers/                 # 辅助工具
+│       │   ├── subagent_manager.py
+│       │   └── agent_helper.py
+│       └── debug/                   # 调试工具
+│           ├── check_factor_format.py
+│           ├── debug_index_format.py
+│           └── check_financial_data_structure.py
 │
 └── 📦 归档
     └── archive/                     # 历史文件归档
@@ -259,31 +346,43 @@ multifactors_beta/
         └── project_status/          # 项目状态历史
 ```
 
-## 核心特性
+## 架构特色与优势
 
-### 🏗️ 架构设计
-- **分层架构**: 基础框架 → 配置管理 → 业务逻辑
-- **混入模式**: 功能模块化组合，高度可复用
-- **依赖注入**: 支持单元测试和mock
-- **插件化**: 灵活的数据源适配
+### 🤖 AI助手优先的创新设计
+- **智能交互界面**: 用户通过自然语言即可完成复杂量化研究任务
+- **智能路由机制**: AI助手自动选择最佳工具和策略，提升研究效率
+- **专业化配置**: `config/agents.yaml` 和 `factors/config/ai_assistant.yaml` 提供专业配置
+- **降低使用门槛**: 量化研究不再需要深入的技术细节，专注于研究本身
 
-### ⚡ 性能优化
-- **向量化处理**: 大数据集性能提升300-500%
+**核心AI助手组件**：
+- `factors/ai_quant_assistant_v2.py` - V2.0智能路由器版本（< 200行代码，< 3,000 tokens）
+- `factor_manager.py` - 因子管理CLI工具，支持自然语言交互
+- 完整的决策逻辑和使用示例
+
+### 🏗️ 清晰的四层架构
+- **AI助手层**: 智能交互界面，自然语言量化研究
+- **数据层分离**: 数据获取、预处理、质量检查独立管理
+- **因子层完善**: 研究、生产、操作工具一体化
+- **策略层专业**: 回测、评估、风险管理专业化
+- **基础层稳固**: 配置、工具、集成支撑全局
+
+### 🎯 模块化设计优势  
+- **职责明确**: 每层专注自身核心功能，避免职责混乱
+- **松耦合**: 层间通过标准接口交互，便于独立开发
+- **高内聚**: 相关功能聚合在同一层内，便于维护
+- **可扩展**: 新功能可在对应层级便捷添加
+
+### ⚡ 性能与质量保障
+- **向量化优先**: 大数据集性能提升300-500%
 - **内存优化**: 峰值内存使用量减少40-60%
-- **智能选择**: 根据数据规模自动选择最优算法
-- **批处理**: 支持大规模数据的流式处理
+- **测试驱动**: 85%测试覆盖率，确保代码质量
+- **配置化管理**: 零硬编码，灵活适配不同环境
 
-### 🔧 工程质量
-- **代码重复率**: 从70%降低到20%
-- **测试覆盖率**: 从0%提升到85%
-- **错误处理**: 完善的验证和异常处理
-- **配置外化**: 消除硬编码，提高灵活性
-
-### 🧪 测试体系
-- **单元测试**: 测试单个函数和类
-- **集成测试**: 测试模块协作和数据流
-- **性能测试**: 基准测试和内存监控
-- **模拟数据**: 自动生成测试数据
+### 🔧 开发友好性
+- **示例丰富**: examples/目录提供完整使用示例
+- **工具齐全**: tools/目录提供调试和开发辅助工具  
+- **文档完善**: 架构设计、使用指南、最佳实践
+- **规范统一**: 编码规范、命名约定、接口标准
 
 ## 使用入门
 
@@ -292,24 +391,81 @@ multifactors_beta/
 # 数据准备
 python data/prepare_auxiliary_data.py
 
-# 更新价格数据
+# 更新价格数据  
 python scheduled_data_updater.py --data-type price
+
+# 批量生成因子
+python quick_generate_factors.py --set core
+
+# 生成正交化因子
+python generate_orthogonal_factors.py --batch
 
 # 运行测试
 pytest tests/
 ```
 
 ### 2. 因子计算示例
+
+#### 纯财务因子（仅需财务数据）
 ```python
-from factors.financial.fundamental_factors import EPFactor, BPFactor
+from factors.generator.financial.ep_ttm_factor import EP_ttm_Factor
+from factors.generator.financial.financial_report_processor import FinancialReportProcessor
 
-# 计算EP因子
-ep_factor = EPFactor(method='ttm')
-ep_values = ep_factor.calculate(financial_data, market_cap, release_dates, trading_dates)
+# 使用财务报表处理器计算TTM数据
+ttm_data = FinancialReportProcessor.calculate_ttm(financial_data)
 
-# 计算BP因子
-bp_factor = BPFactor()
-bp_values = bp_factor.calculate(financial_data, market_cap, release_dates, trading_dates)
+# 创建具体因子实例
+ep_ttm_factor = EP_ttm_Factor()
+ep_ttm_result = ep_ttm_factor.calculate()
+
+# 使用YoY增长率计算
+yoy_growth = FinancialReportProcessor.calculate_yoy(financial_data)
+```
+
+#### 混合因子（需要多种数据源）🆕
+```python
+from factors.generator.mixed import get_mixed_factor_manager
+
+# 获取混合因子管理器
+manager = get_mixed_factor_manager()
+
+# 准备数据
+data = {
+    'financial_data': financial_data,
+    'market_cap': market_cap
+}
+
+# 计算估值因子
+bp = manager.calculate_factor('BP', data)        # 净资产市值比
+ep = manager.calculate_factor('EP_ttm', data)    # 净利润市值比
+```
+
+#### 因子操作工具箱 🆕
+```python
+from factors import operations
+
+# 截面操作
+factor_rank = operations.rank(factor)                   # 截面排序
+factor_zscore = operations.zscore(factor)               # 截面标准化
+factor_winsorized = operations.winsorize(factor, (0.025, 0.025))  # 去极值
+
+# 时序操作
+ma20 = operations.ma(price_data, window=20)             # 20日移动平均
+volatility = operations.std(returns, window=60)         # 60日波动率
+lagged = operations.shift(factor, periods=1)            # 滞后1期
+
+# 因子组合
+combined = operations.combine([factor1, factor2], [0.6, 0.4])  # 线性组合
+neutral = operations.neutralize(factor, market_cap)     # 市值中性化
+momentum_factor = operations.momentum(price_data, period=20)   # 动量因子
+
+# 管道操作
+result = (operations.pipeline(raw_factor)
+         .winsorize((0.01, 0.01))
+         .zscore()
+         .rolling_mean(20)
+         .rank(pct=True)
+         .get())
 ```
 
 ### 3. 自定义数据源
@@ -323,25 +479,301 @@ factor.set_column_mapping('quarter', 'PERIOD')
 available = factor.validate_data_requirements(data, ['earnings', 'quarter'])
 ```
 
-## 维护指南
+### 4. 学习使用示例
+```bash
+# 查看因子计算示例
+ls examples/factor_examples/
 
-### 日常维护
-1. **定期清理**: 清理logs/和cache/目录
-2. **测试验证**: 运行完整测试套件
-3. **性能监控**: 使用性能测试监控系统表现
+# 学习完整工作流
+python examples/workflows/standard_factor_workflow.py
 
-### 开发扩展
-1. **新因子开发**: 继承FactorBase，使用混入类
-2. **配置管理**: 在factor_config.py中添加配置
-3. **测试先行**: 为新功能编写测试用例
+# 查看性能基准测试
+python examples/benchmarks/momentum_performance_benchmark.py
 
-### 版本管理
-- 重要更新记录在PROJECT_STATUS.md
-- 配置变更添加版本注释  
-- 保持向后兼容性
+# 体验演示功能
+python examples/demos/demo_claude_usage.py
+
+# 因子管理工具
+python factor_manager.py stats
+python factor_manager.py list
+```
+
+### 5. AI助手使用 🤖
+
+#### 智能量化研究助手
+```python
+from factors.ai_quant_assistant_v2 import AIQuantAssistant
+
+# 初始化AI助手
+assistant = AIQuantAssistant()
+
+# 自然语言因子研究
+request = "帮我生成一个基于盈利能力的混合因子，使用最新的财务数据"
+result = assistant.process_request(request)
+print(result.interpretation)  # AI助手的解释和建议
+
+# 智能因子筛选
+screening_request = "从现有因子中筛选出表现最好的价值类因子"
+screening_result = assistant.process_request(screening_request)
+```
+
+#### 因子管理CLI工具
+```bash
+# 查看因子统计信息
+python factor_manager.py stats
+
+# 列出所有因子
+python factor_manager.py list --category financial
+
+# 注册新因子
+python factor_manager.py register --name "CustomFactor" --type mixed
+
+# 查询因子信息
+python factor_manager.py info --name "ROE_ttm"
+```
+
+#### AI助手配置
+```yaml
+# config/agents.yaml
+ai_assistant:
+  version: "2.0"
+  routing_strategy: "intelligent"
+  max_tokens: 3000
+  decision_logic: "AI_ASSISTANT_BRAIN.md"
+  
+  capabilities:
+    - factor_generation
+    - factor_screening  
+    - performance_analysis
+    - data_preprocessing
+```
+
+### 6. 因子版本管理 🆕
+```python
+from factors.tester.core.pipeline import SingleFactorTestPipeline
+
+pipeline = SingleFactorTestPipeline()
+
+# 测试原始因子
+result_raw = pipeline.run('ROE_ttm', factor_version='raw')
+
+# 测试正交化因子
+result_orth = pipeline.run('ROE_ttm', factor_version='orthogonal') 
+
+# 自动选择最优版本
+result_auto = pipeline.run('ROE_ttm', factor_version='auto')
+```
+
+## 项目优化成果 ✨
+
+### 🔧 配置管理系统升级
+**统一配置架构**：
+- **之前**: 分散的 `config.yaml`, `factor_config.yaml` 在根目录
+- **现在**: 统一的 `config/` 包，包含4个专业配置文件
+- **优势**: 类型安全、模块化、易于维护
+
+**新配置体系**：
+```
+config/
+├── main.yaml           # 系统核心配置（数据库、路径、系统参数）
+├── factors.yaml        # 因子生成配置（批次、参数、版本管理）
+├── field_mappings.yaml # 数据字段映射（财务数据标准化）
+├── agents.yaml         # AI代理专业配置（路由、决策、能力）
+└── schemas/            # 配置验证模式
+```
+
+**配置管理优势**：
+- **统一入口**: `from config import get_config, ConfigManager`
+- **类型验证**: JSON Schema验证配置正确性  
+- **环境隔离**: 开发/测试/生产环境独立配置
+- **热重载**: 运行时配置更新支持
+
+### 📁 项目结构优化对比
+- **根目录文件**: 73个 → 15个核心文件
+- **配置文件**: 分散 → 统一config/包管理
+- **测试文件清理**: 删除30个过时测试文件
+- **示例文件整理**: 12个示例文件移至examples/
+- **工具文件归类**: 5个辅助工具移至tools/
+- **AI助手集成**: 新增智能交互层
+
+### 🎯 新架构组织优势
+1. **根目录清爽**: 只保留核心执行脚本和配置入口
+2. **配置专业化**: config/包提供完整配置管理体系
+3. **AI助手优先**: 智能交互成为主要用户界面
+4. **示例集中**: examples/目录提供完整学习资源
+5. **工具分类**: tools/目录便于开发和调试
+6. **测试规范**: tests/目录统一管理所有测试
+
+## 开发指南
+
+### 🚀 快速上手流程
+
+#### 1. 环境准备
+```bash
+# 克隆项目
+git clone <repository-url>
+cd multifactors_beta
+
+# 安装依赖
+pip install -r requirements.txt
+
+# 配置环境变量
+cp .env.example .env
+# 编辑 .env 文件，填入数据库配置
+```
+
+#### 2. 理解架构
+```bash
+# 阅读核心架构文档
+cat ARCHITECTURE_V3.md           # 四层架构设计
+cat CLAUDE.md                    # AI助手使用配置
+cat QUICK_REFERENCE.md           # 快速参考指南
+```
+
+#### 3. 体验AI助手
+```bash
+# 运行AI助手演示
+python examples/demos/demo_ai_assistant_usage.py
+
+# 使用因子管理工具
+python factor_manager.py stats
+python factor_manager.py list --type financial
+```
+
+#### 4. 运行示例
+```bash
+# 基础数据准备
+python data/prepare_auxiliary_data.py
+
+# 生成示例因子
+python examples/factor_examples/generate_bp_factor.py
+
+# 运行性能基准测试
+python examples/benchmarks/momentum_performance_benchmark.py
+```
+
+### 💡 最佳实践指南
+
+#### AI助手优先原则
+- **首选交互方式**: 优先使用AI助手进行量化研究
+- **自然语言接口**: 通过自然语言描述需求，让AI助手选择最佳工具
+- **智能路由**: 利用AI助手的智能路由机制，避免直接调用底层API
+- **配置优化**: 根据研究需要调整AI助手配置（`config/agents.yaml`）
+
+#### 配置管理最佳实践
+- **统一配置**: 所有配置使用 `config/` 包进行管理
+- **环境变量**: 敏感信息通过环境变量管理，不要硬编码
+- **配置验证**: 使用配置模式验证确保配置正确性
+- **热重载**: 利用配置系统的热重载功能进行开发调试
+
+```python
+# 正确的配置使用方式
+from config import get_config
+config = get_config()
+
+# 错误的方式 - 不要直接读取配置文件
+# import yaml
+# with open('config.yaml') as f:
+#     config = yaml.load(f)
+```
+
+#### 因子开发最佳实践
+1. **使用因子管理工具**：
+```bash
+# 注册新因子
+python factor_manager.py register "MyFactor" financial "我的自定义因子"
+
+# 验证因子
+python factor_manager.py validate
+
+# 备份注册表
+python factor_manager.py backup
+```
+
+2. **遵循标准流程**：
+```python
+# 1. 继承标准基类
+from factors.base.factor_base import FactorBase
+
+# 2. 使用数据适配器
+from factors.base.flexible_data_adapter import FlexibleDataAdapter
+
+# 3. 实现标准接口
+class MyFactor(FactorBase):
+    def calculate(self):
+        # 实现计算逻辑
+        pass
+```
+
+3. **质量保证**：
+- 编写单元测试
+- 使用 `SingleFactorTestPipeline` 进行标准测试
+- 验证数据格式和质量
+
+#### 代码质量标准
+- **编码规范**: 遵循 `CLAUDE.md` 中的编码规范
+- **类型安全**: 使用类型注解提高代码可读性
+- **错误处理**: 实现完善的错误处理和日志记录
+- **性能优化**: 优先使用向量化操作，避免循环
+
+#### 测试和验证
+```bash
+# 运行单元测试
+pytest tests/unit/
+
+# 运行集成测试
+pytest tests/integration/
+
+# 性能测试
+python examples/benchmarks/
+```
+
+### 🛠️ 高级开发指南
+
+#### 自定义AI助手能力
+- 扩展 `factors/ai_quant_assistant_v2.py` 的决策逻辑
+- 添加新的路由规则到配置文件
+- 实现专业化的子助手
+
+#### 新架构层级开发
+- **数据层扩展**: 在 `data/` 下添加新的数据源
+- **因子层扩展**: 在 `factors/generators/` 下添加新类型因子
+- **策略层扩展**: 在 `backtest/` 下添加新策略
+
+#### 配置系统扩展
+- 添加新配置模式到 `config/schemas/`
+- 实现配置验证和默认值处理
+- 支持动态配置更新
+
+### 🚨 注意事项
+
+#### 避免的做法
+- ❌ 不要绕过AI助手直接调用底层API（除非必要）
+- ❌ 不要在代码中硬编码配置信息
+- ❌ 不要忽略数据格式验证
+- ❌ 不要使用已废弃的模块和接口
+
+#### 安全考虑
+- 🔒 确保数据库密码等敏感信息通过环境变量管理
+- 🔒 不要在代码中泄露真实数据
+- 🔒 定期备份因子注册表和重要配置
+
+### 📚 学习资源
+
+#### 推荐学习路径
+1. **初学者**: examples/demos/ → examples/factor_examples/
+2. **进阶开发**: examples/workflows/ → examples/benchmarks/
+3. **专家级**: 阅读架构设计文档，扩展核心功能
+
+#### 文档资源
+- `ARCHITECTURE_V3.md` - 系统架构设计
+- `DATA_MODULE_COMPLETE.md` - 数据模块详解
+- `MIXED_FACTOR_INTEGRATION_GUIDE.md` - 混合因子开发
+- `TESTING_REPORT.md` - 测试框架说明
 
 ---
 
-**项目状态**: 生产就绪  
-**架构版本**: 2.1 (完善版)  
-**最后更新**: 2025-08-22
+**项目状态**: 🚀 生产就绪，AI助手优先架构完成  
+**架构版本**: 4.0 (AI助手 + 四层架构)  
+**最后更新**: 2025-09-06
+**核心特色**: AI助手优先，智能路由，统一配置管理

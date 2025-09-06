@@ -17,13 +17,8 @@ from .incremental_price_updater import IncrementalPriceUpdater
 from .incremental_stop_price_updater import IncrementalStopPriceUpdater
 from .incremental_financial_updater import IncrementalFinancialUpdater
 
-# 导入基础数据本地化的主要函数
-from .BasicDataLocalization import (
-    GetStockDayDataDFFromSql,
-    Get3SheetsFromSql,
-    GetMacroIndexFromSql_save,
-    GetAllDayPriceDataFromSql_save
-)
+# 注意：BasicDataLocalization.py 已经解耦，不再导入其函数
+# 如需使用旧功能，请直接从该模块导入
 
 __all__ = [
     # 数据获取器类
@@ -36,11 +31,6 @@ __all__ = [
     'IncrementalPriceUpdater', # 增量价格更新器
     'IncrementalStopPriceUpdater', # 增量涨跌停价格更新器
     'IncrementalFinancialUpdater', # 增量财务数据更新器
-    # 基础数据本地化函数
-    'GetStockDayDataDFFromSql',
-    'Get3SheetsFromSql', 
-    'GetMacroIndexFromSql_save',
-    'GetAllDayPriceDataFromSql_save'
 ]
 
 # 版本信息

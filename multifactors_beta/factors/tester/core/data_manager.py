@@ -10,7 +10,7 @@ import logging
 import os
 from pathlib import Path
 
-from core.config_manager import get_config, get_path
+from config import get_config, config_manager
 from core.utils import OutlierHandler, Normalizer, DataCleaner
 from core.utils.factor_processing import FactorOrthogonalizer
 
@@ -29,7 +29,7 @@ class DataManager:
         config : Dict, optional
             配置字典，如果为None则从全局配置读取
         """
-        self.config = config or get_config('factor_test')
+        self.config = config or get_config('main.factor_test')
         self.data_cache = {}  # 数据缓存
         self._load_basic_data()
         
@@ -37,7 +37,7 @@ class DataManager:
         """加载基础数据"""
         try:
             # 获取数据路径
-            data_path = get_path('data_root')
+            data_path = get_config('main.paths.data_root')
             
             # 加载交易日期
             trading_dates_file = os.path.join(data_path, 'TradingDates.pkl')
@@ -73,7 +73,7 @@ class DataManager:
             return self.data_cache[cache_key]
         
         try:
-            data_path = get_path('data_root')
+            data_path = get_config('main.paths.data_root')
             filename = f"LogReturn_{return_type}_{price_type}.pkl"
             filepath = os.path.join(data_path, filename)
             
@@ -118,7 +118,7 @@ class DataManager:
         
         try:
             base_data_list = []
-            raw_factors_path = get_path('raw_factors')
+            raw_factors_path = get_config('main.paths.raw_factors')
             
             for factor_name in base_names:
                 filepath = os.path.join(raw_factors_path, f"{factor_name}.pkl")
@@ -165,7 +165,7 @@ class DataManager:
                 logger.info("未配置行业分类")
                 return pd.DataFrame()
             
-            data_path = get_path('classification_data')
+            data_path = get_config('main.paths.classification_data')
             filepath = os.path.join(data_path, f"{classification_name}.pkl")
             
             if os.path.exists(filepath):
@@ -174,11 +174,23 @@ class DataManager:
                 # 数据清洗
                 def _clean_industry(slice_data):
                     slice_data = slice_data.fillna(0).astype(float)
-                    slice_data = DataCleaner.delete_all_zeros(slice_data)
-                    # 归一化，使每行和为1
-                    row_sum = slice_data.sum(axis=1)
-                    slice_data = slice_data.div(row_sum, axis=0)
-                    return slice_data
+                    # 记录原始列名
+                    original_cols = slice_data.columns.tolist()
+                    # 删除全零列，但保持结构追踪
+                    valid_cols_mask = (slice_data != 0).any(axis=0)
+                    active_cols = slice_data.columns[valid_cols_mask].tolist()
+                    
+                    if len(active_cols) > 0:
+                        # 保留活跃列
+                        slice_data_clean = slice_data[active_cols]
+                        # 归一化，使每行和为1
+                        row_sum = slice_data_clean.sum(axis=1)
+                        row_sum = row_sum.replace(0, 1)  # 防止除零
+                        slice_data_clean = slice_data_clean.div(row_sum, axis=0)
+                        return slice_data_clean
+                    else:
+                        # 所有列都是零，返回空DataFrame
+                        return pd.DataFrame(index=slice_data.index)
                 
                 industry_data = industry_data.groupby('TradingDates', group_keys=False).apply(_clean_industry)
                 
@@ -198,7 +210,7 @@ class DataManager:
             logger.error(f"加载行业分类数据失败: {e}")
             return pd.DataFrame()
     
-    def load_factor_data(self, factor_name: str) -> pd.Series:
+    def load_factor_data(self, factor_name: str, version: str = 'auto') -> pd.Series:
         """
         加载待测试因子数据
         
@@ -206,55 +218,109 @@ class DataManager:
         ----------
         factor_name : str
             因子名称
+        version : str
+            因子版本选择
+            - 'raw': 只加载原始因子
+            - 'orthogonal': 只加载正交化因子
+            - 'auto': 自动选择（优先正交化因子）
             
         Returns
         -------
         pd.Series
             因子数据
         """
+        # 生成包含版本信息的缓存键
+        cache_key = f"factor_{factor_name}_{version}"
+        if cache_key in self.data_cache:
+            logger.debug(f"从缓存获取因子数据: {factor_name} (version: {version})")
+            return self.data_cache[cache_key]
+        
         try:
-            raw_factors_path = get_path('raw_factors')
-            filepath = os.path.join(raw_factors_path, f"{factor_name}.pkl")
+            # 根据版本参数决定搜索策略
+            search_paths = []
             
-            if not os.path.exists(filepath):
-                # 尝试其他路径
-                alternative_paths = [
-                    get_path('raw_factors_alpha191'),
-                    get_path('orthogonalization_factors')
+            if version == 'raw':
+                # 只搜索原始因子
+                search_paths = [
+                    (get_config('main.paths.raw_factors'), f"{factor_name}.pkl", "raw"),
+                    (get_config('main.paths.raw_factors_alpha191'), f"{factor_name}.pkl", "alpha191"),
                 ]
-                for alt_path in alternative_paths:
-                    alt_filepath = os.path.join(alt_path, f"{factor_name}.pkl")
-                    if os.path.exists(alt_filepath):
-                        filepath = alt_filepath
+            elif version == 'orthogonal':
+                # 只搜索正交化因子
+                search_paths = [
+                    (get_config('main.paths.orthogonalization_factors'), f"{factor_name}_orth.pkl", "orthogonal"),
+                    (get_config('main.paths.orthogonalization_factors'), f"{factor_name}.pkl", "orthogonal_alt"),
+                ]
+            else:  # auto
+                # 优先搜索正交化因子，然后搜索原始因子
+                config_use_orth = self.config.get('use_orthogonal_factors', False)
+                config_version = self.config.get('factor_version', 'auto')
+                
+                if config_use_orth or config_version == 'orthogonal':
+                    search_paths = [
+                        (get_config('main.paths.orthogonalization_factors'), f"{factor_name}_orth.pkl", "orthogonal"),
+                        (get_config('main.paths.orthogonalization_factors'), f"{factor_name}.pkl", "orthogonal_alt"),
+                        (get_config('main.paths.raw_factors'), f"{factor_name}.pkl", "raw"),
+                        (get_config('main.paths.raw_factors_alpha191'), f"{factor_name}.pkl", "alpha191"),
+                        (get_config('main.paths.factors'), f"{factor_name}.pkl", "generated"),
+                    ]
+                else:
+                    search_paths = [
+                        (get_config('main.paths.raw_factors'), f"{factor_name}.pkl", "raw"),
+                        (get_config('main.paths.raw_factors_alpha191'), f"{factor_name}.pkl", "alpha191"),
+                        (get_config('main.paths.factors'), f"{factor_name}.pkl", "generated"),
+                        (get_config('main.paths.orthogonalization_factors'), f"{factor_name}_orth.pkl", "orthogonal"),
+                        (get_config('main.paths.orthogonalization_factors'), f"{factor_name}.pkl", "orthogonal_alt"),
+                    ]
+            
+            # 搜索并加载因子文件
+            factor_data = None
+            loaded_from = None
+            
+            for path, filename, source_type in search_paths:
+                if not path:
+                    continue
+                    
+                filepath = os.path.join(path, filename)
+                if os.path.exists(filepath):
+                    try:
+                        factor_data = pd.read_pickle(filepath)
+                        loaded_from = source_type
+                        logger.info(f"从 {source_type} 加载因子: {factor_name} ({filepath})")
                         break
+                    except Exception as e:
+                        logger.warning(f"加载文件失败 {filepath}: {e}")
+                        continue
             
-            if os.path.exists(filepath):
-                factor_data = pd.read_pickle(filepath)
-                
-                # 确保是Series格式
-                if isinstance(factor_data, pd.DataFrame):
-                    if len(factor_data.columns) == 1:
-                        factor_data = factor_data.iloc[:, 0]
-                    else:
-                        logger.warning(f"因子数据有多列，使用第一列")
-                        factor_data = factor_data.iloc[:, 0]
-                
-                factor_data.name = 'factor'
-                factor_data = factor_data.sort_index(level=0)
-                
-                # 应用时间过滤
-                begin_date = pd.to_datetime(self.config.get('begin_date', '2018-01-01'))
-                end_date = pd.to_datetime(self.config.get('end_date', '2025-12-31'))
-                factor_data = factor_data.loc[
-                    (factor_data.index.get_level_values(0) >= begin_date) &
-                    (factor_data.index.get_level_values(0) <= end_date)
-                ]
-                
-                logger.info(f"加载因子数据: {factor_name}, shape={factor_data.shape}")
-                return factor_data
-            else:
-                logger.error(f"因子文件不存在: {factor_name}")
+            if factor_data is None:
+                logger.error(f"因子文件不存在: {factor_name} (version: {version})")
                 return pd.Series()
+            
+            # 确保是Series格式
+            if isinstance(factor_data, pd.DataFrame):
+                if len(factor_data.columns) == 1:
+                    factor_data = factor_data.iloc[:, 0]
+                else:
+                    logger.warning(f"因子数据有多列，使用第一列: {list(factor_data.columns)}")
+                    factor_data = factor_data.iloc[:, 0]
+            
+            factor_data.name = 'factor'
+            factor_data = factor_data.sort_index(level=0)
+            
+            # 应用时间过滤
+            begin_date = pd.to_datetime(self.config.get('begin_date', '2018-01-01'))
+            end_date = pd.to_datetime(self.config.get('end_date', '2025-12-31'))
+            factor_data = factor_data.loc[
+                (factor_data.index.get_level_values(0) >= begin_date) &
+                (factor_data.index.get_level_values(0) <= end_date)
+            ]
+            
+            logger.info(f"✅ 加载因子数据: {factor_name} ({loaded_from}), shape={factor_data.shape}")
+            
+            # 存储到缓存
+            self.data_cache[cache_key] = factor_data
+            
+            return factor_data
                 
         except Exception as e:
             logger.error(f"加载因子数据失败: {e}")
@@ -265,7 +331,8 @@ class DataManager:
         factor_name: str,
         use_base_factors: bool = True,
         use_industry: bool = True,
-        custom_base_factors: Optional[List[str]] = None
+        custom_base_factors: Optional[List[str]] = None,
+        factor_version: str = 'auto'
     ) -> Dict[str, Any]:
         """
         准备测试数据
@@ -280,6 +347,8 @@ class DataManager:
             是否使用行业分类
         custom_base_factors : List[str], optional
             自定义基准因子列表
+        factor_version : str, default 'auto'
+            因子版本选择 ('raw', 'orthogonal', 'auto')
             
         Returns
         -------
@@ -289,7 +358,7 @@ class DataManager:
         test_data = {}
         
         # 加载因子数据
-        test_data['factor'] = self.load_factor_data(factor_name)
+        test_data['factor'] = self.load_factor_data(factor_name, version=factor_version)
         if test_data['factor'].empty:
             logger.error(f"因子数据为空: {factor_name}")
             return test_data
@@ -364,8 +433,10 @@ class DataManager:
         pd.DataFrame
             合并后的控制变量
         """
-        # 合并数据
-        merged_data = base_factors.join(industry_data, how='left')
+        # 合并数据，先去重防止重复索引
+        base_factors_clean = base_factors[~base_factors.index.duplicated(keep='first')]
+        industry_data_clean = industry_data[~industry_data.index.duplicated(keep='first')]
+        merged_data = base_factors_clean.join(industry_data_clean, how='left')
         
         # 前向填充行业数据
         merged_data = merged_data.groupby('StockCodes').fillna(method='ffill')
@@ -379,10 +450,23 @@ class DataManager:
             # 处理行业数据
             if industry_cols:
                 industry_slice = slice_data[industry_cols].fillna(0)
-                industry_slice = DataCleaner.delete_all_zeros(industry_slice)
-                slice_data[industry_cols] = industry_slice
-            
-            return slice_data
+                # 检查哪些行业列是活跃的
+                valid_industry_mask = (industry_slice != 0).any(axis=0)
+                active_industry_cols = [col for col, valid in zip(industry_cols, valid_industry_mask) if valid]
+                
+                if active_industry_cols:
+                    # 只保留活跃的行业列，重新构建DataFrame
+                    result_data = pd.concat([
+                        slice_data[base_cols],
+                        slice_data[active_industry_cols]
+                    ], axis=1)
+                    return result_data
+                else:
+                    # 所有行业列都无效，只保留基准因子
+                    logger.warning(f"所有行业列都为零，只保留基准因子")
+                    return slice_data[base_cols]
+            else:
+                return slice_data
         
         merged_data = merged_data.groupby(level=0, group_keys=False).apply(_day_processing)
         

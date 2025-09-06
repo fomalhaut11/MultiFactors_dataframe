@@ -13,8 +13,9 @@ import logging
 from .price_processor import PriceDataProcessor
 from .return_calculator import ReturnCalculator
 from .financial_processor import FinancialDataProcessor
+from .sector_classification_processor import SectorClassificationProcessor
 from ..processor.base_processor import BaseDataProcessor
-from core.config_manager import get_path
+from config import get_config
 
 
 class DataProcessingPipeline(BaseDataProcessor):
@@ -33,9 +34,10 @@ class DataProcessingPipeline(BaseDataProcessor):
         self.price_processor = PriceDataProcessor(config_path)
         self.return_calculator = ReturnCalculator(config_path)
         self.financial_processor = FinancialDataProcessor(config_path)
+        self.sector_classification_processor = SectorClassificationProcessor()
         
         # 数据保存路径
-        self.data_save_path = Path(get_path('data_root'))
+        self.data_save_path = Path(get_config('main.paths.data_root'))
         
     def validate_input(self, **kwargs) -> bool:
         """验证输入参数"""
@@ -66,93 +68,39 @@ class DataProcessingPipeline(BaseDataProcessor):
             results['price_df'] = price_df
             results['stock_3d'] = stock_3d
             
-            # 2. 生成日期序列
-            self.logger.info("步骤2: 生成日期序列...")
-            daily_series = self.price_processor.get_date_series(price_df, "daily")
-            weekly_series = self.price_processor.get_date_series(price_df, "weekly")
-            monthly_series = self.price_processor.get_date_series(price_df, "monthly")
-            
-            # 3. 计算各种收益率
-            self.logger.info("步骤3: 计算日收益率...")
+            # 2. 加载预处理的收益率数据（收益率计算已移到预处理阶段）
+            self.logger.info("步骤2: 加载预处理的收益率数据...")
+            auxiliary_path = self.data_save_path / "auxiliary"
             
             # 日收益率 - o2o
-            log_return_daily = self.return_calculator.calculate_log_return(
-                price_df, daily_series, return_type="o2o"
-            )
-            if save_intermediate:
-                save_path = self.data_save_path / "LogReturn_daily_o2o.pkl"
-                pd.to_pickle(log_return_daily, save_path)
-                self.logger.info(f"日收益率(o2o)已保存至: {save_path}")
-            results['log_return_daily_o2o'] = log_return_daily
+            log_return_daily_path = auxiliary_path / "LogReturn_daily_o2o.pkl"
+            if log_return_daily_path.exists():
+                log_return_daily = pd.read_pickle(log_return_daily_path)
+                results['log_return_daily_o2o'] = log_return_daily
+                self.logger.info(f"日收益率(o2o)已加载: {log_return_daily_path}")
+            else:
+                self.logger.warning(f"日收益率文件不存在: {log_return_daily_path}")
+                log_return_daily = None
             
-            # N天滚动收益率
-            self.logger.info("计算20天滚动收益率...")
-            log_return_20days = self.return_calculator.calculate_n_days_return(
-                log_return_daily, lag=20
-            )
-            if save_intermediate:
-                save_path = self.data_save_path / "LogReturn_20days_o2o.pkl"
-                pd.to_pickle(log_return_20days, save_path)
+            # 其他收益率数据
+            return_files = {
+                'log_return_daily_vwap': 'LogReturn_daily_vwap.pkl',
+                'log_return_weekly': 'LogReturn_weekly_o2o.pkl',
+                'log_return_monthly': 'LogReturn_monthly_o2o.pkl',
+                'log_return_5days': 'LogReturn_5days_o2o.pkl',
+                'log_return_20days': 'LogReturn_20days_o2o.pkl'
+            }
             
-            self.logger.info("计算5天滚动收益率...")
-            log_return_5days = self.return_calculator.calculate_n_days_return(
-                log_return_daily, lag=5
-            )
-            if save_intermediate:
-                save_path = self.data_save_path / "LogReturn_5days_o2o.pkl"
-                pd.to_pickle(log_return_5days, save_path)
+            for key, filename in return_files.items():
+                filepath = auxiliary_path / filename
+                if filepath.exists():
+                    results[key] = pd.read_pickle(filepath)
+                    self.logger.info(f"已加载: {filename}")
+                else:
+                    self.logger.warning(f"收益率文件不存在: {filepath}")
             
-            # 日收益率 - vwap
-            self.logger.info("计算日收益率(vwap)...")
-            log_return_daily_vwap = self.return_calculator.calculate_log_return(
-                price_df, daily_series, return_type="vwap"
-            )
-            if save_intermediate:
-                save_path = self.data_save_path / "LogReturn_daily_vwap.pkl"
-                pd.to_pickle(log_return_daily_vwap, save_path)
-            
-            # 释放内存
-            log_return_daily = None
-            gc.collect()
-            
-            # 周收益率
-            self.logger.info("计算周收益率...")
-            log_return_weekly = self.return_calculator.calculate_log_return(
-                price_df, weekly_series, return_type="o2o"
-            )
-            if save_intermediate:
-                save_path = self.data_save_path / "LogReturn_weekly_o2o.pkl"
-                pd.to_pickle(log_return_weekly, save_path)
-                
-            log_return_weekly_vwap = self.return_calculator.calculate_log_return(
-                price_df, weekly_series, return_type="vwap"
-            )
-            if save_intermediate:
-                save_path = self.data_save_path / "LogReturn_weekly_vwap.pkl"
-                pd.to_pickle(log_return_weekly_vwap, save_path)
-            
-            log_return_weekly = None
-            
-            # 月收益率
-            self.logger.info("计算月收益率...")
-            log_return_monthly = self.return_calculator.calculate_log_return(
-                price_df, monthly_series, return_type="o2o"
-            )
-            if save_intermediate:
-                save_path = self.data_save_path / "LogReturn_monthly_o2o.pkl"
-                pd.to_pickle(log_return_monthly, save_path)
-                
-            log_return_monthly_vwap = self.return_calculator.calculate_log_return(
-                price_df, monthly_series, return_type="vwap"
-            )
-            if save_intermediate:
-                save_path = self.data_save_path / "LogReturn_monthly_vwap.pkl"
-                pd.to_pickle(log_return_monthly_vwap, save_path)
-            
-            log_return_monthly = None
-            
-            # 4. 处理财报数据
-            self.logger.info("步骤4: 处理财报数据...")
+            # 3. 处理财报数据
+            self.logger.info("步骤3: 处理财报数据...")
             trading_dates0 = price_df.index.get_level_values(0).unique().tolist()
             
             # 释放价格数据内存
@@ -174,12 +122,12 @@ class DataProcessingPipeline(BaseDataProcessor):
                 save_path = self.data_save_path / "released_dates_count_df.pkl"
                 released_dates_count_df.to_pickle(save_path)
             
-            # 5. 计算财报发布后收益率
-            self.logger.info("步骤5: 计算财报发布后收益率...")
+            # 4. 计算财报发布后收益率
+            self.logger.info("步骤4: 计算财报发布后收益率...")
             
-            # 重新加载日收益率数据
+            # 从auxiliary目录加载日收益率数据
             log_return_daily_o2o = pd.read_pickle(
-                self.data_save_path / "LogReturn_daily_o2o.pkl"
+                self.data_save_path / "auxiliary" / "LogReturn_daily_o2o.pkl"
             )
             
             # 20天
@@ -206,6 +154,45 @@ class DataProcessingPipeline(BaseDataProcessor):
                 lag1return.to_pickle(self.data_save_path / "lag1_released_logreturn.pkl")
                 lag1alfareturn.to_pickle(self.data_save_path / "lag1_released_alfa_logreturn.pkl")
             
+            # 5. 计算股票分类信息
+            self.logger.info("步骤5: 计算股票分类信息...")
+            try:
+                # 获取最新的股票分类信息
+                from datetime import datetime
+                latest_date = datetime.now().strftime('%Y-%m-%d')
+                
+                # 计算完整的分类信息
+                stock_classification = self.sector_classification_processor.calculate_sector_classification_at_date(latest_date)
+                
+                if not stock_classification.empty:
+                    if save_intermediate:
+                        save_path = self.data_save_path / "StockClassification_latest.pkl"
+                        stock_classification.to_pickle(save_path)
+                        self.logger.info(f"股票分类信息已保存至: {save_path}")
+                    
+                    results['stock_classification'] = stock_classification
+                    
+                    # 分别保存申万行业分类
+                    sw_classification = stock_classification[
+                        stock_classification['指数类型'] == '申万行业板块'
+                    ]
+                    if not sw_classification.empty and save_intermediate:
+                        save_path = self.data_save_path / "SW_Industry_Classification.pkl"
+                        sw_classification.to_pickle(save_path)
+                        self.logger.info(f"申万行业分类信息已保存至: {save_path}")
+                    
+                    # 获取分类统计
+                    classification_stats = self.sector_classification_processor.get_classification_stats(latest_date)
+                    self.logger.info(f"分类统计: {classification_stats}")
+                    results['classification_stats'] = classification_stats
+                    
+                else:
+                    self.logger.warning("未获取到股票分类信息")
+                    
+            except Exception as e:
+                self.logger.error(f"股票分类计算失败: {e}")
+                # 分类计算失败不影响整个管道的执行
+            
             self.logger.info("数据处理管道执行完成！")
             
             # 记录处理历史
@@ -220,6 +207,77 @@ class DataProcessingPipeline(BaseDataProcessor):
         except Exception as e:
             self.logger.error(f"数据处理管道执行失败: {e}")
             raise
+    
+    def calculate_stock_classification(self, target_date: Optional[str] = None, 
+                                     concept_types: Optional[list] = None,
+                                     export_format: str = 'pkl') -> pd.DataFrame:
+        """
+        独立的股票分类计算方法
+        
+        Args:
+            target_date: 目标日期，None表示使用当前日期
+            concept_types: 概念类型列表，None表示计算所有类型
+            export_format: 导出格式，'pkl'、'csv'、'excel'
+            
+        Returns:
+            股票分类信息DataFrame
+        """
+        if target_date is None:
+            from datetime import datetime
+            target_date = datetime.now().strftime('%Y-%m-%d')
+        
+        self.logger.info(f"计算股票分类信息: {target_date}")
+        
+        # 计算分类信息
+        classification_df = self.sector_classification_processor.calculate_sector_classification_at_date(
+            target_date, concept_types
+        )
+        
+        # 保存结果
+        if not classification_df.empty:
+            output_path = self.sector_classification_processor.export_classification_data(
+                target_date, format=export_format
+            )
+            self.logger.info(f"分类数据已导出: {output_path}")
+        
+        return classification_df
+    
+    def get_stock_sector_history(self, stock_code: str, start_date: str, end_date: str) -> pd.DataFrame:
+        """
+        获取指定股票的历史分类变化
+        
+        Args:
+            stock_code: 股票代码
+            start_date: 开始日期
+            end_date: 结束日期
+            
+        Returns:
+            历史分类变化DataFrame
+        """
+        self.logger.info(f"获取股票 {stock_code} 的历史分类: {start_date} - {end_date}")
+        
+        # 获取时间序列分类数据
+        series_classification = self.sector_classification_processor.calculate_sector_classification_series(
+            start_date, end_date, frequency='M'  # 按月计算
+        )
+        
+        # 提取指定股票的数据
+        stock_history = []
+        for date_str, classification_df in series_classification.items():
+            if not classification_df.empty:
+                stock_data = classification_df[classification_df['code'] == stock_code]
+                if not stock_data.empty:
+                    stock_data = stock_data.copy()
+                    stock_data['date'] = date_str
+                    stock_history.append(stock_data)
+        
+        if stock_history:
+            result = pd.concat(stock_history, ignore_index=True)
+            result = result.sort_values(['date', '指数类型', 'concept_code'])
+        else:
+            result = pd.DataFrame()
+        
+        return result
 
 
 # 向后兼容的函数接口

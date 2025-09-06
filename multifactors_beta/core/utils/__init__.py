@@ -19,12 +19,9 @@ from .exit_handler import (
 # 数据清洗工具
 from .data_cleaning import OutlierHandler, Normalizer, DataCleaner
 
-# 技术指标工具
-from .technical_indicators import (
-    MovingAverageCalculator,
-    VolatilityCalculator,
-    TechnicalIndicators
-)
+# 技术指标工具已迁移到 factors.generator.technical.indicators
+# 不再在 core.utils 中重导出，避免循环导入
+# 请直接使用：from factors.generator.technical.indicators import TechnicalIndicators
 
 # 因子处理工具
 from .factor_processing import FactorOrthogonalizer, FactorProcessor
@@ -48,11 +45,11 @@ __all__ = [
     'OutlierHandler',
     'Normalizer',
     'DataCleaner',
-    'MovingAverageCalculator',
-    'VolatilityCalculator',
-    'TechnicalIndicators',
+    # 因子处理工具
     'FactorOrthogonalizer',
     'FactorProcessor',
+    # 市场微观结构工具
     'MarketCapFilter',
     'LiquidityMetrics'
+    # 注意：技术指标工具已迁移到 factors.generator.technical.indicators
 ]

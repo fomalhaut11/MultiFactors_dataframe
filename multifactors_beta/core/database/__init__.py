@@ -23,6 +23,12 @@ from .sql_executor import (
     get_table_info
 )
 
+from .database_config import (
+    DatabaseTableConfig,
+    get_db_table_config,
+    get_table_name
+)
+
 # 导出主要接口
 __all__ = [
     # 连接管理器
@@ -39,5 +45,10 @@ __all__ = [
     'execute_query',
     'execute_query_to_dataframe', 
     'execute_stock_data_query',
-    'get_table_info'
+    'get_table_info',
+    
+    # 数据库配置管理
+    'DatabaseTableConfig',
+    'get_db_table_config',
+    'get_table_name'
 ]

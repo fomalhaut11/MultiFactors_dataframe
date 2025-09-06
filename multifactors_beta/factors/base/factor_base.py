@@ -12,16 +12,17 @@ from datetime import datetime
 from core.utils import (
     OutlierHandler,
     Normalizer,
-    TechnicalIndicators,
     FactorOrthogonalizer
 )
+# 注意：TechnicalIndicators不在此处导入，避免循环导入
+# 如需使用，请在具体的factor实现中导入
 # 导入MultiIndex工具
 from ..utils.multiindex_helper import (
     validate_factor_format,
     ensure_multiindex_format,
     MultiIndexHelper
 )
-from core.config_manager import config
+from config import get_config, config_manager
 from .validation import validate_inputs, ErrorHandler
 from .testable_mixin import TestableMixin
 
@@ -73,14 +74,37 @@ class FactorBase(ABC, TestableMixin):
                    remove_outliers: bool = True,
                    standardize: bool = True,
                    outlier_method: str = "IQR",
-                   outlier_threshold: float = 3.0,
-                   standardize_method: str = "zscore") -> pd.Series:
+                   outlier_threshold: float = None,
+                   standardize_method: str = "zscore",
+                   stage: str = "preparation") -> pd.Series:
         """
         因子预处理：去极值和标准化
+        
+        Parameters:
+        -----------
+        factor : pd.Series
+            原始因子数据
+        remove_outliers : bool
+            是否去极值
+        standardize : bool  
+            是否标准化
+        outlier_method : str
+            去极值方法
+        outlier_threshold : float, optional
+            去极值参数，如果为None则根据stage从配置读取
+        standardize_method : str
+            标准化方法
+        stage : str
+            处理阶段：'preparation' (因子制备) 或 'testing' (因子测试)
         """
         # 确保数据格式正确
         factor = ensure_multiindex_format(factor)
         validate_factor_format(factor)
+        
+        # 根据阶段获取配置参数
+        if outlier_threshold is None:
+            outlier_threshold = self._get_stage_config(stage, 'outlier_param')
+            logger.info(f"使用{stage}阶段配置: outlier_param={outlier_threshold}")
         
         result = factor.copy()
         
@@ -111,10 +135,40 @@ class FactorBase(ABC, TestableMixin):
             
         return result
     
+    def _get_stage_config(self, stage: str, param: str) -> float:
+        """
+        根据阶段获取配置参数
+        
+        Parameters:
+        -----------
+        stage : str
+            处理阶段：'preparation' (因子制备) 或 'testing' (因子测试)
+        param : str
+            参数名称
+        
+        Returns:
+        --------
+        float : 配置参数值
+        """
+        try:
+            if stage == "preparation":
+                # 因子制备阶段：使用宽松参数
+                return get_config(f'main.data_processing.factor_preparation.{param}')
+            elif stage == "testing":
+                # 因子测试阶段：使用正常参数
+                return get_config(f'main.data_processing.factor_testing.{param}')
+            else:
+                # 默认配置
+                return get_config(f'main.data_processing.{param}')
+        except Exception as e:
+            logger.warning(f"获取{stage}阶段配置失败，使用默认值: {e}")
+            # 降级到默认配置
+            return get_config(f'main.data_processing.{param}', default=5 if param == 'outlier_param' else 3.0)
+    
     def save(self, factor: pd.Series, save_path: Optional[str] = None):
         """保存因子数据"""
         if save_path is None:
-            save_path = config.get_path('factors') / f"{self.name}.pkl"
+            save_path = config.get_config('main.paths.factors') / f"{self.name}.pkl"
         
         factor.to_pickle(save_path)
         logger.info(f"Factor {self.name} saved to {save_path}")
@@ -122,7 +176,7 @@ class FactorBase(ABC, TestableMixin):
     def load(self, load_path: Optional[str] = None) -> pd.Series:
         """加载因子数据"""
         if load_path is None:
-            load_path = config.get_path('factors') / f"{self.name}.pkl"
+            load_path = config.get_config('main.paths.factors') / f"{self.name}.pkl"
         
         factor = pd.read_pickle(load_path)
         logger.info(f"Factor {self.name} loaded from {load_path}")

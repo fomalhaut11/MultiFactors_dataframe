@@ -12,7 +12,7 @@ import logging
 
 from ..base.time_series_processor import TimeSeriesProcessor
 from ..calculator.factor_calculator import FactorCalculator
-from core.config_manager import config
+from config import get_config, config_managernfig
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +27,7 @@ class UpdateTracker:
         tracker_file : 状态追踪文件路径
         """
         if tracker_file is None:
-            tracker_file = Path(config.get_path('data_root')) / 'factor_update_tracker.json'
+            tracker_file = Path(config.get_config('main.paths.data_root')) / 'factor_update_tracker.json'
         
         self.tracker_file = Path(tracker_file)
         self.status = self._load_status()
@@ -75,8 +75,8 @@ class FactorUpdater:
         data_path : 原始数据路径
         factor_path : 因子保存路径
         """
-        self.data_path = Path(data_path) if data_path else config.get_path('data_root')
-        self.factor_path = Path(factor_path) if factor_path else config.get_path('factors')
+        self.data_path = Path(data_path) if data_path else config.get_config('main.paths.data_root')
+        self.factor_path = Path(factor_path) if factor_path else config.get_config('main.paths.factors')
         
         self.tracker = UpdateTracker()
         self.calculator = FactorCalculator()

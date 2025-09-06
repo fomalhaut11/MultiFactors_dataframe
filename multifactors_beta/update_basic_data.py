@@ -16,7 +16,7 @@ project_root = Path(__file__).parent
 sys.path.insert(0, str(project_root))
 
 from data.fetcher.incremental_price_updater import IncrementalPriceUpdater
-from core.config_manager import get_config
+from config import get_config
 
 # 配置日志
 logging.basicConfig(
