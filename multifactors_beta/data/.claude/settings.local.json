@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//e/Documents/PythonProject/StockProject/MultiFactors/multifactors_beta/factors/**)",
+      "Bash(python test_sector_valuation.py:*)",
+      "Bash(timeout:*)",
+      "Bash(python test:*)",
+      "Bash(python:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

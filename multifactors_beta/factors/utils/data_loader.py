@@ -187,6 +187,72 @@ class FactorDataLoader:
             raise
     
     @classmethod
+    def load_financial_data(cls) -> pd.DataFrame:
+        """
+        加载财务数据
+        
+        Returns
+        -------
+        pd.DataFrame
+            财务数据，包含所有财务指标，MultiIndex格式[ReportDate, StockCodes]
+        """
+        cache_key = 'financial_data'
+        
+        if cache_key in cls._cache:
+            logger.debug("从缓存加载财务数据")
+            return cls._cache[cache_key]
+        
+        try:
+            filepath = cls._get_data_path("FinancialData_unified.pkl")
+            
+            if not filepath.exists():
+                raise FileNotFoundError(f"财务数据文件不存在: {filepath}")
+            
+            logger.info("加载财务数据: FinancialData_unified.pkl")
+            financial_data = pd.read_pickle(filepath)
+            
+            # 验证数据格式
+            if not isinstance(financial_data, pd.DataFrame):
+                raise ValueError(f"财务数据格式错误，期望DataFrame，实际{type(financial_data)}")
+            
+            # 验证索引格式 - 财务数据通常是(ReportDate, StockCodes)格式
+            if not isinstance(financial_data.index, pd.MultiIndex):
+                logger.warning("财务数据不是MultiIndex格式，尝试重构索引...")
+                
+                # 如果有ReportDate和StockCodes列，使用它们构建MultiIndex
+                if 'ReportDate' in financial_data.columns and 'StockCodes' in financial_data.columns:
+                    financial_data = financial_data.set_index(['ReportDate', 'StockCodes'])
+                    logger.info("已重构财务数据为MultiIndex格式")
+                else:
+                    logger.warning("无法重构财务数据索引，使用原格式")
+            
+            # 验证关键字段存在
+            key_fields = ['DEDUCTEDPROFIT', 'TOT_OPER_REV', 'EQY_BELONGTO_PARCOMSH']
+            available_fields = [field for field in key_fields if field in financial_data.columns]
+            if available_fields:
+                logger.info(f"财务数据关键字段验证: 找到 {len(available_fields)}/{len(key_fields)} 个关键字段")
+            else:
+                logger.warning("未找到预期的关键财务字段，请检查数据文件")
+            
+            # 排序并缓存
+            try:
+                financial_data = financial_data.sort_index()
+            except:
+                logger.warning("财务数据排序失败，使用原顺序")
+                
+            cls._cache[cache_key] = financial_data
+            
+            logger.info(f"财务数据加载成功: {financial_data.shape}")
+            logger.info(f"财务数据列数: {len(financial_data.columns)}")
+            logger.info(f"样本字段: {list(financial_data.columns)[:5]}...")
+            
+            return financial_data
+            
+        except Exception as e:
+            logger.error(f"加载财务数据失败: {e}")
+            raise
+
+    @classmethod
     def load_market_cap(cls) -> pd.Series:
         """
         加载市值数据
@@ -251,6 +317,18 @@ class FactorDataLoader:
         # 这里先返回None，等待具体的基准数据文件格式确认
         logger.warning(f"基准收益率数据加载功能待实现: {benchmark}")
         return None
+    
+    @classmethod
+    def load_trading_dates(cls) -> pd.DatetimeIndex:
+        """
+        加载交易日期序列（别名方法，与get_trading_dates相同）
+        
+        Returns
+        -------
+        pd.DatetimeIndex
+            交易日期序列
+        """
+        return cls.get_trading_dates()
     
     @classmethod
     def get_trading_dates(cls) -> pd.DatetimeIndex:
@@ -466,6 +544,10 @@ def get_daily_returns(return_type: str = 'o2o') -> pd.Series:
 def get_price_data() -> pd.DataFrame:
     """获取价格数据的便捷函数"""
     return FactorDataLoader.load_price_data()
+
+def get_financial_data() -> pd.DataFrame:
+    """获取财务数据的便捷函数"""
+    return FactorDataLoader.load_financial_data()
 
 def get_market_cap() -> pd.Series:
     """获取市值数据的便捷函数"""

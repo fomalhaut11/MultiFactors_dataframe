@@ -813,11 +813,41 @@ python scheduled_data_updater.py --data-type financial --health-check
   - 单因子测试系统
   - 数据获取和预处理
 
+## 📚 文档导航
+
+### 🚀 快速开始（必读）
+
+- **[README.md](README.md)** - 本文档，项目总览
+- **[CLAUDE.md](CLAUDE.md)** - AI助手使用指南（场景路由）
+- **[快速参考](docs/guides/general/QUICK_REFERENCE.md)** - 常用命令速查
+
+### 📖 详细文档（按需查阅）
+
+**架构设计**：
+- [项目架构v3.0](docs/architecture/ARCHITECTURE_V3.md) - 四层架构设计
+- [项目结构说明](docs/architecture/PROJECT_STRUCTURE.md) - 完整目录结构
+- [因子架构](docs/architecture/FACTORS_ARCHITECTURE_FINAL.md) - 因子模块设计
+
+**使用指南**：
+- 数据处理: [数据更新](docs/guides/data/DATA_UPDATE_GUIDE.md) | [数据模块](docs/guides/data/DATA_MODULE_COMPLETE.md)
+- 因子开发: [新因子开发](docs/new-factor-scenario.md) ⭐ | [防重复造轮子](docs/anti-duplication-guide.md) ⭐ | [工具集指南](docs/factor-generators-guide.md) ⭐
+- 因子测试: [单因子测试](docs/单因子测试模块使用指南.md) | [因子筛选](docs/因子筛选分析模块使用指南.md)
+- 回测系统: [回测使用指南](docs/guides/backtest/backtest_usage_guide.md)
+
+**开发文档**：
+- [版本变更历史](docs/development/CHANGELOG.md)
+- [模块开发状态](docs/development/MODULE_DEVELOPMENT_STATUS.md)
+- [项目进度报告](docs/development/PROJECT_PROGRESS.md)
+
+**完整文档索引**: 见 [docs/README.md](docs/README.md)
+
+---
+
 ## 联系方式
 
 如有问题或建议，请提交Issue或联系项目维护者。
 
 ---
 
-**项目状态**: 生产就绪  
+**项目状态**: 生产就绪
 **License**: MIT

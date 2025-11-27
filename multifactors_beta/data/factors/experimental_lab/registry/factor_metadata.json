@@ -1,0 +1,95 @@
+{
+  "complex_profitability_factor": {
+    "name": "complex_profitability_factor",
+    "description": "\n    复杂盈利能力因子：{(TTM利润-TTM财务费用)-单季度存货}/短期债务 / 5日收益率截面z-score\n    \n    经济含义：\n    - 分子衡量企业真实的盈利能力，减去财务成本和存货变动的影响\n    - 分母考虑企业短期偿债压力\n    - 除以收益率z-score进行市场情绪调整\n    \n    预期：该因子应该能够识别具有真实盈利能力且不受短期市场波动影响的股票\n    ",
+    "calculation_func": null,
+    "status": "failed",
+    "category": "profitability",
+    "created_time": "2025-09-09T02:21:05.707681",
+    "last_updated": "2025-09-09T02:54:06.010960",
+    "author": "",
+    "version": "1.0",
+    "dependencies": [],
+    "expected_frequency": "daily",
+    "calculation_params": {},
+    "data_requirements": [],
+    "test_results": {},
+    "performance_metrics": {},
+    "status_history": [
+      {
+        "timestamp": "2025-09-09T02:21:05.707681",
+        "old_status": "registered",
+        "new_status": "registered",
+        "note": "初始注册"
+      },
+      {
+        "timestamp": "2025-09-09T02:21:13.814565",
+        "old_status": "registered",
+        "new_status": "failed",
+        "note": "计算失败: 计算失败: type object 'FactorDataLoader' has no attribute 'load_trading_dates'\nTraceback (most recent call last):\n  File \"E:\\Documents\\PythonProject\\StockProject\\MultiFactors\\multifactors_beta\\factors\\experimental_lab\\calculation_engine.py\", line 256, in calculate_factor\n    factor_data = calculation_func(**calc_kwargs)\n  File \"E:\\Documents\\PythonProject\\StockProject\\MultiFactors\\multifactors_beta\\test_complex_profitability_experimental.py\", line 58, in calculate_complex_profitability_factor\n    trading_dates = context.load_trading_dates()\n  File \"E:\\Documents\\PythonProject\\StockProject\\MultiFactors\\multifactors_beta\\factors\\experimental_lab\\calculation_engine.py\", line 72, in load_trading_dates\n    self.trading_dates = FactorDataLoader.load_trading_dates()\nAttributeError: type object 'FactorDataLoader' has no attribute 'load_trading_dates'\n"
+      },
+      {
+        "timestamp": "2025-09-09T02:27:34.174338",
+        "old_status": "failed",
+        "new_status": "failed",
+        "note": "计算失败: 计算失败: TTM利润数据缺失，请检查财务数据中的net_income或profit字段\nTraceback (most recent call last):\n  File \"E:\\Documents\\PythonProject\\StockProject\\MultiFactors\\multifactors_beta\\factors\\experimental_lab\\calculation_engine.py\", line 256, in calculate_factor\n    factor_data = calculation_func(**calc_kwargs)\n  File \"E:\\Documents\\PythonProject\\StockProject\\MultiFactors\\multifactors_beta\\test_complex_profitability_experimental.py\", line 77, in calculate_complex_profitability_factor\n    raise ValueError(\"TTM利润数据缺失，请检查财务数据中的net_income或profit字段\")\nValueError: TTM利润数据缺失，请检查财务数据中的net_income或profit字段\n"
+      }
+    ]
+  },
+  "simplified_profitability_factor": {
+    "name": "simplified_profitability_factor",
+    "description": "\n    简化版盈利能力因子：TTM净利润 / 总流动负债 / 5日收益率截面z-score\n    \n    经济含义：\n    - 分子衡量企业的盈利能力（TTM净利润）\n    - 分母衡量企业短期偿债压力（总流动负债）\n    - 除以收益率z-score进行市场情绪调整\n    \n    预期：该因子应该能够识别具有良好盈利能力且短期偿债压力较小的股票\n    \n    注：这是复杂版本的简化实现，用于验证experimental_lab框架\n    ",
+    "calculation_func": null,
+    "status": "registered",
+    "category": "profitability",
+    "created_time": "2025-09-09T03:22:23.020764",
+    "last_updated": "2025-09-09T03:22:23.020764",
+    "author": "",
+    "version": "1.0",
+    "dependencies": [],
+    "expected_frequency": "daily",
+    "calculation_params": {},
+    "data_requirements": [],
+    "test_results": {},
+    "performance_metrics": {},
+    "status_history": [
+      {
+        "timestamp": "2025-09-09T03:22:23.020764",
+        "old_status": "registered",
+        "new_status": "registered",
+        "note": "初始注册"
+      }
+    ]
+  },
+  "basic_test_factor": {
+    "name": "basic_test_factor",
+    "description": "\n    基础测试因子：用于验证experimental_lab框架功能\n    \n    这是一个模拟的测试因子，用于验证框架的完整工作流程：\n    1. 因子注册\n    2. 因子计算 \n    3. 因子测试\n    4. 结果跟踪\n    5. 数据导出\n    \n    注：这不是真实的投资因子，仅用于系统测试\n    ",
+    "calculation_func": null,
+    "status": "calculated",
+    "category": "test",
+    "created_time": "2025-09-09T03:41:15.616975",
+    "last_updated": "2025-09-09T03:41:15.645976",
+    "author": "AI Assistant",
+    "version": "1.0",
+    "dependencies": [],
+    "expected_frequency": "daily",
+    "calculation_params": {},
+    "data_requirements": [],
+    "test_results": {},
+    "performance_metrics": {},
+    "status_history": [
+      {
+        "timestamp": "2025-09-09T03:41:15.616975",
+        "old_status": "registered",
+        "new_status": "registered",
+        "note": "初始注册"
+      },
+      {
+        "timestamp": "2025-09-09T03:41:15.645976",
+        "old_status": "registered",
+        "new_status": "calculated",
+        "note": "计算成功，耗时 0.02秒"
+      }
+    ]
+  }
+}

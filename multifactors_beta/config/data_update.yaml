@@ -1,0 +1,59 @@
+# 数据更新配置文件
+# 用于控制数据更新流程的行为
+
+# 板块估值计算配置
+sector_valuation:
+  enabled: true                    # 是否启用板块估值计算
+  default_date_range: 252          # 默认计算天数（252=一年）
+  output_formats:                  # 输出格式
+    - pkl                          # 二进制格式（主要）
+    - csv                          # CSV格式（便于查看）
+    - json                         # JSON汇总报告
+  save_intermediate: true          # 是否保存中间结果
+
+# 更新任务配置
+update_tasks:
+  daily:
+    price_data: true               # 更新价格数据
+    returns: true                  # 计算收益率
+    sector_valuation: true         # 更新板块估值
+    sector_date_range: 1           # 板块估值计算最近1天
+
+  weekly:
+    financial_data: true           # 更新财务数据
+    sector_classification: true    # 更新行业分类
+    sector_valuation: true         # 更新板块估值
+    sector_date_range: 5           # 板块估值计算最近5天
+
+  monthly:
+    full_pipeline: true            # 运行完整流程
+    sector_valuation: true         # 更新板块估值
+    sector_date_range: 22          # 板块估值计算最近22天（一个月）
+
+# 性能优化配置
+optimization:
+  use_parallel: false              # 是否使用并行处理
+  use_incremental: true            # 是否使用增量更新
+  memory_limit_gb: 8              # 内存限制（GB）
+  chunk_size: 10000                # 批处理大小
+
+# 日志配置
+logging:
+  level: INFO                      # 日志级别: DEBUG, INFO, WARNING, ERROR
+  save_to_file: true               # 是否保存到文件
+  max_file_size_mb: 100            # 日志文件最大大小（MB）
+  backup_count: 10                 # 保留的历史日志文件数量
+
+# 数据质量检查
+quality_check:
+  check_missing_data: true         # 检查缺失数据
+  check_outliers: true             # 检查异常值
+  pe_range: [5, 200]              # 合理的PE范围
+  pb_range: [0.5, 10]             # 合理的PB范围
+
+# 通知配置（可选）
+notification:
+  enabled: false                   # 是否启用通知
+  on_success: true                 # 成功时通知
+  on_failure: true                 # 失败时通知
+  email: ""                        # 邮件地址（如果启用）
