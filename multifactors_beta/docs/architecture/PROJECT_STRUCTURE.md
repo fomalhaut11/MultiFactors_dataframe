@@ -301,15 +301,20 @@ multifactors_beta/
 │   └── legacy/                      # 历史版本
 │       └── README.md                # 历史版本说明
 │
-├── 📜 核心执行脚本
-│   ├── scheduled_data_updater.py    # 定时数据更新器 ⭐
-│   ├── interactive_data_updater.py  # 交互式数据更新器
-│   ├── get_historical_price_2014.py # 历史数据获取工具
-│   ├── batch_generate_factors.py    # 批量因子生成工具 ⭐
-│   ├── quick_generate_factors.py    # 快速因子生成工具 ⭐
-│   ├── advanced_factor_generator.py # 高级因子生成器 ⭐
-│   ├── factor_manager.py            # 因子管理工具CLI
-│   └── generate_orthogonal_factors.py  # 正交化因子生成脚本
+├── 🔧 开发工具（已整理）
+│   └── tools/                       # 开发和调试工具 🆕
+│       ├── factor_generation/       # 因子生成工具集
+│       │   ├── batch_generate_factors.py    # 批量因子生成工具 ⭐
+│       │   ├── quick_generate_factors.py    # 快速因子生成工具 ⭐
+│       │   ├── advanced_factor_generator.py # 高级因子生成器 ⭐
+│       │   ├── factor_manager.py            # 因子管理工具CLI
+│       │   └── generate_orthogonal_factors.py  # 正交化因子生成脚本
+│       ├── data_management/         # 数据管理工具集
+│       │   ├── scheduled_data_updater.py    # 定时数据更新器 ⭐
+│       │   ├── interactive_data_updater.py  # 交互式数据更新器
+│       │   └── get_historical_price_2014.py # 历史数据获取工具
+│       ├── debugging/               # 调试和分析工具
+│       └── utilities/               # 通用工具脚本
 │
 ├── 📚 示例和教程
 │   └── examples/                    # 使用示例和教程 🆕
@@ -391,14 +396,14 @@ multifactors_beta/
 # 数据准备
 python data/prepare_auxiliary_data.py
 
-# 更新价格数据  
-python scheduled_data_updater.py --data-type price
+# 更新价格数据
+python tools/data_management/scheduled_data_updater.py --data-type price
 
 # 批量生成因子
-python quick_generate_factors.py --set core
+python tools/factor_generation/quick_generate_factors.py --set core
 
 # 生成正交化因子
-python generate_orthogonal_factors.py --batch
+python tools/factor_generation/generate_orthogonal_factors.py --batch
 
 # 运行测试
 pytest tests/

@@ -42,13 +42,13 @@ pip install pandas numpy scipy statsmodels
 
 ```bash
 # 🩺 健康检查
-python scheduled_data_updater.py --data-type all --health-check
+python tools/data_management/scheduled_data_updater.py --data-type all --health-check
 
 # 🔄 数据更新
-python scheduled_data_updater.py --data-type all --force
+python tools/data_management/scheduled_data_updater.py --data-type all --force
 
 # 📋 查看数据状态
-python scheduled_data_updater.py --data-summary
+python tools/data_management/scheduled_data_updater.py --data-summary
 ```
 
 **📚 数据更新系统文档**：
@@ -91,48 +91,48 @@ python data/prepare_auxiliary_data.py --parallel    # 启用并行处理（实�
 
 ```bash
 # 1️⃣ 获取历史价格数据（首次运行）
-python get_historical_price_2014.py
+python tools/data_management/get_historical_price_2014.py
 
 # 2️⃣ 获取财务数据（手动执行）
-python scheduled_data_updater.py --data-type financial
+python tools/data_management/scheduled_data_updater.py --data-type financial
 
 # 3️⃣ 验证数据完整性
-python scheduled_data_updater.py --data-type all --health-check
+python tools/data_management/scheduled_data_updater.py --data-type all --health-check
 ```
 
 #### 🔄 完整数据准备工作流程
 
 ```bash
 # 第一步：获取原始数据（首次运行或数据缺失时）
-python get_historical_price_2014.py                    # 历史价格数据
-python scheduled_data_updater.py --data-type financial # 财务数据
+python tools/data_management/get_historical_price_2014.py                    # 历史价格数据
+python tools/data_management/scheduled_data_updater.py --data-type financial # 财务数据
 
 # 第二步：生成辅助数据（必须执行）
 python data/prepare_auxiliary_data.py --fast          # 预处理辅助数据
 
 # 第三步：验证数据就绪
-python scheduled_data_updater.py --data-type all --health-check
+python tools/data_management/scheduled_data_updater.py --data-type all --health-check
 
 # 🎯 现在可以开始因子计算和回测！
 ```
 
 #### 📅 日常数据更新（高频数据）
-python scheduled_data_updater.py --data-type price      # 价格数据（推荐日更）
-python scheduled_data_updater.py --data-type stop_price # 涨跌停数据（推荐日更）
+python tools/data_management/scheduled_data_updater.py --data-type price      # 价格数据（推荐日更）
+python tools/data_management/scheduled_data_updater.py --data-type stop_price # 涨跌停数据（推荐日更）
 
 # 低频数据更新（按需手动执行）
-python scheduled_data_updater.py --data-type financial  # 财务数据（季报后更新）
+python tools/data_management/scheduled_data_updater.py --data-type financial  # 财务数据（季报后更新）
 
 # 一次性更新所有数据（谨慎使用）
-python scheduled_data_updater.py --data-type all        # 包含尚未实现的industry模块
+python tools/data_management/scheduled_data_updater.py --data-type all        # 包含尚未实现的industry模块
 
 # 强制更新（忽略时间和必要性检查）
-python scheduled_data_updater.py --data-type price --force
+python tools/data_management/scheduled_data_updater.py --data-type price --force
 
 # 数据健康检查
-python scheduled_data_updater.py --data-type price --health-check      # 检查价格数据
-python scheduled_data_updater.py --data-type financial --health-check  # 检查财务数据
-python scheduled_data_updater.py --data-type all --health-check        # 检查所有数据
+python tools/data_management/scheduled_data_updater.py --data-type price --health-check      # 检查价格数据
+python tools/data_management/scheduled_data_updater.py --data-type financial --health-check  # 检查财务数据
+python tools/data_management/scheduled_data_updater.py --data-type all --health-check        # 检查所有数据
 ```
 
 ### 3. 批量因子生成 🚀
@@ -143,16 +143,16 @@ python scheduled_data_updater.py --data-type all --health-check        # 检查�
 **quick_generate_factors.py** - 零配置，开箱即用的快速因子生成
 ```bash
 # 🎯 生成核心因子集合（15个最重要的因子）
-python quick_generate_factors.py                    # 默认core模式
+python tools/factor_generation/quick_generate_factors.py                    # 默认core模式
 
-# 📋 生成基础因子集合（8个代表性因子）  
-python quick_generate_factors.py --set basic        # 适合小数据量测试
+# 📋 生成基础因子集合（8个代表性因子）
+python tools/factor_generation/quick_generate_factors.py --set basic        # 适合小数据量测试
 
 # 🧪 生成测试因子集合（4个常用因子）
-python quick_generate_factors.py --set test         # 快速验证环境
+python tools/factor_generation/quick_generate_factors.py --set test         # 快速验证环境
 
 # 📖 查看所有可用因子集合
-python quick_generate_factors.py --list
+python tools/factor_generation/quick_generate_factors.py --list
 ```
 
 **预设因子集合**：
@@ -164,21 +164,21 @@ python quick_generate_factors.py --list
 **advanced_factor_generator.py** - 基于YAML配置的智能因子生成系统
 ```bash
 # 🔧 使用默认配置生成核心因子
-python advanced_factor_generator.py --mode core
+python tools/factor_generation/advanced_factor_generator.py --mode core
 
 # 📦 按因子分组生成
-python advanced_factor_generator.py --mode financial    # 生成所有财务因子
-python advanced_factor_generator.py --mode mixed        # 生成混合因子（需多种数据）
+python tools/factor_generation/advanced_factor_generator.py --mode financial    # 生成所有财务因子
+python tools/factor_generation/advanced_factor_generator.py --mode mixed        # 生成混合因子（需多种数据）
 
 # 🎯 指定特定因子生成
-python advanced_factor_generator.py --factors "ROE_ttm,BP,EP_ttm,Size"
+python tools/factor_generation/advanced_factor_generator.py --factors "ROE_ttm,BP,EP_ttm,Size"
 
 # 📋 查看所有可用因子和模式
-python advanced_factor_generator.py --list             # 查看所有因子
-python advanced_factor_generator.py --list-modes       # 查看所有模式
+python tools/factor_generation/advanced_factor_generator.py --list             # 查看所有因子
+python tools/factor_generation/advanced_factor_generator.py --list-modes       # 查看所有模式
 
 # ⚙️ 使用自定义配置文件
-python advanced_factor_generator.py --config my_config.yaml --mode all
+python tools/factor_generation/advanced_factor_generator.py --config my_config.yaml --mode all
 ```
 
 **因子分组**（基于factor_config.yaml）：
@@ -191,25 +191,25 @@ python advanced_factor_generator.py --config my_config.yaml --mode all
 **batch_generate_factors.py** - 支持60+个因子的完整批量生成系统
 ```bash
 # 🌟 生成所有已实现的因子（60+个）
-python batch_generate_factors.py --mode all
+python tools/factor_generation/batch_generate_factors.py --mode all
 
 # 📦 按类型生成因子
-python batch_generate_factors.py --mode financial      # 财务因子（61个）
-python batch_generate_factors.py --mode technical      # 技术因子（17个）
-python batch_generate_factors.py --mode risk          # 风险因子（8个）
-python batch_generate_factors.py --mode mixed         # 混合因子（7个）
+python tools/factor_generation/batch_generate_factors.py --mode financial      # 财务因子（61个）
+python tools/factor_generation/batch_generate_factors.py --mode technical      # 技术因子（17个）
+python tools/factor_generation/batch_generate_factors.py --mode risk          # 风险因子（8个）
+python tools/factor_generation/batch_generate_factors.py --mode mixed         # 混合因子（7个）
 
 # 🎯 指定因子列表生成
-python batch_generate_factors.py --factors "ROE_ttm,ROA_ttm,BP,EP_ttm,Size"
+python tools/factor_generation/batch_generate_factors.py --factors "ROE_ttm,ROA_ttm,BP,EP_ttm,Size"
 
 # ⚡ 并行加速生成（4核）+ 快速模式
-python batch_generate_factors.py --mode all --parallel 4 --fast
+python tools/factor_generation/batch_generate_factors.py --mode all --parallel 4 --fast
 
 # 📋 查看所有可用因子
-python batch_generate_factors.py --list-factors
+python tools/factor_generation/batch_generate_factors.py --list-factors
 
 # 🧪 生成但不保存（仅测试）
-python batch_generate_factors.py --mode test --no-save
+python tools/factor_generation/batch_generate_factors.py --mode test --no-save
 ```
 
 **性能优化选项**：
