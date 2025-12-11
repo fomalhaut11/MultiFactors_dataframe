@@ -588,10 +588,23 @@ multifactors_beta/
 
 ## 使用文档
 
-- [数据预处理指南](docs/数据预处理功能完整指南.md)
-- [因子计算指南](docs/因子计算模块迁移指南.md)
-- [数据更新说明](docs/Price数据增量更新使用说明.md)
-- [数据字段说明](docs/数据字段理解修正说明.md)
+### 📚 快速导航
+- **[完整文档索引](docs/README.md)** - 文档中心首页
+
+### 🎓 入门学习
+- [开发第一个因子](docs/tutorials/02-develop-first-factor.md) - 完整因子开发教程
+
+### 🔧 操作指南
+- [准备辅助数据](docs/how-to/data/prepare-auxiliary-data.md) - 数据预处理
+- [更新价格数据](docs/how-to/data/update-price-data.md) - 增量数据更新
+- [测试单因子](docs/how-to/testing/test-single-factor.md) - 因子测试流程
+
+### 📖 参考文档
+- [Generators API](docs/reference/api/generators-api.md) - 核心工具API
+
+### 💡 概念说明
+- [财报数据处理](docs/explanation/concepts/financial-data-processing.md) - 财务数据概念
+- [交易日期](docs/explanation/concepts/trading-dates.md) - 日期对齐规则
 
 ## 配置说明
 
@@ -819,27 +832,33 @@ python scheduled_data_updater.py --data-type financial --health-check
 
 - **[README.md](README.md)** - 本文档，项目总览
 - **[CLAUDE.md](CLAUDE.md)** - AI助手使用指南（场景路由）
-- **[快速参考](docs/guides/general/QUICK_REFERENCE.md)** - 常用命令速查
+- **[完整文档索引](docs/README.md)** - 文档中心（基于Diataxis框架）
 
 ### 📖 详细文档（按需查阅）
 
-**架构设计**：
-- [项目架构v3.0](docs/architecture/ARCHITECTURE_V3.md) - 四层架构设计
-- [项目结构说明](docs/architecture/PROJECT_STRUCTURE.md) - 完整目录结构
-- [因子架构](docs/architecture/FACTORS_ARCHITECTURE_FINAL.md) - 因子模块设计
+**🎓 学习教程**：
+- [开发第一个因子](docs/tutorials/02-develop-first-factor.md) ⭐⭐⭐ - 完整因子开发流程
 
-**使用指南**：
-- 数据处理: [数据更新](docs/guides/data/DATA_UPDATE_GUIDE.md) | [数据模块](docs/guides/data/DATA_MODULE_COMPLETE.md)
-- 因子开发: [新因子开发](docs/new-factor-scenario.md) ⭐ | [防重复造轮子](docs/anti-duplication-guide.md) ⭐ | [工具集指南](docs/factor-generators-guide.md) ⭐
-- 因子测试: [单因子测试](docs/单因子测试模块使用指南.md) | [因子筛选](docs/因子筛选分析模块使用指南.md)
-- 回测系统: [回测使用指南](docs/guides/backtest/backtest_usage_guide.md)
+**🔧 操作指南**：
+- 数据操作: [准备辅助数据](docs/how-to/data/prepare-auxiliary-data.md) | [更新价格数据](docs/how-to/data/update-price-data.md)
+- 因子操作: [防重复造轮子](docs/how-to/factors/avoid-duplication.md) ⭐⭐⭐ | [分析筛选因子](docs/how-to/factors/analyze-and-screen-factors.md) | [更新因子](docs/how-to/factors/update-factors.md)
+- 测试操作: [测试单因子](docs/how-to/testing/test-single-factor.md)
+
+**📖 参考手册**：
+- [Generators API](docs/reference/api/generators-api.md) ⭐⭐⭐ - 核心工具API
+
+**💡 概念说明**：
+- [财报数据处理](docs/explanation/concepts/financial-data-processing.md) - 财务数据概念
+- [交易日期](docs/explanation/concepts/trading-dates.md) - 日期对齐规则
+- [性能优化](docs/explanation/best-practices/performance-optimization.md) - 性能优化方法
+
+**📝 代码示例**：
+- [BP因子案例](docs/examples/advanced/bp-factor-case-study.md) - 完整估值因子案例
 
 **开发文档**：
 - [版本变更历史](docs/development/CHANGELOG.md)
 - [模块开发状态](docs/development/MODULE_DEVELOPMENT_STATUS.md)
 - [项目进度报告](docs/development/PROJECT_PROGRESS.md)
-
-**完整文档索引**: 见 [docs/README.md](docs/README.md)
 
 ---
 

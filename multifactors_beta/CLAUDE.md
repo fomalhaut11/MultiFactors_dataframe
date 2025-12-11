@@ -18,35 +18,32 @@
 **适用情况**: 创建新的因子类或计算逻辑
 ```
 引导路径:
-第一步 → @docs/new-factor-scenario.md     (完整开发流程)
-工具指南 → @docs/factor-generators-guide.md (generators工具集详解)
-陷阱预警 → @docs/anti-duplication-guide.md  (防重复造轮子)
+第一步 → @docs/tutorials/02-develop-first-factor.md  (完整开发流程)
+工具指南 → @docs/reference/api/generators-api.md      (generators工具集详解)
+陷阱预警 → @docs/how-to/factors/avoid-duplication.md  (防重复造轮子)
 ```
 
 ### 🧪 因子测试场景
 **适用情况**: 测试因子效果、进行回测分析
 ```
 引导路径:
-测试流程 → @docs/factor-testing-scenario.md (测试完整流程)
-测试工具 → @docs/testing-framework-guide.md (测试框架使用)
-结果分析 → @docs/factor-analysis-guide.md   (结果解读方法)
+测试流程 → @docs/how-to/testing/test-single-factor.md  (测试完整流程)
+结果分析 → @docs/how-to/factors/analyze-and-screen-factors.md (结果解读方法)
 ```
 
 ### 🔍 代码审查/重构场景
 **适用情况**: 修改现有代码、优化性能、代码重构
 ```
 引导路径:
-重构指南 → @docs/code-refactoring-scenario.md (重构最佳实践)
-质量检查 → @docs/code-quality-checklist.md   (代码质量标准)
-性能优化 → @docs/performance-guide.md         (性能优化指南)
+性能优化 → @docs/explanation/best-practices/performance-optimization.md (性能优化指南)
 ```
 
 ### 🔗 系统集成场景
 **适用情况**: 模块集成、配置管理、部署相关
 ```
 引导路径:
-集成指南 → @docs/system-integration-scenario.md (集成流程)
-配置管理 → @docs/config-management-guide.md     (配置规范)
+数据准备 → @docs/how-to/data/prepare-auxiliary-data.md (辅助数据生成)
+数据更新 → @docs/how-to/data/update-price-data.md       (价格数据更新)
 ```
 
 ## 🤖 AI助手场景识别指南
@@ -59,7 +56,7 @@
 - **正在修改现有的因子代码？** → 代码审查/重构场景
 - **正在整合多个模块？** → 系统集成场景
 
-**不确定场景？** 查阅 → @docs/scenario-identification-help.md
+**不确定场景？** 查阅 → @docs/tutorials/ 或 @docs/how-to/ 目录
 
 ## ⚡ 快速工具查找
 
@@ -74,7 +71,7 @@ from factors.generators import (
     expand_to_daily_vectorized  # 将财报数据填充到交易日数据， 所有因子都必须是填充到交易日数据的MultiIndex 的series [TradingDates, StockCodes]
 )
 ```
-**详细说明** → @docs/factor-generators-guide.md
+**详细说明** → @docs/reference/api/generators-api.md
 
 ### 测试工具速查
 ```python
@@ -82,7 +79,7 @@ from factors.generators import (
 from factors.tester import SingleFactorTestPipeline
 from factors.analyzer import FactorScreener
 ```
-**详细说明** → @docs/testing-framework-guide.md
+**详细说明** → @docs/how-to/testing/test-single-factor.md
 
 ## 🚨 常见错误预警
 
@@ -94,14 +91,14 @@ from factors.analyzer import FactorScreener
 5. **测试文件位置错误** - 所有测试文件必须在`tests/`目录下，禁止在根目录或业务代码目录创建测试文件
 
 ### 错误发生时的应对
-发现自己在重复造轮子？立即停止 → @docs/anti-duplication-guide.md
+发现自己在重复造轮子？立即停止 → @docs/how-to/factors/avoid-duplication.md
 
 ---
 
 ## 📋 项目基本信息
 - **项目类型**: 多因子量化投资研究框架
-- **架构版本**: v2.1 (生产级)
+- **架构版本**: v4.0.0 (生产级)
 - **主要语言**: Python 3.9+
 - **核心理念**: AI助手是系统的主要用户界面
 
-**详细架构信息** → @docs/project-architecture.md
+**详细架构信息** → @docs/explanation/concepts/ 目录

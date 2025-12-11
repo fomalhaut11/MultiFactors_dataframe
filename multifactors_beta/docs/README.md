@@ -1,24 +1,37 @@
 # 项目文档中心
 
-**最后更新**: 2025-11-27
+**最后更新**: 2025-12-11
 **项目版本**: v4.0.0
-**文档体系**: 三级架构（根目录 → docs/ → 子模块/）
+**文档体系**: Diataxis 框架（学习、操作、参考、说明）
 
 ---
 
 ## 📖 文档导航说明
 
-本项目采用**三级文档体系**，适合不同角色和需求：
+本项目采用 **Diataxis 文档框架**，提供四种类型的文档满足不同需求：
 
 ```
-L0 (根目录)  → 快速入门文档
-L1 (docs/)   → 详细使用文档（本目录）
-L2 (子模块/) → 模块专属文档
+📚 Diataxis 框架四大文档类型:
+
+学习导向 (Tutorials)      → 通过实践学习技能
+  ↓
+目标导向 (How-to Guides)  → 解决具体问题
+  ↓
+信息导向 (Reference)      → 查阅技术细节
+  ↓
+理解导向 (Explanation)    → 深入理解概念
 ```
+
+**📌 如何选择文档**:
+- **想学习新技能** → [Tutorials](tutorials/)
+- **遇到具体问题** → [How-to Guides](how-to/)
+- **查找API信息** → [Reference](reference/)
+- **理解原理概念** → [Explanation](explanation/)
+- **需要代码示例** → [Examples](examples/)
 
 ---
 
-## 🚀 快速入门（L0 - 根目录）
+## 🚀 快速入门（根目录文档）
 
 **新用户必读**，建议按顺序阅读：
 
@@ -30,202 +43,129 @@ L2 (子模块/) → 模块专属文档
    - AI助手使用指南：场景路由、工作场景识别
    - 适合：AI辅助开发用户
 
-3. **[DOCUMENTATION_AUDIT_REPORT.md](../DOCUMENTATION_AUDIT_REPORT.md)**
-   - 文档结构审查报告：文档重构说明
+3. **[DOCUMENTATION_OPTIMIZATION_PLAN.md](../DOCUMENTATION_OPTIMIZATION_PLAN.md)**
+   - 文档优化计划：Diataxis框架实施方案
    - 适合：文档维护者
 
 ---
 
-## 📚 详细文档（L1 - docs/）
+## 📚 Diataxis 文档体系
 
-### 🏗️ 架构设计
+### 🎓 教程 (Tutorials)
 
-**了解项目设计理念和技术架构**：
+**学习导向** - 通过实践学习
 
-- **[项目架构v3.0](architecture/ARCHITECTURE_V3.md)** ⭐⭐⭐
-  - 四层架构设计（AI助手层 → 策略层 → 因子层 → 数据层 → 基础层）
-  - 模块职责划分
-  - 架构演进历史
+**入门教程**:
+1. **[开发第一个因子](tutorials/02-develop-first-factor.md)** ⭐⭐⭐
+   - 完整因子开发流程
+   - 学习时间：30分钟
+   - 前置要求：Python基础
 
-- **[项目结构说明](architecture/PROJECT_STRUCTURE.md)** ⭐⭐
-  - 完整目录结构
-  - 文件组织方式
-  - 命名规范
-
-- **[因子架构最终版](architecture/FACTORS_ARCHITECTURE_FINAL.md)** ⭐
-  - 因子模块三层架构（生成→测试→分析）
-  - 因子数据流
-  - 设计模式
+**完整教程索引** → [tutorials/README.md](tutorials/README.md)
 
 ---
 
-### 📖 使用指南
+### 🔧 操作指南 (How-to Guides)
 
-#### 数据处理指南 (guides/data/)
+**目标导向** - 解决具体问题
 
-- **[数据更新指南](guides/data/DATA_UPDATE_GUIDE.md)** ⭐⭐⭐
-  - 定时更新配置
-  - 增量更新机制
-  - 健康检查
+#### 数据操作
+- **[准备辅助数据](how-to/data/prepare-auxiliary-data.md)** ⭐⭐
+  - 生成TradingDates、ReleaseDates等辅助数据
+- **[更新价格数据](how-to/data/update-price-data.md)** ⭐⭐
+  - Price数据增量更新
 
-- **[数据模块完整指南](guides/data/DATA_MODULE_COMPLETE.md)** ⭐⭐
-  - 数据获取和处理流程
-  - 数据结构规范
-  - 数据依赖关系
-
-- **[数据更新API文档](guides/data/DATA_UPDATER_API.md)** ⭐
-  - API接口说明
-  - 参数详解
-  - 使用示例
-
-- **[数据依赖图谱](guides/data/DATA_DEPENDENCY_MAP.md)**
-  - 数据流向关系
-  - 模块依赖分析
-
-#### 因子开发指南 (guides/factors/)
-
-**⚠️ 因子开发必读三篇**：
-
-1. **[新因子开发完整流程](new-factor-scenario.md)** ⭐⭐⭐
-   - 完整开发步骤
-   - 标准代码模板
-   - 常见陷阱避免
-
-2. **[防重复造轮子指南](anti-duplication-guide.md)** ⭐⭐⭐
-   - 强制检查清单
-   - 现有工具查找
-   - 避免重复实现
-
-3. **[因子生成器工具集](factor-generators-guide.md)** ⭐⭐⭐
-   - factors.generators完整API
-   - 财务/技术/混合/Alpha191工具
-   - 使用示例
-
-**其他因子文档**：
-
-- **[因子快速入门](guides/factors/FACTORS_QUICK_START.md)** ⭐
-  - 5分钟生成第一个因子
-  - 批量生成工作流
-
-- **[因子仓库指南](guides/factors/FACTOR_REPOSITORY_GUIDE.md)** ⭐
-  - 因子注册管理
-  - 动态加载机制
-
-- **[混合因子集成指南](guides/factors/MIXED_FACTOR_INTEGRATION_GUIDE.md)**
-  - 多数据源协同
-  - 混合因子开发示例
-
-#### 因子测试指南
-
-- **[单因子测试模块](单因子测试模块使用指南.md)** ⭐⭐
-  - SingleFactorTestPipeline使用
-  - IC分析和分组测试
-
-- **[因子筛选分析](因子筛选分析模块使用指南.md)** ⭐⭐
-  - FactorScreener使用
-  - 筛选策略配置
-
-- **[因子更新模块](因子更新模块使用指南.md)**
+#### 因子操作
+- **[防止重复造轮子](how-to/factors/avoid-duplication.md)** ⭐⭐⭐
+  - 必读检查清单，避免重复实现
+- **[分析和筛选因子](how-to/factors/analyze-and-screen-factors.md)** ⭐⭐
+  - 因子筛选分析流程
+- **[更新因子数据](how-to/factors/update-factors.md)**
   - 因子增量更新
-  - 版本管理
 
-#### 回测系统指南 (guides/backtest/)
+#### 测试操作
+- **[测试单因子](how-to/testing/test-single-factor.md)** ⭐⭐
+  - 单因子测试完整流程
 
-- **[回测使用指南](guides/backtest/backtest_usage_guide.md)** ⭐
-  - 回测引擎使用
-  - 策略配置
-  - 绩效分析
-
-#### 通用指南 (guides/general/)
-
-- **[快速参考](guides/general/QUICK_REFERENCE.md)** ⭐⭐
-  - 常用命令速查
-  - 快速问题解决
-
-- **[编码问题解决](guides/general/encoding-guide.md)** ⭐
-  - Windows GBK兼容
-  - 环境配置
-  - 字符编码处理
-
-- **[股票池规范](guides/general/STOCK_UNIVERSE_SPECIFICATION.md)**
-  - 股票池构建
-  - 筛选条件
-
-- **[高换手率股票池](guides/general/HIGH_TURNOVER_UNIVERSE_USAGE.md)**
-  - 高频交易股票池
-  - 流动性筛选
+**完整操作指南索引** → [how-to/README.md](how-to/README.md)
 
 ---
 
-### 🔧 开发文档 (development/)
+### 📖 参考手册 (Reference)
 
-- **[版本变更历史](development/CHANGELOG.md)** ⭐⭐
-  - 详细版本记录
-  - 破坏性变更说明
-  - 升级指南
+**信息导向** - 技术文档和规范
 
-- **[模块开发状态](development/MODULE_DEVELOPMENT_STATUS.md)** ⭐
-  - 详细模块清单和API
-  - 使用示例
-  - 完成度追踪
+#### API参考
+- **[Generators API](reference/api/generators-api.md)** ⭐⭐⭐
+  - 核心数据处理工具集
+  - 财务工具 (TTM, YoY, QoQ等)
+  - 技术指标工具
+  - Alpha191操作函数
 
-- **[项目进度报告](development/PROJECT_PROGRESS.md)**
-  - 各模块完成度（87%）
-  - 已实现功能清单
-  - 开发路线图
+**完整参考文档索引** → [reference/README.md](reference/README.md)
 
 ---
 
-### 📦 归档文档 (archived/)
+### 💡 说明文档 (Explanation)
 
-**历史参考，不再维护**：
+**理解导向** - 概念和原理
 
-#### 测试报告 (archived/test-reports/)
-- `FACTORS_CONFIG_INTEGRATION_TEST_REPORT.md` - 集成测试报告（2025-09-06）
-- `TESTING_REPORT.md` - 测试框架报告（2025-08-29）
+#### 核心概念
+- **[财报数据处理](explanation/concepts/financial-data-processing.md)** ⭐⭐
+  - 财报字段、TTM/YoY/QoQ概念
+- **[交易日期](explanation/concepts/trading-dates.md)** ⭐
+  - 交易日历、日期对齐
 
-#### 迁移指南 (archived/migration-guides/)
-- `STOCK_UNIVERSE_PATH_UPDATE.md` - 路径更新说明（已完成）
+#### 最佳实践
+- **[性能优化](explanation/best-practices/performance-optimization.md)** ⭐⭐
+  - 性能优化方法和增量处理
 
----
-
-## 📝 数据处理专题文档
-
-### 财务数据处理
-- **[财报数据处理逻辑](财报数据处理逻辑说明.md)**
-  - 财报字段说明
-  - TTM/YoY/QoQ计算
-
-- **[数据预处理功能](数据预处理功能完整指南.md)**
-  - 预处理流程
-  - 辅助数据生成
-
-- **[交易日期统一使用](交易日期统一使用指南.md)**
-  - 交易日历管理
-  - 日期对齐规则
-
-- **[Price数据增量更新](Price数据增量更新使用说明.md)**
-  - 增量更新策略
-  - 数据完整性检查
-
-### 技术规范
-- **[模块接口设计规范](模块接口设计规范.md)** ⭐
-  - 接口设计原则
-  - 命名约定
-  - 参数规范
-
-- **[性能优化和增量处理](性能优化和增量处理说明.md)**
-  - 性能优化策略
-  - 增量处理方法
-
-### 因子使用案例
-- **[BP因子使用指南](BP因子使用指南.md)**
-  - 估值因子实现案例
-  - 混合因子开发示例
+**完整说明文档索引** → [explanation/README.md](explanation/README.md)
 
 ---
 
-## 🗂️ 子模块文档（L2）
+### 📝 示例代码 (Examples)
+
+**实用导向** - 可运行的代码
+
+#### 高级用法
+- **[BP因子案例研究](examples/advanced/bp-factor-case-study.md)** ⭐⭐⭐
+  - 完整的估值因子实现案例
+
+**完整示例索引** → [examples/README.md](examples/README.md)
+
+---
+
+## 📂 按角色分类
+
+### 👤 新用户/研究员
+**推荐阅读顺序**：
+1. [README.md](../README.md) - 项目总览
+2. [开发第一个因子](tutorials/02-develop-first-factor.md) - 上手实践
+3. [准备辅助数据](how-to/data/prepare-auxiliary-data.md) - 数据准备
+
+### 👨‍💻 因子开发者
+**必读文档**：
+1. [开发第一个因子](tutorials/02-develop-first-factor.md) ⭐⭐⭐
+2. [防止重复造轮子](how-to/factors/avoid-duplication.md) ⭐⭐⭐
+3. [Generators API](reference/api/generators-api.md) ⭐⭐⭐
+4. [测试单因子](how-to/testing/test-single-factor.md) ⭐⭐
+
+### 🏗️ 架构师/高级开发者
+**核心文档**：
+1. [财报数据处理](explanation/concepts/financial-data-processing.md)
+2. [性能优化](explanation/best-practices/performance-optimization.md)
+3. [BP因子案例研究](examples/advanced/bp-factor-case-study.md)
+
+### 🔧 运维/数据管理员
+**关键文档**：
+1. [准备辅助数据](how-to/data/prepare-auxiliary-data.md)
+2. [更新价格数据](how-to/data/update-price-data.md)
+3. [配置系统说明](../config/README.md)
+
+---
+
+## 🗂️ 子模块文档
 
 各模块目录下的README文档：
 
@@ -235,41 +175,22 @@ L2 (子模块/) → 模块专属文档
 | **核心模块** | [core/README.md](../core/README.md) | 核心工具说明 |
 | **数据模块** | [data/README.md](../data/README.md) | 数据获取和处理 |
 | **调试工具** | [debug/README.md](../debug/README.md) | 调试工具说明 |
-| **示例代码** | [examples/README.md](../examples/README.md) | 使用示例 |
 | **测试规范** | [tests/README.md](../tests/README.md) | 测试规范 ⭐ |
 | **工具脚本** | [tools/README.md](../tools/README.md) | 辅助工具 |
 
 ---
 
-## 📂 按角色分类
+## 🔍 快速查找
 
-### 👤 新用户/研究员
-**推荐阅读顺序**：
-1. [README.md](../README.md) - 项目总览
-2. [快速参考](guides/general/QUICK_REFERENCE.md) - 常用命令
-3. [因子快速入门](guides/factors/FACTORS_QUICK_START.md) - 5分钟上手
-4. [数据更新指南](guides/data/DATA_UPDATE_GUIDE.md) - 数据准备
+### 我想了解...
 
-### 👨‍💻 因子开发者
-**必读文档**：
-1. [新因子开发场景](new-factor-scenario.md) ⭐⭐⭐
-2. [防重复造轮子](anti-duplication-guide.md) ⭐⭐⭐
-3. [因子生成器工具集](factor-generators-guide.md) ⭐⭐⭐
-4. [单因子测试模块](单因子测试模块使用指南.md) ⭐⭐
-
-### 🏗️ 架构师/高级开发者
-**核心文档**：
-1. [项目架构v3.0](architecture/ARCHITECTURE_V3.md)
-2. [模块开发状态](development/MODULE_DEVELOPMENT_STATUS.md)
-3. [模块接口设计规范](模块接口设计规范.md)
-4. [性能优化说明](性能优化和增量处理说明.md)
-
-### 🔧 运维/数据管理员
-**关键文档**：
-1. [数据更新指南](guides/data/DATA_UPDATE_GUIDE.md)
-2. [数据依赖图谱](guides/data/DATA_DEPENDENCY_MAP.md)
-3. [配置系统说明](../config/README.md)
-4. [编码问题解决](guides/general/encoding-guide.md)
+- **如何开始？** → [README.md](../README.md)
+- **如何开发新因子？** → [开发第一个因子](tutorials/02-develop-first-factor.md)
+- **如何准备数据？** → [准备辅助数据](how-to/data/prepare-auxiliary-data.md)
+- **如何测试因子？** → [测试单因子](how-to/testing/test-single-factor.md)
+- **避免重复造轮子？** → [防止重复造轮子](how-to/factors/avoid-duplication.md)
+- **查找工具API？** → [Generators API](reference/api/generators-api.md)
+- **理解财报处理？** → [财报数据处理](explanation/concepts/financial-data-processing.md)
 
 ---
 
@@ -288,17 +209,16 @@ L2 (子模块/) → 模块专属文档
 
 ---
 
-## 🔍 快速查找
+## 📚 归档文档 (archived/)
 
-### 我想了解...
+**历史参考，不再维护**：
 
-- **如何开始？** → [README.md](../README.md)
-- **如何开发新因子？** → [新因子开发场景](new-factor-scenario.md)
-- **如何更新数据？** → [数据更新指南](guides/data/DATA_UPDATE_GUIDE.md)
-- **如何测试因子？** → [单因子测试模块](单因子测试模块使用指南.md)
-- **遇到编码问题？** → [编码问题解决](guides/general/encoding-guide.md)
-- **项目架构？** → [项目架构v3.0](architecture/ARCHITECTURE_V3.md)
-- **版本变更？** → [CHANGELOG](development/CHANGELOG.md)
+#### 测试报告 (archived/test-reports/)
+- `FACTORS_CONFIG_INTEGRATION_TEST_REPORT.md` - 集成测试报告（2025-09-06）
+- `TESTING_REPORT.md` - 测试框架报告（2025-08-29）
+
+#### 迁移指南 (archived/migration-guides/)
+- `STOCK_UNIVERSE_PATH_UPDATE.md` - 路径更新说明（已完成）
 
 ---
 
@@ -322,17 +242,39 @@ L2 (子模块/) → 模块专属文档
 1. **及时更新** - 功能变更时同步更新文档
 2. **定期清理** - 每月清理过时文档
 3. **版本标注** - 重要文档标注更新日期
-4. **结构清晰** - 保持文档分类合理
+4. **结构清晰** - 保持Diataxis框架分类
 
 ### 贡献文档
 欢迎改进文档：
 1. Fork项目
 2. 在docs/目录下修改或新增文档
-3. 提交Pull Request
-4. 说明改进内容
+3. 遵循Diataxis框架分类
+4. 提交Pull Request
+
+---
+
+## 🎯 Diataxis 框架简介
+
+本项目采用 [Diataxis](https://diataxis.fr/) 文档框架，这是一个成熟的文档组织方法论，被 Django、Gatsby 等大型项目采用。
+
+### 四种文档类型
+
+| 类型 | 导向 | 目标 | 形式 |
+|------|------|------|------|
+| **Tutorials** | 学习 | 让新手通过实践学会技能 | 手把手教学 |
+| **How-to** | 目标 | 解决特定问题 | 问题→步骤 |
+| **Reference** | 信息 | 提供准确技术信息 | 干巴巴但准确 |
+| **Explanation** | 理解 | 解释概念和原理 | 为什么这样设计 |
+
+### 为什么使用 Diataxis？
+
+✅ **基于成熟框架** - 行业标准，非自创体系
+✅ **用户需求导向** - 根据用户意图组织文档
+✅ **易于导航** - 清晰的文档分类和索引
+✅ **易于维护** - 明确的文档职责划分
 
 ---
 
 **文档维护**: MultiFactors Team
-**最后更新**: 2025-11-27
+**最后更新**: 2025-12-11
 **项目版本**: v4.0.0
