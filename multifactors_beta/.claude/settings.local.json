@@ -44,7 +44,22 @@
       "Read(E:\\Documents\\PythonProject/**)",
       "WebSearch",
       "Bash(tree:*)",
-      "Bash(git mv:*)"
+      "Bash(git mv:*)",
+      "mcp__sequential-thinking__sequentialthinking",
+      "Bash(git tag:*)",
+      "Bash(git push:*)",
+      "Bash(while read dir)",
+      "Bash(do)",
+      "Bash(if [ ! -f \"$dir/README.md\" ])",
+      "Bash([ \"$dir\" != \"docs/tutorials\" ])",
+      "Bash([ \"$dir\" != \"docs/how-to\" ])",
+      "Bash([ \"$dir\" != \"docs/reference\" ])",
+      "Bash([ \"$dir\" != \"docs/explanation\" ])",
+      "Bash([ \"$dir\" != \"docs/examples\" ])",
+      "Bash(then)",
+      "Bash(fi)",
+      "Bash(done)",
+      "Bash(wc:*)"
     ],
     "deny": [],
     "additionalDirectories": [
