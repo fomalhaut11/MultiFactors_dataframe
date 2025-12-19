@@ -45,21 +45,24 @@ class SingleFactorTestPipeline:
         logger.info("单因子测试流水线初始化完成")
         
     def run(
-        self, 
+        self,
         factor_name: str,
         save_result: bool = True,
+        save_processed_factor: bool = True,
         stock_universe: Optional[Union[List[str], str, pd.Series]] = None,
         **override_config
     ) -> TestResult:
         """
         执行单因子测试
-        
+
         Parameters
         ----------
         factor_name : str
             因子名称
-        save_result : bool
-            是否保存结果
+        save_result : bool, default True
+            是否保存测试结果
+        save_processed_factor : bool, default True
+            是否单独保存处理后的因子到orthogonalization_factors目录
         stock_universe : List[str] or str, optional
             股票池，支持多种格式：
             - None/'full': 全市场（默认）
@@ -69,7 +72,7 @@ class SingleFactorTestPipeline:
             - ['000001', '000002']: 直接股票列表
         **override_config
             覆盖配置参数
-            
+
         Returns
         -------
         TestResult
@@ -118,9 +121,14 @@ class SingleFactorTestPipeline:
         if save_result:
             logger.info("保存测试结果...")
             self.result_manager.save(result)
-        
+
+        # 单独保存处理后的因子
+        if save_processed_factor and result.processed_factor is not None:
+            logger.info("单独保存处理后的因子...")
+            self.result_manager.save_processed_factor_separately(result)
+
         logger.info(f"因子测试完成: {factor_name}")
-        
+
         return result
     
     def batch_run(
@@ -550,3 +558,165 @@ class SingleFactorTestPipeline:
         """清空数据缓存"""
         self.data_manager.clear_cache()
         logger.info("数据缓存已清空")
+
+    def export_processed_factor(
+        self,
+        factor_name: str,
+        subfolder: Optional[str] = None,
+        **override_config
+    ) -> str:
+        """
+        导出处理后的因子（中性化+归一化）
+
+        Parameters
+        ----------
+        factor_name : str
+            因子名称
+        subfolder : str, optional
+            子文件夹名称（用于组织不同配置的因子）
+        **override_config
+            覆盖配置参数
+
+        Returns
+        -------
+        str
+            保存的文件路径
+
+        Examples
+        --------
+        >>> pipeline = SingleFactorTestPipeline()
+        >>> # 导出默认配置的中性化因子
+        >>> path = pipeline.export_processed_factor('ROE_ttm')
+        >>>
+        >>> # 导出特定配置的因子
+        >>> path = pipeline.export_processed_factor(
+        ...     'ROE_ttm',
+        ...     subfolder='large_cap_pool',
+        ...     netral_base=True,
+        ...     use_industry=True
+        ... )
+        """
+        logger.info(f"导出处理后的因子: {factor_name}")
+
+        # 执行测试（不保存完整结果）
+        result = self.run(
+            factor_name,
+            save_result=False,
+            save_processed_factor=False,
+            **override_config
+        )
+
+        # 单独保存处理后的因子
+        if result.processed_factor is not None:
+            filepath = self.result_manager.save_processed_factor_separately(
+                result,
+                subfolder=subfolder
+            )
+            logger.info(f"因子导出完成: {filepath}")
+            return filepath
+        else:
+            logger.error(f"因子导出失败: {factor_name} 没有处理后的数据")
+            return ""
+
+    def load_processed_factor(
+        self,
+        factor_name: str,
+        subfolder: Optional[str] = None,
+        config_key: Optional[str] = None
+    ) -> Optional[pd.Series]:
+        """
+        加载处理后的因子
+
+        Parameters
+        ----------
+        factor_name : str
+            因子名称
+        subfolder : str, optional
+            子文件夹名称
+        config_key : str, optional
+            配置键（例如：'neutral_industry_outlier3_zscore'）
+
+        Returns
+        -------
+        pd.Series or None
+            处理后的因子数据（MultiIndex[TradingDates, StockCodes] Series）
+
+        Examples
+        --------
+        >>> pipeline = SingleFactorTestPipeline()
+        >>> # 自动查找因子
+        >>> factor = pipeline.load_processed_factor('ROE_ttm')
+        >>>
+        >>> # 从特定子文件夹加载
+        >>> factor = pipeline.load_processed_factor('ROE_ttm', subfolder='large_cap_pool')
+        >>>
+        >>> # 使用配置键加载
+        >>> factor = pipeline.load_processed_factor(
+        ...     'ROE_ttm',
+        ...     config_key='neutral_industry_outlier3_zscore'
+        ... )
+        """
+        return self.result_manager.load_processed_factor(
+            factor_name,
+            subfolder=subfolder,
+            config_key=config_key
+        )
+
+    def load_factor_metadata(
+        self,
+        factor_name: str,
+        subfolder: Optional[str] = None
+    ) -> Optional[Dict]:
+        """
+        加载因子元数据
+
+        Parameters
+        ----------
+        factor_name : str
+            因子名称
+        subfolder : str, optional
+            子文件夹名称
+
+        Returns
+        -------
+        dict or None
+            因子元数据（包含处理配置、数据信息、性能指标等）
+        """
+        return self.result_manager.load_factor_metadata(factor_name, subfolder)
+
+    def list_processed_factors(
+        self,
+        subfolder: Optional[str] = None,
+        return_metadata: bool = False
+    ) -> Union[List[str], pd.DataFrame]:
+        """
+        列出所有处理后的因子
+
+        Parameters
+        ----------
+        subfolder : str, optional
+            子文件夹名称
+        return_metadata : bool, default False
+            是否返回详细元数据（DataFrame格式）
+
+        Returns
+        -------
+        List[str] or pd.DataFrame
+            因子名称列表或包含元数据的DataFrame
+
+        Examples
+        --------
+        >>> pipeline = SingleFactorTestPipeline()
+        >>> # 获取所有因子名称
+        >>> factors = pipeline.list_processed_factors()
+        >>> print(factors)
+        ['ROE_ttm', 'ROA_ttm', 'EP_ttm', ...]
+        >>>
+        >>> # 获取详细元数据
+        >>> factors_df = pipeline.list_processed_factors(return_metadata=True)
+        >>> print(factors_df[['factor_name', 'ic_mean', 'icir', 'sample_count']])
+        """
+        return self.result_manager.list_processed_factors(
+            subfolder=subfolder,
+            return_metadata=return_metadata
+        )

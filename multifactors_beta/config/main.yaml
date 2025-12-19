@@ -61,25 +61,30 @@ data_update:
 paths:
   # 项目根目录 (会自动设置)
   project_root: 'E:\Documents\PythonProject\StockProject\MultiFactors\MutiFactors_1.0'
-  
+
   # 数据存储路径
   data_root: 'E:\Documents\PythonProject\StockProject\StockData'
-  raw_factors: 'E:\Documents\PythonProject\StockProject\StockData\RawFactors'
+  auxiliary_data: 'E:\Documents\PythonProject\StockProject\StockData\auxiliary'
+
+  # 因子数据路径（按处理阶段组织）
+  raw_factors: 'E:\Documents\PythonProject\StockProject\StockData\RawFactors'  # 原始因子（未处理）
   raw_factors_alpha191: 'E:\Documents\PythonProject\StockProject\StockData\RawFactors_alpha191'
-  orthogonalization_factors: 'E:\Documents\PythonProject\StockProject\StockData\OrthogonalizationFactors'
+  orthogonalization_factors: 'E:\Documents\PythonProject\StockProject\StockData\OrthogonalizationFactors'  # 处理后因子（中性化+归一化）
+
+  # 其他数据路径
   classification_data: 'E:\Documents\PythonProject\StockProject\StockData\Classificationdata'
-  single_factor_test: 'E:\Documents\PythonProject\StockProject\StockData\SingleFactorTestData'
+  single_factor_test: 'E:\Documents\PythonProject\StockProject\StockData\SingleFactorTestData'  # 测试结果（含因子快照）
   temp_data: 'E:\Documents\PythonProject\StockProject\StockData\TempData'
-  
+
   # 因子存储路径 (新增)
   factors: 'E:\Documents\PythonProject\StockProject\StockData\factors'
-  
+
   # 股票池存储路径 (新增)
   stock_universe: 'E:\Documents\PythonProject\StockProject\StockData\stock_universe'
-  
+
   # 输出路径
   results: './results'
-  logs: './logs' 
+  logs: './logs'
   cache: './cache'
 
 # =============================================================================
@@ -89,26 +94,33 @@ factor_test:
   # 测试时间范围
   begin_date: '2018-01-01'
   end_date: '2025-12-31'
-  
+
+  # 数据路径配置（使用auxiliary目录中的辅助数据）
+  auxiliary_data_path: 'E:\Documents\PythonProject\StockProject\StockData\auxiliary'
+
   # 回测设置
   backtest_type: 'daily'        # daily, weekly, monthly
   group_nums: 10                # 分组数量
   netral_base: true             # 是否基准中性化
   back_test_trading_price: 'o2o' # 交易价格类型: o2o, vwap
-  
+
   # 因子版本选择
   use_orthogonal_factors: false  # 是否优先使用预中性化因子
   factor_version: 'auto'        # 因子版本: 'raw', 'orthogonal', 'auto'
-  
+
+  # 因子保存设置（新增）
+  save_processed_factor: true   # 是否自动保存处理后的因子到orthogonalization_factors目录
+  processed_factor_subfolder: null  # 处理后因子的子文件夹（null表示自动按配置组织）
+
   # 基准因子
-  base_factors: 
+  base_factors:
     - 'LogMarketCap'
     - 'BP'
     - 'EP_ttm'
     - 'ma_120'
     - 'Vol_120'
-  
-  # 分类器配置  
+
+  # 分类器配置
   classification_name: 'classification_one_hot'
   matrix_name: 'similarity_matrix'
   nearest_nums: 50

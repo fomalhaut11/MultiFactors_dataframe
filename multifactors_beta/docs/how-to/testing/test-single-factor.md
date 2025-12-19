@@ -2,7 +2,7 @@
 
 ## 概述
 
-新的单因子测试模块提供了完整、高效、可扩展的因子测试框架，支持回归分析、分组测试、IC分析等多种测试方法。
+新的单因子测试模块提供了完整、高效、可扩展的因子测试框架，支持回归分析、分组测试、IC分析等多种测试方法。**v2.1 新增了中性化和归一化因子的独立保存和管理功能。**
 
 ## 架构设计
 
@@ -13,8 +13,8 @@ factors/tester/
 ├── core/                      # 核心功能
 │   ├── data_manager.py       # 数据管理
 │   ├── factor_tester.py      # 测试执行
-│   ├── result_manager.py     # 结果管理
-│   └── pipeline.py           # 测试流水线
+│   ├── result_manager.py     # 结果管理（新增因子保存/加载）
+│   └── pipeline.py           # 测试流水线（新增导出/导入接口）
 ├── engines/                   # 测试引擎（待扩展）
 ├── analyzers/                 # 分析工具（待扩展）
 └── utils/                     # 工具函数
@@ -43,6 +43,13 @@ factors/tester/
 - 多格式导出（pickle、yaml、json、excel）
 - 结果比较和分析工具
 
+### 5. **中性化因子管理（v2.1 新增）**
+- **自动保存**: 测试时自动保存处理后的因子到专用目录
+- **独立管理**: 处理后的因子与测试结果分离存储
+- **版本组织**: 按配置参数自动组织因子存储结构
+- **元数据记录**: 保存完整的处理配置和性能指标
+- **便捷导入**: 提供简单的加载接口重用处理后的因子
+
 ## 快速开始
 
 ### 基础使用
@@ -53,12 +60,28 @@ from factors.tester import SingleFactorTestPipeline
 # 创建测试流水线
 pipeline = SingleFactorTestPipeline()
 
-# 测试单个因子
+# 测试单个因子（自动保存测试结果和处理后的因子）
 result = pipeline.run('ROE_ttm')
 
 # 查看结果
 print(f"IC均值: {result.ic_result.ic_mean:.4f}")
 print(f"ICIR: {result.ic_result.icir:.4f}")
+
+# 处理后的因子已自动保存到：
+# StockData/OrthogonalizationFactors/neutral_industry_outlier3_zscore/ROE_ttm.pkl
+```
+
+### 控制因子保存行为
+
+```python
+# 只保存测试结果，不保存处理后的因子
+result = pipeline.run('ROE_ttm', save_processed_factor=False)
+
+# 只生成因子，不保存测试结果
+result = pipeline.run('ROE_ttm', save_result=False, save_processed_factor=True)
+
+# 都不保存（仅用于临时测试）
+result = pipeline.run('ROE_ttm', save_result=False, save_processed_factor=False)
 ```
 
 ### 自定义配置

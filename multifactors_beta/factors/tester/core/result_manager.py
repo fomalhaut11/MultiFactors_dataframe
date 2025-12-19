@@ -299,3 +299,273 @@ class ResultManager:
                         logger.warning(f"删除文件失败 {filepath}: {e}")
         
         logger.info(f"清理了 {deleted_count} 个旧文件")
+
+    def save_processed_factor_separately(
+        self,
+        result: TestResult,
+        subfolder: Optional[str] = None,
+        add_metadata: bool = True
+    ) -> str:
+        """
+        单独保存处理后的因子到专用目录
+
+        Parameters
+        ----------
+        result : TestResult
+            测试结果对象
+        subfolder : str, optional
+            子文件夹名称（例如按股票池、配置等组织）
+        add_metadata : bool, default True
+            是否同时保存元数据文件
+
+        Returns
+        -------
+        str
+            保存的因子文件路径
+
+        Notes
+        -----
+        处理后的因子包含：
+        - 去极值处理
+        - 标准化（zscore归一化）
+        - 基准因子中性化（如果配置了netral_base）
+        - 行业中性化（如果配置了use_industry）
+        """
+        if result.processed_factor is None or result.processed_factor.empty:
+            logger.warning(f"因子 {result.factor_name} 没有处理后的数据，跳过保存")
+            return ""
+
+        # 确定保存路径
+        orthogonal_base = get_config('main.paths.orthogonalization_factors')
+
+        if subfolder:
+            save_path = os.path.join(orthogonal_base, subfolder)
+        else:
+            # 使用默认子文件夹结构：按配置哈希分类
+            config_key = self._generate_config_key(result.config_snapshot)
+            save_path = os.path.join(orthogonal_base, config_key)
+
+        Path(save_path).mkdir(parents=True, exist_ok=True)
+
+        # 保存因子数据
+        factor_file = os.path.join(save_path, f"{result.factor_name}.pkl")
+        result.processed_factor.to_pickle(factor_file)
+        logger.info(f"处理后的因子已保存: {factor_file}")
+
+        # 保存元数据
+        if add_metadata:
+            metadata = {
+                'factor_name': result.factor_name,
+                'test_id': result.test_id,
+                'test_time': result.test_time.isoformat(),
+                'processing_config': {
+                    'outlier_method': result.config_snapshot.get('outlier_method'),
+                    'outlier_param': result.config_snapshot.get('outlier_param'),
+                    'normalization_method': result.config_snapshot.get('normalization_method'),
+                    'netral_base': result.config_snapshot.get('netral_base'),
+                    'base_factors': result.config_snapshot.get('base_factors'),
+                    'use_industry': result.config_snapshot.get('use_industry'),
+                    'classification_name': result.config_snapshot.get('classification_name'),
+                },
+                'data_info': {
+                    'begin_date': result.config_snapshot.get('begin_date'),
+                    'end_date': result.config_snapshot.get('end_date'),
+                    'sample_count': len(result.processed_factor),
+                    'stock_count': len(result.processed_factor.index.get_level_values(1).unique()),
+                    'date_count': len(result.processed_factor.index.get_level_values(0).unique()),
+                },
+                'performance_summary': result.performance_metrics
+            }
+
+            metadata_file = os.path.join(save_path, f"{result.factor_name}_metadata.json")
+            with open(metadata_file, 'w', encoding='utf-8') as f:
+                json.dump(metadata, f, indent=2, ensure_ascii=False, default=str)
+            logger.info(f"因子元数据已保存: {metadata_file}")
+
+        return factor_file
+
+    def load_processed_factor(
+        self,
+        factor_name: str,
+        subfolder: Optional[str] = None,
+        config_key: Optional[str] = None
+    ) -> Optional[pd.Series]:
+        """
+        加载处理后的因子
+
+        Parameters
+        ----------
+        factor_name : str
+            因子名称
+        subfolder : str, optional
+            子文件夹名称
+        config_key : str, optional
+            配置键（如果不提供subfolder）
+
+        Returns
+        -------
+        pd.Series or None
+            处理后的因子数据，如果不存在返回None
+        """
+        orthogonal_base = get_config('main.paths.orthogonalization_factors')
+
+        # 确定加载路径
+        if subfolder:
+            load_path = os.path.join(orthogonal_base, subfolder)
+        elif config_key:
+            load_path = os.path.join(orthogonal_base, config_key)
+        else:
+            # 尝试在所有子文件夹中查找
+            for root, dirs, files in os.walk(orthogonal_base):
+                target_file = f"{factor_name}.pkl"
+                if target_file in files:
+                    factor_path = os.path.join(root, target_file)
+                    logger.info(f"找到处理后的因子: {factor_path}")
+                    return pd.read_pickle(factor_path)
+
+            logger.warning(f"未找到处理后的因子: {factor_name}")
+            return None
+
+        # 加载指定路径的因子
+        factor_file = os.path.join(load_path, f"{factor_name}.pkl")
+        if os.path.exists(factor_file):
+            logger.info(f"加载处理后的因子: {factor_file}")
+            return pd.read_pickle(factor_file)
+        else:
+            logger.warning(f"因子文件不存在: {factor_file}")
+            return None
+
+    def load_factor_metadata(
+        self,
+        factor_name: str,
+        subfolder: Optional[str] = None
+    ) -> Optional[Dict]:
+        """
+        加载因子元数据
+
+        Parameters
+        ----------
+        factor_name : str
+            因子名称
+        subfolder : str, optional
+            子文件夹名称
+
+        Returns
+        -------
+        dict or None
+            因子元数据
+        """
+        orthogonal_base = get_config('main.paths.orthogonalization_factors')
+
+        # 确定加载路径
+        if subfolder:
+            search_path = os.path.join(orthogonal_base, subfolder)
+        else:
+            search_path = orthogonal_base
+
+        # 查找元数据文件
+        for root, dirs, files in os.walk(search_path):
+            metadata_file = f"{factor_name}_metadata.json"
+            if metadata_file in files:
+                metadata_path = os.path.join(root, metadata_file)
+                with open(metadata_path, 'r', encoding='utf-8') as f:
+                    return json.load(f)
+
+        logger.warning(f"未找到因子元数据: {factor_name}")
+        return None
+
+    def list_processed_factors(
+        self,
+        subfolder: Optional[str] = None,
+        return_metadata: bool = False
+    ) -> Union[List[str], pd.DataFrame]:
+        """
+        列出所有处理后的因子
+
+        Parameters
+        ----------
+        subfolder : str, optional
+            子文件夹名称
+        return_metadata : bool, default False
+            是否返回详细元数据（DataFrame格式）
+
+        Returns
+        -------
+        List[str] or pd.DataFrame
+            因子名称列表或包含元数据的DataFrame
+        """
+        orthogonal_base = get_config('main.paths.orthogonalization_factors')
+
+        if subfolder:
+            search_path = os.path.join(orthogonal_base, subfolder)
+        else:
+            search_path = orthogonal_base
+
+        if not os.path.exists(search_path):
+            logger.warning(f"路径不存在: {search_path}")
+            return [] if not return_metadata else pd.DataFrame()
+
+        factors = []
+
+        for root, dirs, files in os.walk(search_path):
+            for file in files:
+                if file.endswith('.pkl') and not file.endswith('_metadata.pkl'):
+                    factor_name = file.replace('.pkl', '')
+
+                    if return_metadata:
+                        # 读取元数据
+                        metadata_file = os.path.join(root, f"{factor_name}_metadata.json")
+                        if os.path.exists(metadata_file):
+                            with open(metadata_file, 'r', encoding='utf-8') as f:
+                                metadata = json.load(f)
+                            factors.append({
+                                'factor_name': factor_name,
+                                'path': os.path.join(root, file),
+                                'subfolder': os.path.relpath(root, orthogonal_base),
+                                **metadata.get('data_info', {}),
+                                **metadata.get('processing_config', {}),
+                            })
+                        else:
+                            factors.append({
+                                'factor_name': factor_name,
+                                'path': os.path.join(root, file),
+                                'subfolder': os.path.relpath(root, orthogonal_base),
+                            })
+                    else:
+                        factors.append(factor_name)
+
+        if return_metadata:
+            return pd.DataFrame(factors) if factors else pd.DataFrame()
+        else:
+            return factors
+
+    def _generate_config_key(self, config: Dict) -> str:
+        """
+        生成配置键（用于组织因子存储）
+
+        Parameters
+        ----------
+        config : Dict
+            配置字典
+
+        Returns
+        -------
+        str
+            配置键
+        """
+        # 使用关键配置参数生成简短的配置键
+        key_params = []
+
+        if config.get('netral_base'):
+            key_params.append('neutral')
+
+        if config.get('use_industry'):
+            key_params.append('industry')
+
+        outlier_param = config.get('outlier_param', 3)
+        key_params.append(f'outlier{outlier_param}')
+
+        norm_method = config.get('normalization_method', 'zscore')
+        key_params.append(norm_method)
+
+        return '_'.join(key_params) if key_params else 'default'
