@@ -32,23 +32,23 @@ class FactorOrthogonalizer:
         """
         # 导入所需模块
         from .data_cleaning import OutlierHandler, Normalizer
-        
+
         # 按日期分组处理
         def _orthogonalize_date(date_data: pd.DataFrame) -> pd.DataFrame:
             """对单个日期的数据进行正交化"""
-            result = pd.DataFrame(index=date_data.index, columns=date_data.columns)
-            
+            result = pd.DataFrame(index=date_data.index, columns=date_data.columns, dtype=float)
+
             for i, col in enumerate(date_data.columns):
                 factor_data = date_data[col].values
-                
+
                 # 去除异常值
                 if remove_outliers:
                     factor_data = OutlierHandler.remove_outlier(factor_data, method="IQR")
-                
+
                 # 标准化
                 if normalize:
                     factor_data = Normalizer.normalize(factor_data, method="zscore")
-                
+
                 if i == 0:
                     # 第一个因子直接使用
                     result.iloc[:, i] = factor_data

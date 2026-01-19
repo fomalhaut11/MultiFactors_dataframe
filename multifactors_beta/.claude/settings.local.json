@@ -59,7 +59,15 @@
       "Bash(then)",
       "Bash(fi)",
       "Bash(done)",
-      "Bash(wc:*)"
+      "Bash(wc:*)",
+      "Bash(PYTHONPATH=/e/Documents/PythonProject/StockProject/MultiFactors/multifactors_beta python:*)",
+      "Bash(tee:*)",
+      "Bash(tasklist:*)",
+      "Bash(findstr:*)",
+      "Bash(pstree:*)",
+      "Bash(git checkout:*)",
+      "Bash(git merge:*)",
+      "Bash(cat:*)"
     ],
     "deny": [],
     "additionalDirectories": [

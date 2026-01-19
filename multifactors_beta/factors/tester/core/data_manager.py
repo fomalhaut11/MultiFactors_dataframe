@@ -55,14 +55,14 @@ class DataManager:
     def load_return_data(self, return_type: str = 'daily', price_type: str = 'o2o') -> pd.Series:
         """
         加载收益率数据
-        
+
         Parameters
         ----------
         return_type : str
             收益类型 ('daily', 'weekly', 'monthly')
         price_type : str
             价格类型 ('o2o', 'vwap')
-            
+
         Returns
         -------
         pd.Series
@@ -71,9 +71,11 @@ class DataManager:
         cache_key = f"return_{return_type}_{price_type}"
         if cache_key in self.data_cache:
             return self.data_cache[cache_key]
-        
+
         try:
-            data_path = get_config('main.paths.data_root')
+            # 优先从factor_test.auxiliary_data_path加载，然后paths.auxiliary_data，最后data_root
+            auxiliary_path = self.config.get('auxiliary_data_path') or get_config('main.paths.auxiliary_data')
+            data_path = auxiliary_path if auxiliary_path else get_config('main.paths.data_root')
             filename = f"LogReturn_{return_type}_{price_type}.pkl"
             filepath = os.path.join(data_path, filename)
             
@@ -500,13 +502,15 @@ class DataManager:
             common_index = valid_dfs[0].index
             for df in valid_dfs[1:]:
                 common_index = common_index.intersection(df.index)
-            
+
             # 对齐所有数据
             for key in data_dict:
                 if key in ['factor', 'returns', 'control_variables']:
                     if isinstance(data_dict[key], (pd.DataFrame, pd.Series)) and not data_dict[key].empty:
-                        data_dict[key] = data_dict[key].loc[common_index]
-            
+                        # 获取当前数据的索引与common_index的交集，避免KeyError
+                        aligned_index = data_dict[key].index.intersection(common_index)
+                        data_dict[key] = data_dict[key].loc[aligned_index]
+
             logger.info(f"数据对齐完成，共同样本数: {len(common_index)}")
         
         return data_dict

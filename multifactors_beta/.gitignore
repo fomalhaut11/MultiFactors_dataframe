@@ -55,3 +55,8 @@ config_local.yaml
 secrets.yaml
 *.key
 *.pem
+# 临时文档和结果目录
+claudedocs/
+results/
+debug_test_result.py
+factors/repository/financial/
