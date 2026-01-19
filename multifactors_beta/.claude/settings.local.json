@@ -67,7 +67,8 @@
       "Bash(pstree:*)",
       "Bash(git checkout:*)",
       "Bash(git merge:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(FILTER_BRANCH_SQUELCH_WARNING=1 git filter-branch:*)"
     ],
     "deny": [],
     "additionalDirectories": [
