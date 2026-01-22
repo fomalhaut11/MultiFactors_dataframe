@@ -5,23 +5,32 @@
 
 主要模块：
 - moving_average: 移动平均类指标
-- oscillator: 振荡器指标（RSI、MACD等）  
+- oscillator: 振荡器指标（RSI、MACD、KDJ、CCI等）
 - volatility: 波动率指标
-- trend: 趋势指标
+- momentum: 动量因子
+- reversal: 反转因子
+- volume: 成交量因子
 
 Author: AI Assistant
 Date: 2025-09-03
+Updated: 2025-01
 """
 
 from .moving_average import MovingAverageCalculator
 from .oscillator import TechnicalIndicators
 from .volatility import VolatilityCalculator
+from .momentum import MomentumCalculator
+from .reversal import ReversalCalculator
+from .volume import VolumeCalculator
 
 __all__ = [
     'MovingAverageCalculator',
-    'TechnicalIndicators', 
-    'VolatilityCalculator'
+    'TechnicalIndicators',
+    'VolatilityCalculator',
+    'MomentumCalculator',
+    'ReversalCalculator',
+    'VolumeCalculator'
 ]
 
 # 版本信息
-__version__ = '1.0.0'
+__version__ = '2.0.0'

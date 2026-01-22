@@ -6,9 +6,14 @@
 - MACD (指数平滑移动平均线)
 - 布林带 (Bollinger Bands)
 - 滚动Z-score
+- KDJ (随机指标)
+- CCI (商品通道指标)
+- Williams %R (威廉指标)
+- ATR (真实波动幅度均值)
 
-Author: AI Assistant  
+Author: AI Assistant
 Date: 2025-09-03
+Updated: 2025-01
 """
 
 import pandas as pd
@@ -160,5 +165,272 @@ class TechnicalIndicators:
                 
                 zscore[i] = (data[i] - mean_val) / std_val
                 zscore[i] = np.clip(zscore[i], -cap, cap)
-                
+
             return zscore
+
+    @staticmethod
+    def kdj(high: pd.Series,
+            low: pd.Series,
+            close: pd.Series,
+            n: int = 9,
+            m1: int = 3,
+            m2: int = 3) -> Tuple[pd.Series, pd.Series, pd.Series]:
+        """
+        计算KDJ随机指标
+
+        KDJ指标基于最高价、最低价和收盘价计算
+
+        Parameters
+        ----------
+        high : pd.Series
+            最高价
+        low : pd.Series
+            最低价
+        close : pd.Series
+            收盘价
+        n : int, default 9
+            RSV计算周期
+        m1 : int, default 3
+            K值平滑周期
+        m2 : int, default 3
+            D值平滑周期
+
+        Returns
+        -------
+        tuple of pd.Series
+            (K, D, J)
+            K: 快速随机指标
+            D: 慢速随机指标
+            J: J指标 = 3*K - 2*D
+        """
+        # 计算N日内最低价和最高价
+        lowest_low = low.rolling(window=n, min_periods=1).min()
+        highest_high = high.rolling(window=n, min_periods=1).max()
+
+        # RSV (Raw Stochastic Value)
+        rsv = 100 * (close - lowest_low) / (highest_high - lowest_low + 1e-10)
+
+        # K值 (使用EMA平滑)
+        k = rsv.ewm(span=m1, adjust=False).mean()
+
+        # D值 (K的EMA)
+        d = k.ewm(span=m2, adjust=False).mean()
+
+        # J值
+        j = 3 * k - 2 * d
+
+        return k, d, j
+
+    @staticmethod
+    def cci(high: pd.Series,
+            low: pd.Series,
+            close: pd.Series,
+            window: int = 20) -> pd.Series:
+        """
+        计算商品通道指标 (CCI - Commodity Channel Index)
+
+        CCI = (典型价格 - MA) / (0.015 * 平均偏差)
+
+        Parameters
+        ----------
+        high : pd.Series
+            最高价
+        low : pd.Series
+            最低价
+        close : pd.Series
+            收盘价
+        window : int, default 20
+            计算周期
+
+        Returns
+        -------
+        pd.Series
+            CCI指标值
+        """
+        # 典型价格
+        typical_price = (high + low + close) / 3
+
+        # 移动平均
+        ma = typical_price.rolling(window=window).mean()
+
+        # 平均偏差 (Mean Deviation)
+        mean_deviation = typical_price.rolling(window=window).apply(
+            lambda x: np.abs(x - x.mean()).mean(), raw=True
+        )
+
+        # CCI
+        cci = (typical_price - ma) / (0.015 * mean_deviation + 1e-10)
+
+        return cci
+
+    @staticmethod
+    def williams_r(high: pd.Series,
+                   low: pd.Series,
+                   close: pd.Series,
+                   window: int = 14) -> pd.Series:
+        """
+        计算威廉指标 (Williams %R)
+
+        Williams %R = (最高价 - 收盘价) / (最高价 - 最低价) * -100
+
+        范围: -100 到 0
+        - 接近 0: 超买
+        - 接近 -100: 超卖
+
+        Parameters
+        ----------
+        high : pd.Series
+            最高价
+        low : pd.Series
+            最低价
+        close : pd.Series
+            收盘价
+        window : int, default 14
+            计算周期
+
+        Returns
+        -------
+        pd.Series
+            Williams %R值 (-100 到 0)
+        """
+        highest_high = high.rolling(window=window, min_periods=1).max()
+        lowest_low = low.rolling(window=window, min_periods=1).min()
+
+        williams_r = (highest_high - close) / (highest_high - lowest_low + 1e-10) * -100
+
+        return williams_r
+
+    @staticmethod
+    def atr(high: pd.Series,
+            low: pd.Series,
+            close: pd.Series,
+            window: int = 14) -> pd.Series:
+        """
+        计算真实波动幅度均值 (ATR - Average True Range)
+
+        ATR是衡量市场波动性的指标
+
+        Parameters
+        ----------
+        high : pd.Series
+            最高价
+        low : pd.Series
+            最低价
+        close : pd.Series
+            收盘价
+        window : int, default 14
+            计算周期
+
+        Returns
+        -------
+        pd.Series
+            ATR值
+        """
+        # 前一日收盘价
+        prev_close = close.shift(1)
+
+        # 真实波幅的三个组成部分
+        tr1 = high - low  # 当日高低差
+        tr2 = (high - prev_close).abs()  # 当日高点与昨日收盘差
+        tr3 = (low - prev_close).abs()  # 当日低点与昨日收盘差
+
+        # 真实波幅
+        tr = pd.concat([tr1, tr2, tr3], axis=1).max(axis=1)
+
+        # ATR (使用EMA)
+        atr = tr.ewm(span=window, adjust=False).mean()
+
+        return atr
+
+    @staticmethod
+    def dmi(high: pd.Series,
+            low: pd.Series,
+            close: pd.Series,
+            window: int = 14) -> Tuple[pd.Series, pd.Series, pd.Series]:
+        """
+        计算动向指标 (DMI - Directional Movement Index)
+
+        包含 +DI, -DI 和 ADX
+
+        Parameters
+        ----------
+        high : pd.Series
+            最高价
+        low : pd.Series
+            最低价
+        close : pd.Series
+            收盘价
+        window : int, default 14
+            计算周期
+
+        Returns
+        -------
+        tuple of pd.Series
+            (+DI, -DI, ADX)
+        """
+        # 计算方向变动
+        up_move = high.diff()
+        down_move = -low.diff()
+
+        # +DM和-DM
+        plus_dm = up_move.where((up_move > down_move) & (up_move > 0), 0)
+        minus_dm = down_move.where((down_move > up_move) & (down_move > 0), 0)
+
+        # ATR
+        atr = TechnicalIndicators.atr(high, low, close, window)
+
+        # +DI和-DI
+        plus_di = 100 * plus_dm.ewm(span=window, adjust=False).mean() / (atr + 1e-10)
+        minus_di = 100 * minus_dm.ewm(span=window, adjust=False).mean() / (atr + 1e-10)
+
+        # DX
+        dx = 100 * (plus_di - minus_di).abs() / (plus_di + minus_di + 1e-10)
+
+        # ADX (DX的移动平均)
+        adx = dx.ewm(span=window, adjust=False).mean()
+
+        return plus_di, minus_di, adx
+
+    @staticmethod
+    def stochastic_rsi(close: pd.Series,
+                       rsi_window: int = 14,
+                       stoch_window: int = 14,
+                       k_smooth: int = 3,
+                       d_smooth: int = 3) -> Tuple[pd.Series, pd.Series]:
+        """
+        计算随机RSI (Stochastic RSI)
+
+        将RSI值标准化到0-100范围
+
+        Parameters
+        ----------
+        close : pd.Series
+            收盘价
+        rsi_window : int, default 14
+            RSI计算周期
+        stoch_window : int, default 14
+            随机指标周期
+        k_smooth : int, default 3
+            K线平滑周期
+        d_smooth : int, default 3
+            D线平滑周期
+
+        Returns
+        -------
+        tuple of pd.Series
+            (Stoch RSI K, Stoch RSI D)
+        """
+        # 计算RSI
+        rsi = TechnicalIndicators.rsi(close, rsi_window)
+
+        # 计算随机RSI
+        lowest_rsi = rsi.rolling(window=stoch_window, min_periods=1).min()
+        highest_rsi = rsi.rolling(window=stoch_window, min_periods=1).max()
+
+        stoch_rsi = 100 * (rsi - lowest_rsi) / (highest_rsi - lowest_rsi + 1e-10)
+
+        # K线和D线
+        stoch_rsi_k = stoch_rsi.rolling(window=k_smooth).mean()
+        stoch_rsi_d = stoch_rsi_k.rolling(window=d_smooth).mean()
+
+        return stoch_rsi_k, stoch_rsi_d
